@@ -5,7 +5,7 @@
 #include "Simulator.h"
 
 int main() {
-    Simulator simulator;
+    Simulator simulator("FEM Simulator");
     simulator.LoadScene(CONFIG_PATH "/static-curve.json");
     simulator.MainLoop();
 //    simulator.Simulate();

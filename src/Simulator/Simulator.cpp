@@ -11,6 +11,10 @@
 
 using nlohmann::json;
 
+glm::vec3 Json2GlmVec3(const json& vec) {
+    return glm::vec3(vec[0], vec[1], vec[2]);
+}
+
 void Simulator::LoadScene(const std::string &config) {
     json config_json;
     std::fstream config_file(config);
@@ -40,6 +44,22 @@ void Simulator::LoadScene(const std::string &config) {
     }
 
     _system.UpdateSettings();
+
+    const auto& renderer_config_json = config_json["renderer"];
+    const auto& camera_config_json = renderer_config_json["camera"];
+    _camera_position = Json2GlmVec3(camera_config_json["position"]);
+    _camera_look = Json2GlmVec3(camera_config_json["look"]);
+    _camera_up = Json2GlmVec3(camera_config_json["up"]);
+
+    const auto& light_config_json = renderer_config_json["light"];
+    _light_position = Json2GlmVec3(light_config_json["position"]);
+    _light_ambient = Json2GlmVec3(light_config_json["ambient"]);
+    _light_diffuse = Json2GlmVec3(light_config_json["diffuse"]);
+    _light_specular = Json2GlmVec3(light_config_json["specular"]);
+    _light_Kc = light_config_json["Kc"];
+    _light_Kl = light_config_json["Kl"];
+    _light_Kq = light_config_json["Kq"];
+
 }
 
 void Simulator::Simulate() {
@@ -59,6 +79,19 @@ Simulator::~Simulator() {
 }
 
 void Simulator::InitializeScene(Scene &scene) {
+    SetCamera(
+        _camera_position,
+        _camera_look,
+        _camera_up
+    );
+    SetLight(
+        _light_position,
+        _light_ambient,
+        _light_diffuse,
+        _light_specular,
+        _light_Kc, _light_Kl, _light_Kq
+    );
+
     const auto& objs = _system._objs;
     _obj_scene_id.resize(_system._size);
     for (int i = 0; i < _system._size; i++) {
