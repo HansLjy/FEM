@@ -17,6 +17,7 @@ public:
     void Processing(Scene &scene) override;
 
     void LoadScene(const std::string& config);
+    void Simulate();
 
     ~Simulator();
 

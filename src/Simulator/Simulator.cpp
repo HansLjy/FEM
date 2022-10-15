@@ -42,6 +42,18 @@ void Simulator::LoadScene(const std::string &config) {
     _system.UpdateSettings();
 }
 
+void Simulator::Simulate() {
+    double current_time = 0;
+    while(current_time < _duration) {
+        VectorXd x_next, v_next;
+        _integrator->Step(_system, _time_step, x_next, v_next);
+        _system.SetCoordinate(x_next);
+        _system.SetVelocity(v_next);
+
+        current_time += _time_step;
+    }
+}
+
 Simulator::~Simulator() {
     delete _integrator;
 }

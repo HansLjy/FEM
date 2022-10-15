@@ -1,7 +1,7 @@
 #ifndef EXAMPLE_APP_HPP
 #define EXAMPLE_APP_HPP
 
-#include "GUI.hpp"
+#include "GUI/GUI.hpp"
 
 class ExampleApp : public GUI {
 public:

@@ -37,8 +37,8 @@ void FastProjectionIntegrator::Step(Target &target, double h, VectorXd &x_next, 
     Eigen::LDLT<MatrixXd> LDLT_dense;
     int step = 0;
     while(std::abs(C.norm() / C.size()) > _tolerance) {
-        std::cout << "x_next = " << x_next.transpose() << std::endl;
-        std::cout << "constraint = " << C.transpose() << std::endl;
+//        std::cout << "x_next = " << x_next.transpose() << std::endl;
+//        std::cout << "constraint = " << C.transpose() << std::endl;
 
         SparseMatrixXd nabla_c;
         target.GetConstraintGradient(nabla_c, x_next);
@@ -64,5 +64,5 @@ void FastProjectionIntegrator::Step(Target &target, double h, VectorXd &x_next, 
     }
 
     v_next = (x_next - x) / h;
-    std::cout << "Coordinate: " << x_next.transpose() << std::endl;
+//    std::cout << "Coordinate: " << x_next.transpose() << std::endl;
 }
