@@ -3,9 +3,9 @@
 
 void ExampleApp::InitializeScene(Scene &scene) {
     SetCamera(
-        glm::vec3(0.0f, 0.0f, 5.0f),
-        glm::vec3(0.0f, 0.0f, -1.0f),
-        glm::vec3(0.0f, 1.0f, 0.0f)
+        glm::vec3(5.0f, 0.0f, 5.0f),
+        glm::vec3(-1.0f, 0.0f, -1.0f),
+        glm::vec3(0.0f, 0.0f, 1.0f)
     );
     SetLight(
         glm::vec3(0.0f, 10.0f, 0.0f),
@@ -15,7 +15,6 @@ void ExampleApp::InitializeScene(Scene &scene) {
         1.0f, 0.35f, 0.44f
     );
     id1 = scene.AddMesh();
-    id2 = scene.AddMesh();
 }
 
 void ExampleApp::Processing(Scene &scene) {
@@ -28,6 +27,8 @@ void ExampleApp::Processing(Scene &scene) {
                 -0.5, +0.5, -0.5,
                 +0.5, -0.5, -0.5,
                 -0.5, -0.5, -0.5;
+
+    vertices.array() += 1;
 
     Eigen::MatrixXi topo(12, 3);
     topo << 0, 1, 3,
@@ -43,13 +44,8 @@ void ExampleApp::Processing(Scene &scene) {
             1, 5, 3,
             3, 5, 7;
 
-    MatrixXd offset(8, 3);
-    offset.setConstant(1.2);
-
     scene.SelectData(id1);
     scene.SetMesh(vertices, topo);
-    scene.SelectData(id2);
-    scene.SetMesh(vertices + offset, topo);
 
 
 }
