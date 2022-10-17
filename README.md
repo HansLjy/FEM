@@ -13,6 +13,7 @@ A simple finite element method simulator.
 - [ ] Better GUI, features include:
   - [ ] different material
   - [ ] floor rendering
+    - Update: half way there. The floor will drift for unknown reasons.
   - [ ] automatically change the initial position of the camera
   - [ ] keyboard shortcut to change different views
   - [ ] tracing objects
