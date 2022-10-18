@@ -10,32 +10,13 @@ double Object::GetEnergy() const {
     return GetPotential() + GetExternalEnergy();
 }
 
-void Object::GetPotentialHessian(SparseMatrixXd &hessian) const {
-    COO coo;
-    GetPotentialHessian(coo, 0, 0);
-    hessian.resize(GetDOF(), GetDOF());
-    hessian.setFromTriplets(coo.begin(), coo.end());
-}
-
 VectorXd Object::GetEnergyGradient() const {
     return GetPotentialGradient() + GetExternalEnergyGradient();
 }
 
-void Object::GetEnergyHessian(SparseMatrixXd &hessian) const {
-    GetPotentialHessian(hessian);
-    SparseMatrixXd hessian2;
-    GetExternalEnergyHessian(hessian2);
-    hessian += hessian2;
-}
-
 void Object::GetEnergyHessian(COO &coo, int x_offset, int y_offset) const {
-    SparseMatrixXd hessian;
-    GetEnergyHessian(hessian);
-    for (int i = 0; i < hessian.outerSize(); i++) {
-        for (SparseMatrixXd::InnerIterator itr(hessian, i); itr; ++itr) {
-            coo.push_back(Tripletd(itr.row() + x_offset, itr.col() + y_offset, itr.value()));
-        }
-    }
+    GetPotentialHessian(coo, x_offset, y_offset);
+    GetExternalEnergyHessian(coo, x_offset, y_offset);
 }
 
 void Object::AddExternalForce(const ExternalForce &force) {
@@ -65,13 +46,6 @@ void Object::GetExternalEnergyHessian(COO &coo, int x_offset, int y_offset) cons
     }
 }
 
-void Object::GetExternalEnergyHessian(SparseMatrixXd &hessian) const {
-    COO coo;
-    GetExternalEnergyHessian(coo, 0, 0);
-    hessian.resize(GetDOF(), GetDOF());
-    hessian.setFromTriplets(coo.begin(), coo.end());
-}
-
 Object::~Object() {
     for (auto& ext_force : _external_forces) {
         delete ext_force;
@@ -89,6 +63,9 @@ Object::Object(const Object &rhs) {
 }
 
 Object &Object::operator=(const Object &rhs) {
+    if (this == &rhs) {
+        return *this;
+    }
     _x = rhs._x;
     _v = rhs._v;
     for (const auto& ext_force : _external_forces) {

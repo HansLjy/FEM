@@ -13,6 +13,7 @@ class CurveForTest : public Curve {
 public:
     CurveForTest(const Vector3d &start, const Vector3d &end, int num_segments, double total_mass, double alpha)
         : Curve(start, end, num_segments, total_mass, alpha) {}
+
     FRIEND_TEST(CurveTest, CurveInitializationTest);
     FRIEND_TEST(CurveTest, CurveEnergyTest);
     FRIEND_TEST(CurveTest, CurveGradientTest);
@@ -199,7 +200,9 @@ TEST(GravityTest, CurveGravityDerivativeTest) {
 
     auto numeric_hessian = FiniteDifferential2(func, x_backup);
     curve._x = x_backup;
-    SparseMatrixXd analytic_hessian;
-    curve.GetExternalEnergyHessian(analytic_hessian);
+    SparseMatrixXd analytic_hessian(curve.GetDOF(), curve.GetDOF());
+    COO coo;
+    curve.GetExternalEnergyHessian(coo, 0, 0);
+    analytic_hessian.setFromTriplets(coo.begin(), coo.end());
     EXPECT_NEAR((numeric_hessian - analytic_hessian).norm() / numeric_hessian.size(), 0, 1e-5);
 }

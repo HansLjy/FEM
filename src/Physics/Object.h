@@ -43,19 +43,16 @@ public:
 
     double GetEnergy() const;
     VectorXd GetEnergyGradient() const;
-    void GetEnergyHessian(SparseMatrixXd& hessian) const;
     void GetEnergyHessian(COO& coo, int x_offset, int y_offset) const;
 
     virtual double GetPotential() const = 0;
     virtual VectorXd GetPotentialGradient() const = 0;
-    void GetPotentialHessian(SparseMatrixXd &hessian) const;
     virtual void GetPotentialHessian(COO &coo, int x_offset, int y_offset) const = 0;
 
     void AddExternalForce(const ExternalForce& force);
 
     double GetExternalEnergy() const;
     VectorXd GetExternalEnergyGradient() const;
-    void GetExternalEnergyHessian(SparseMatrixXd& hessian) const;
     void GetExternalEnergyHessian(COO& coo, int x_offset, int y_offset) const;
 
     const Shape * GetShape() {
