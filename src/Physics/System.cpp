@@ -44,6 +44,7 @@ int System::AddObject(const Object &obj, const std::string &name) {
         _size *= 2;
     }
     _DOF += obj.GetDOF();
+    _constraint_size += obj.GetConstraintSize();
     return idx;
 }
 
@@ -57,6 +58,7 @@ bool System::DeleteObject(int idx) {
     _next_free[idx] = _first_free;
     _first_free = idx;
     _DOF -= _objs[idx]->GetDOF();
+    _constraint_size -= _objs[idx]->GetConstraintSize();
     delete _objs[idx];
 
     for (auto itr = _index.begin(); itr != _index.end(); itr++) {
@@ -80,6 +82,7 @@ bool System::DeleteObject(const std::string &name) {
     _next_free[idx] = _first_free;
     _first_free = idx;
     _DOF -= _objs[idx]->GetDOF();
+    _constraint_size -= _objs[idx]->GetConstraintSize();
     delete _objs[idx];
 
     _index.erase(result);
@@ -133,7 +136,7 @@ VectorXd System::GetVelocity() const {
     for (int i = 0; i < _size; i++) {                                           \
         if (_used[i]) {                                                         \
             const auto& obj = _objs[i];                                         \
-            obj->Get##Funcname() = var.block(current_row, 0, obj->GetDOF(), 1); \
+            obj->Set##Funcname(var.block(current_row, 0, obj->GetDOF(), 1));    \
             current_row += obj->GetDOF();                                       \
         }                                                                       \
     }
@@ -198,11 +201,20 @@ bool System::DeleteConstraint(int idx) {
 VectorXd System::GetConstraint(const VectorXd &x) const {
     VectorXd constraint(_constraint_size);
     const int num_constraint = _constraints.size();
-    int current_offset = 0;
+    int current_constraint_offset = 0;
     for (int i = 0; i < num_constraint; i++) {
-        constraint.block(current_offset, 0, _constraints[i]->GetSize(), 1)
+        constraint.block(current_constraint_offset, 0, _constraints[i]->GetSize(), 1)
             = _constraints[i]->GetValue(x);
-        current_offset += _constraints[i]->GetSize();
+        current_constraint_offset += _constraints[i]->GetSize();
+    }
+    int current_object_offset = 0;
+    for (int i = 0; i < _size; i++) {
+        if (_used[i]) {
+            constraint.block(current_constraint_offset, 0, _objs[i]->GetConstraintSize(), 1)
+                = _objs[i]->GetInnerConstraint(x.segment(current_object_offset, _objs[i]->GetDOF()));
+            current_constraint_offset += _objs[i]->GetConstraintSize();
+            current_object_offset += _objs[i]->GetDOF();
+        }
     }
     return constraint;
 }
@@ -210,12 +222,20 @@ VectorXd System::GetConstraint(const VectorXd &x) const {
 void System::GetConstraintGradient(SparseMatrixXd &gradient, const Eigen::VectorXd &x) const {
     COO coo;
     int num_constraint = _constraints.size();
-    int current_offset = 0;
+    int current_constraint_offset = 0;
     for (int i = 0; i < num_constraint; i++) {
-        _constraints[i]->GetGradient(x, coo, current_offset);
-        current_offset += _constraints[i]->GetSize();
+        _constraints[i]->GetGradient(x, coo, current_constraint_offset);
+        current_constraint_offset += _constraints[i]->GetSize();
     }
-    gradient.resize(current_offset, x.size());
+    int current_object_offset = 0;
+    for (int i = 0; i < _size; i++) {
+        if (_used[i]) {
+            _objs[i]->GetInnerConstraintGradient(x.segment(current_object_offset, _objs[i]->GetDOF()), coo, current_constraint_offset, current_object_offset);
+            current_constraint_offset += _objs[i]->GetConstraintSize();
+            current_object_offset += _objs[i]->GetDOF();
+        }
+    }
+    gradient.resize(current_constraint_offset, x.size());
     gradient.setFromTriplets(coo.begin(), coo.end());
 }
 

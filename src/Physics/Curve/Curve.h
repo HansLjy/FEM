@@ -8,26 +8,28 @@
 #include "Object.h"
 #include "EigenAll.h"
 
-class InextensibleCurve;
 class CurveGravity;
 
-class Curve : public Object {
+class Curve : public ShapedObject {
 public:
     explicit Curve(const json& config);
-    Curve(const Vector3d &start, const Vector3d &end, int num_segments, double total_mass, double alpha);
+    Curve(double total_mass, double alpha, const Vector3d &start, const Vector3d &end, int num_segments);
+    Curve(double total_mass, double alpha, const VectorXd &x);
 
-    void GetMass(SparseMatrixXd &mass) const override;
     void GetMass(COO &coo, int x_offset, int y_offset) const override;
 
     double GetPotential() const override;
     VectorXd GetPotentialGradient() const override;
     void GetPotentialHessian(COO &coo, int x_offset, int y_offset) const override;
 
+    int GetConstraintSize() const override;
+    VectorXd GetInnerConstraint(const VectorXd &x) const override;
+    void GetInnerConstraintGradient(const VectorXd &x, COO &coo, int x_offset, int y_offset) const override;
+
     ~Curve() override = default;
 
     DERIVED_DECLARE_CLONE(Object)
 
-    friend class InextensibleCurve;
     friend class CurveGravity;
 
 protected:
@@ -38,6 +40,9 @@ protected:
     VectorXd _mass_sparse;      // mass assigned to every **coordinate**
     VectorXd _rest_length;      // length of every edge in the rest shape
     VectorXd _voronoi_length;   // length under the government of one point
+
+private:
+    static VectorXd GetX(const Vector3d& start, const Vector3d& end, int num_segments);
 };
 
 #endif //FEM_CURVE_H

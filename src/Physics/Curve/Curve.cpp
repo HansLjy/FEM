@@ -8,47 +8,41 @@
 
 DEFINE_CLONE(Object, Curve)
 
-Curve::Curve(const Vector3d &start, const Vector3d &end, int num_segments, double total_mass, double alpha)
-    : _alpha(alpha), _num_points(num_segments + 1) {
+VectorXd Curve::GetX(const Vector3d &start, const Vector3d &end, int num_segments){
+    VectorXd x(3 * (num_segments + 1));
     Vector3d delta = (end - start) / num_segments;
-    _x.resize(3 * _num_points);
-    _x_rest.resize(3 * _num_points);
-    _v.resize(3 * _num_points);
-    _v.setZero();
     Vector3d current = start;
     for (int i = 0, j = 0; i <= num_segments; i++, j += 3, current += delta) {
-        _x.block<3, 1>(j, 0) = _x_rest.block<3, 1>(j, 0) = current;
+        x.segment<3>(j) = current;
     }
+    return x;
+}
+
+Curve::Curve(double total_mass, double alpha, const Eigen::Vector3d &start, const Eigen::Vector3d &end,
+             int num_segments) : Curve(total_mass, alpha, GetX(start, end, num_segments)) {}
+
+#include "JsonUtil.h"
+
+Curve::Curve(const nlohmann::json &config) :
+    Curve(config["mass"], config["alpha"], Json2Vec(config["start"]), Json2Vec(config["end"]), config["segments"]){}
+
+Curve::Curve(double total_mass, double alpha, const VectorXd &x)
+    : ShapedObject(x, CurveShape()), _alpha(alpha), _num_points(x.size() / 3) {
+    _x_rest = x;
     _mass.resize(_num_points);
     _mass.setConstant(total_mass / _num_points);
-    _mass_sparse.resize(3 * _num_points);
+    _mass_sparse.resize(_num_points * 3);
     _mass_sparse.setConstant(total_mass / _num_points);
-    _rest_length.resize(num_segments);
-    _rest_length.setConstant(delta.norm());
-    _voronoi_length.resize(_num_points);
-    _voronoi_length.setConstant(delta.norm());
-    _voronoi_length(0) = _voronoi_length(_num_points - 1) = delta.norm() / 2;
-
-    _shape = new CurveShape;
-}
-
-Curve::Curve(const nlohmann::json &config) {
-    const auto& start_array = config["start"];
-    const auto& end_array = config["end"];
-    Vector3d start, end;
-    for (int i = 0; i < 3; i++) {
-        start(i) = start_array[i];
-        end(i) = end_array[i];
+    _rest_length.resize(_num_points - 1);
+    for (int i = 0, j = 0; i < _num_points - 1; i++, j += 3) {
+        _rest_length(i) = (_x_rest.block<3, 1>(j + 3, 0) - _x_rest.block<3, 1>(j, 0)).norm();
     }
-    const int num_segments = config["segments"];
-    const double mass = config["mass"];
-    const double alpha = config["alpha"];
-
-    *this = Curve(start, end, num_segments, mass, alpha);
-}
-
-void Curve::GetMass(SparseMatrixXd &mass) const {
-    mass = _mass_sparse.diagonal().sparseView();
+    _voronoi_length.resize(_num_points);
+    for (int i = 1; i < _num_points - 1; i++) {
+        _voronoi_length(i) = (_rest_length(i - 1) + _rest_length(i)) / 2;
+    }
+    _voronoi_length(0) = _rest_length(0) / 2;
+    _voronoi_length(_num_points - 1) = _rest_length(_num_points - 2) / 2;
 }
 
 void Curve::GetMass(COO &coo, int x_offset, int y_offset) const {
@@ -114,4 +108,27 @@ VectorXd Curve::GetPotentialGradient() const {
 
 void Curve::GetPotentialHessian(COO &coo, int x_offset, int y_offset) const {
     throw std::logic_error("Currently, implicit Euler for elastic curve is unsupported");
+}
+
+int Curve::GetConstraintSize() const {
+    return _num_points - 1;
+}
+
+VectorXd Curve::GetInnerConstraint(const VectorXd &x) const {
+    VectorXd result(_num_points - 1);
+    for (int i = 0, j = 0; i < _num_points - 1; i++, j += 3) {
+        Vector3d e = x.segment<3>(j + 3) - x.segment<3>(j);
+        result(i) = e.dot(e) - _rest_length(i) * _rest_length(i);
+    }
+    return result;
+}
+
+void Curve::GetInnerConstraintGradient(const VectorXd &x, COO &coo, int x_offset, int y_offset) const {
+    for (int i = 0, j = 0; i < _num_points - 1; i++, j += 3) {
+        Vector3d e = x.segment<3>(j + 3) - x.segment<3>(j);
+        for (int k = 0; k < 3; k++) {
+            coo.push_back(Tripletd(x_offset + i, y_offset + j + k, -2 * e(k)));
+            coo.push_back(Tripletd(x_offset + i, y_offset + j + k + 3, 2 * e(k)));
+        }
+    }
 }

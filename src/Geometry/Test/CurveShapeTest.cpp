@@ -13,11 +13,10 @@ TEST(ShapeTest, CurveShapeTest) {
     const int num_segments = 1;
     const int num_vertices = 8 * num_segments;
     const int num_faces = 12 * num_segments;
-    Curve curve(start, end, num_segments, 1, 1);
-    const auto& shape = curve.GetShape();
+    Curve curve(1, 1, start, end, num_segments);
     MatrixXd vertices;
     MatrixXi topo;
-    shape->GetSurface(curve, vertices, topo);
+    curve.GetShape(vertices, topo);
 
     // std::cout << "Vertices: " << std::endl << vertices << std::endl;
 

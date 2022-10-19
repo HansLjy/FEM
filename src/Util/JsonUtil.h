@@ -11,5 +11,6 @@
 using nlohmann::json;
 
 Vector3d Json2Vec(const json& vec);
+VectorXd Json2VecX(const json& vec);
 
 #endif //FEM_JSONUTIL_H

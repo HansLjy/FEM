@@ -9,3 +9,11 @@ Vector3d Json2Vec(const json& vec) {
     result << vec[0], vec[1], vec[2];
     return result;
 }
+
+VectorXd Json2VecX(const json& vec) {
+    VectorXd result(vec.size());
+    for (int i = 0; i < vec.size(); i++) {
+        result(i) = vec[i];
+    }
+    return result;
+}

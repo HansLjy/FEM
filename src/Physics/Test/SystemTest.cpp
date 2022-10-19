@@ -16,17 +16,13 @@ DEFINE_CLONE(Shape, StubShape)
 
 class StubObject : public Object {
 public:
-    StubObject() : _uid(++count) {
+    StubObject() : Object(VectorXd()), _uid(++count) {
         _x.resize(_uid);
         _x.setConstant(_uid);
         _v.resize(_uid);
         _v.setConstant(-_uid);
-        _shape = new StubShape;
     }
 
-    void GetMass(SparseMatrixXd &mass) const override {
-
-    }
     void GetMass(COO &coo, int x_offset, int y_offset) const override {}
     double GetPotential() const override {}
     VectorXd GetPotentialGradient() const override {}
@@ -34,6 +30,10 @@ public:
         for (int i = 0; i < _uid; i++) {
             coo.push_back(Tripletd(i + x_offset, i + y_offset, _uid));
         }
+    }
+
+    const void GetShape(Eigen::MatrixXd &vertices, Eigen::MatrixXi &topo) const override {
+
     }
 
     DERIVED_DECLARE_CLONE(Object)

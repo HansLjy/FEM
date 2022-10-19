@@ -9,10 +9,12 @@
 #include "Pattern.h"
 #include "ExternalForce/ExternalForce.h"
 
-class Shape;
-
 class Object {
 public:
+    Object(const VectorXd& x) : _x(x), _v(x.size()) {
+        _v.setConstant(0);
+    }
+    Object(const VectorXd& x, const VectorXd& v) : _x(x), _v(v) {}
 
     int GetDOF() const {
         return _x.size();
@@ -34,11 +36,15 @@ public:
         return _v;
     }
 
-    /**
-     * The mass should satisfy the definition of kinetic energy
-     * T = 1/2 v^T M v
-     */
-    virtual void GetMass(SparseMatrixXd &mass) const = 0;  // General mass (sparse matrix form)
+    virtual void SetCoordinate(const VectorXd& x) {
+        _x = x;
+    }
+
+    virtual void SetVelocity(const VectorXd& v) {
+        _v = v;
+    }
+
+    // General mass (sparse matrix form)
     virtual void GetMass(COO &coo, int x_offset, int y_offset) const = 0;           // General mass (coo form)
 
     double GetEnergy() const;
@@ -49,18 +55,19 @@ public:
     virtual VectorXd GetPotentialGradient() const = 0;
     virtual void GetPotentialHessian(COO &coo, int x_offset, int y_offset) const = 0;
 
-    void AddExternalForce(const ExternalForce& force);
+    virtual void AddExternalForce(const ExternalForce& force);
 
-    double GetExternalEnergy() const;
-    VectorXd GetExternalEnergyGradient() const;
-    void GetExternalEnergyHessian(COO& coo, int x_offset, int y_offset) const;
+    virtual double GetExternalEnergy() const;
+    virtual VectorXd GetExternalEnergyGradient() const;
+    virtual void GetExternalEnergyHessian(COO& coo, int x_offset, int y_offset) const;
 
-    const Shape * GetShape() {
-        return _shape;
-    }
+    virtual const void GetShape(MatrixXd& vertices, MatrixXi& topo) const = 0;
+
+    virtual int GetConstraintSize() const;
+    virtual VectorXd GetInnerConstraint(const VectorXd &x) const;
+    virtual void GetInnerConstraintGradient(const VectorXd &x, COO &coo, int x_offset, int y_offset) const;
 
     virtual ~Object();
-    Object() = default;
     Object(const Object& rhs);
     Object& operator=(const Object& rhs);
 
@@ -71,7 +78,22 @@ protected:
     VectorXd _v;
 
     std::vector<const ExternalForce*> _external_forces;
-    Shape* _shape;
+};
+
+class Shape;
+
+class ShapedObject : public Object {
+public:
+    ShapedObject(const VectorXd& x, const Shape& shape);
+    ShapedObject(const VectorXd& x, const VectorXd& v, const Shape& shape);
+    const void GetShape(Eigen::MatrixXd &vertices, Eigen::MatrixXi &topo) const override;
+
+    ~ShapedObject() override;
+    ShapedObject(const ShapedObject& rhs);
+    ShapedObject& operator=(const ShapedObject& rhs);
+
+protected:
+    const Shape* _shape;
 };
 
 DECLARE_XXX_FACTORY(Object)

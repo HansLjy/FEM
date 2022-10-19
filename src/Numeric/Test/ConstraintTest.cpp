@@ -2,14 +2,14 @@
 // Created by hansljy on 10/14/22.
 //
 
-#include "Constraint/Curve/FixedPoint.h"
-#include "Constraint/Curve/InextensibleCurve.h"
 #include "gtest/gtest.h"
+#include "Curve/Curve.h"
+#include "Constraint/SampledObject/FixedPointConstraint.h"
 
 class CurveForTest : public Curve {
 public:
     CurveForTest(const Vector3d &start, const Vector3d &end, int num_segments, double total_mass, double alpha)
-            : Curve(start, end, num_segments, total_mass, alpha) {}
+            : Curve(total_mass, alpha, start, end, num_segments) {}
     FRIEND_TEST(ConstraintTest, FixedPointTest);
 };
 
@@ -21,7 +21,7 @@ TEST(ConstraintTest, FixedPointTest) {
     end << 0, 0, 1;
     const int num_segments = 1;
     CurveForTest curve(start, end, num_segments, 1, 0.1);
-    FixedPoint fixed_point(curve, 0, 1, end);
+    FixedPointConstraint fixed_point(start, 0, 0);
     fixed_point.SetOffset(0, 0);
 
     VectorXd x = curve._x;

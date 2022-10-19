@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.22)
 
-file(GLOB_RECURSE PHYSICS_SOURCE_FILE Curve/*.cpp ExternalForce/*.cpp RigidBody/*.cpp)
+file(GLOB_RECURSE PHYSICS_SOURCE_FILE Curve/*.cpp ExternalForce/*.cpp RigidBody/*.cpp ReducedObject/*.cpp)
 list(APPEND PHYSICS_SOURCE_FILE Object.cpp)
 list(APPEND PHYSICS_SOURCE_FILE System.cpp)
 

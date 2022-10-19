@@ -41,7 +41,7 @@ classname *classname##Factory::Get##classname(const std::string& type, const jso
 	virtual classname* Clone() const = 0;
 
 #define MIDDLE_DECLARE_CLONE(classname) \
-    classname* Clone() override = 0;
+    classname* Clone() const override = 0;
 
 #define DERIVED_DECLARE_CLONE(classname) \
 	classname* Clone() const override;

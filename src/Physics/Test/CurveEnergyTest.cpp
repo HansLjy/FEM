@@ -12,7 +12,7 @@
 class CurveForTest : public Curve {
 public:
     CurveForTest(const Vector3d &start, const Vector3d &end, int num_segments, double total_mass, double alpha)
-        : Curve(start, end, num_segments, total_mass, alpha) {}
+        : Curve(total_mass, alpha, start, end, num_segments) {}
 
     FRIEND_TEST(CurveTest, CurveInitializationTest);
     FRIEND_TEST(CurveTest, CurveEnergyTest);
@@ -152,6 +152,7 @@ TEST(CurveTest, CurveGravityTest) {
     const double mass = 1;
     CurveForTest curve(start, end, num_segments, mass, 0.1);
     curve.AddExternalForce(gravity);
+    curve.AddExternalForce(gravity);
 
     EXPECT_NEAR(curve.GetExternalEnergy(), 0, 1e-15);  // neutral
 
@@ -165,7 +166,7 @@ TEST(CurveTest, CurveGravityTest) {
         delta_3d << delta(0), delta(1), 0;
         curve._x.block<3, 1>(3 * i, 0) = curve._x.block<3, 1>(3 * (i - 1), 0) + delta_3d;
     }
-    EXPECT_NEAR(curve.GetExternalEnergy(), mass * g_norm * 1, 1e-10);
+    EXPECT_NEAR(curve.GetExternalEnergy(), mass * g_norm * 1 * 2, 1e-10);
 }
 
 TEST(GravityTest, CurveGravityDerivativeTest) {

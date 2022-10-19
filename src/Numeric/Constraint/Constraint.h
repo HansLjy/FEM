@@ -12,16 +12,18 @@
 class Constraint {
 public:
 
-    virtual int GetSize() const = 0;
+    Constraint(int num_objects, int size, const std::vector<int>& indices);
+
+    int GetSize() const;
 
     //<- How many objects are involved in this constraint
-    virtual int GetObjectsNum() const = 0;
+    int GetObjectsNum() const;
 
     //<- Get the index of the objects involved in the constraint
-    virtual int GetObjectIndex(int object_id) const = 0;
+    int GetObjectIndex(int object_id) const;
 
     //<- Set the corresponding offsets of the objects involved
-    virtual void SetOffset(int offset_id, int offset) = 0;
+    void SetOffset(int offset_id, int offset);
 
     virtual VectorXd GetValue(const VectorXd &x) const = 0;
     virtual void GetGradient(const VectorXd &x, COO &coo, int x_offset) const = 0;
@@ -29,6 +31,12 @@ public:
     virtual ~Constraint() = default;
 
     BASE_DECLARE_CLONE(Constraint)
+
+protected:
+    const int _num_objects;
+    const int _size;
+    std::vector<int> _index;
+    std::vector<int> _offsets;
 };
 
 class ConstraintFactory {

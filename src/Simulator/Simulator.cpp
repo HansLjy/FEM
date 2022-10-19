@@ -12,7 +12,7 @@
 using nlohmann::json;
 
 glm::vec3 Json2GlmVec3(const json& vec) {
-    return glm::vec3(vec[0], vec[1], vec[2]);
+    return {vec[0], vec[1], vec[2]};
 }
 
 void Simulator::LoadScene(const std::string &config) {
@@ -97,10 +97,9 @@ void Simulator::InitializeScene(Scene &scene) {
     for (int i = 0; i < _system._size; i++) {
         if (_system._used[i]) {
             const auto& obj = objs[i];
-            const auto& shape = obj->GetShape();
             MatrixXd vertices;
             MatrixXi topo;
-            shape->GetSurface(*obj, vertices, topo);
+            obj->GetShape(vertices, topo);
             _obj_scene_id[i] = scene.AddMesh(vertices, topo);
         }
     }
@@ -115,10 +114,9 @@ void Simulator::Processing(Scene &scene) {
     for (int i = 0; i < _system._size; i++) {
         if (_system._used[i]) {
             const auto& obj = objs[i];
-            const auto& shape = obj->GetShape();
             MatrixXd vertices;
             MatrixXi topo;
-            shape->GetSurface(*obj, vertices, topo);
+            obj->GetShape(vertices, topo);
             scene.SelectData(_obj_scene_id[i]);
             scene.SetMesh(vertices, topo);
         }

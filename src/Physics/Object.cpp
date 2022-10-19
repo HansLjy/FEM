@@ -3,7 +3,6 @@
 //
 
 #include "Object.h"
-#include "Curve/Curve.h"
 #include "Shape.h"
 
 double Object::GetEnergy() const {
@@ -46,11 +45,22 @@ void Object::GetExternalEnergyHessian(COO &coo, int x_offset, int y_offset) cons
     }
 }
 
+int Object::GetConstraintSize() const {
+    return 0;
+}
+
+VectorXd Object::GetInnerConstraint(const VectorXd &x) const {
+    return VectorXd(0);
+}
+
+void Object::GetInnerConstraintGradient(const VectorXd &x, COO &coo, int x_offset, int y_offset) const {
+
+}
+
 Object::~Object() {
     for (auto& ext_force : _external_forces) {
         delete ext_force;
     }
-    delete _shape;
 }
 
 Object::Object(const Object &rhs) {
@@ -59,7 +69,6 @@ Object::Object(const Object &rhs) {
     for (const auto& ext_force : rhs._external_forces) {
         _external_forces.push_back(ext_force->Clone());
     }
-    _shape = rhs._shape->Clone();
 }
 
 Object &Object::operator=(const Object &rhs) {
@@ -75,11 +84,40 @@ Object &Object::operator=(const Object &rhs) {
     for (const auto& ext_force : rhs._external_forces) {
         _external_forces.push_back(ext_force->Clone());
     }
+    return *this;
+}
+
+ShapedObject::ShapedObject(const VectorXd& x, const VectorXd& v, const Shape& shape)
+    : Object(x, v), _shape(shape.Clone()) {}
+
+ShapedObject::ShapedObject(const Eigen::VectorXd &x, const Shape &shape)
+    : Object(x), _shape(shape.Clone()) {}
+
+ShapedObject::~ShapedObject() noexcept {
+    delete _shape;
+}
+
+ShapedObject::ShapedObject(const ShapedObject &rhs) : Object(rhs), _shape(rhs._shape->Clone()){}
+
+ShapedObject &ShapedObject::operator=(const ShapedObject &rhs) {
+    if (this == &rhs) {
+        return *this;
+    }
+    Object::operator=(rhs);
     delete _shape;
     _shape = rhs._shape->Clone();
     return *this;
 }
 
+const void ShapedObject::GetShape(Eigen::MatrixXd &vertices, Eigen::MatrixXi &topo) const {
+    _shape->GetSurface(*this, vertices, topo);
+}
+
+
+#include "Curve/Curve.h"
+#include "ReducedObject/ReducedBezierCurve.h"
+
 BEGIN_DEFINE_XXX_FACTORY(Object)
     ADD_PRODUCT("elastic-curve", Curve)
+    ADD_PRODUCT("reduced-bezier-curve", ReducedBezierCurve)
 END_DEFINE_XXX_FACTORY
