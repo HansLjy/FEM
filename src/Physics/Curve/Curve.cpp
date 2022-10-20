@@ -15,31 +15,41 @@ VectorXd Curve::GetX(const Vector3d &start, const Vector3d &end, int num_segment
     return x;
 }
 
-Curve::Curve(double total_mass, double alpha, const Eigen::Vector3d &start, const Eigen::Vector3d &end,
-             int num_segments) : Curve(total_mass, alpha, GetX(start, end, num_segments)) {}
+Curve::Curve(double total_mass, double alpha_max, double alpha_min, const Vector3d &start, const Vector3d &end,
+             int num_segments) : Curve(total_mass, alpha_max, alpha_min, GetX(start, end, num_segments)) {}
 
-Curve::Curve(double total_mass, double alpha, const Eigen::VectorXd &x) : ShapedObject(x, CurveShape()), _alpha(alpha), _num_points(x.size() / 3) {
-     _x_rest = x;
-     _mass.resize(_num_points);
-     _mass.setConstant(total_mass / _num_points);
-     _mass_sparse.resize(_num_points * 3);
-     _mass_sparse.setConstant(total_mass / _num_points);
-     _rest_length.resize(_num_points - 1);
-     for (int i = 0, j = 0; i < _num_points - 1; i++, j += 3) {
-         _rest_length(i) = (_x_rest.block<3, 1>(j + 3, 0) - _x_rest.block<3, 1>(j, 0)).norm();
-     }
-     _voronoi_length.resize(_num_points);
-     for (int i = 1; i < _num_points - 1; i++) {
-         _voronoi_length(i) = (_rest_length(i - 1) + _rest_length(i)) / 2;
-     }
-     _voronoi_length(0) = _rest_length(0) / 2;
-     _voronoi_length(_num_points - 1) = _rest_length(_num_points - 2) / 2;
+Curve::Curve(double total_mass, double alpha_max, double alpha_min, const VectorXd &x) : ShapedObject(x, CurveShape()), _num_points(x.size() / 3) {
+    _alpha.resize(_num_points - 1);
+    if (_num_points > 2) {
+        const double delta_alpha = (alpha_min - alpha_max) / (_num_points - 3);
+        double current_alpha = alpha_max;
+        for (int i = 1; i < _num_points - 1; i++) {
+            _alpha(i) = current_alpha;
+            current_alpha += delta_alpha;
+        }
+    }
+
+    _x_rest = x;
+    _mass.resize(_num_points);
+    _mass.setConstant(total_mass / _num_points);
+    _mass_sparse.resize(_num_points * 3);
+    _mass_sparse.setConstant(total_mass / _num_points);
+    _rest_length.resize(_num_points - 1);
+    for (int i = 0, j = 0; i < _num_points - 1; i++, j += 3) {
+        _rest_length(i) = (_x_rest.block<3, 1>(j + 3, 0) - _x_rest.block<3, 1>(j, 0)).norm();
+    }
+    _voronoi_length.resize(_num_points);
+    for (int i = 1; i < _num_points - 1; i++) {
+        _voronoi_length(i) = (_rest_length(i - 1) + _rest_length(i)) / 2;
+    }
+    _voronoi_length(0) = _rest_length(0) / 2;
+    _voronoi_length(_num_points - 1) = _rest_length(_num_points - 2) / 2;
 }
 
 #include "JsonUtil.h"
 
 Curve::Curve(const nlohmann::json &config)
-    : Curve(config["mass"], config["alpha"], Json2Vec(config["start"]),
+    : Curve(config["mass"], config["alpha-max"], config["alpha-min"], Json2Vec(config["start"]),
             Json2Vec(config["end"]), config["segments"]) {}
 
 void Curve::GetMass(COO &coo, int x_offset, int y_offset) const {

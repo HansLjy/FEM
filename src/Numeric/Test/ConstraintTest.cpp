@@ -9,7 +9,7 @@
 class InextensibleCurveForTest : public InextensibleCurve {
 public:
     InextensibleCurveForTest(const Vector3d &start, const Vector3d &end, int num_segments, double total_mass, double alpha)
-            : InextensibleCurve(total_mass, alpha, start, end, num_segments) {}
+            : InextensibleCurve(total_mass, alpha, alpha, start, end, num_segments) {}
     FRIEND_TEST(ConstraintTest, FixedPointTest);
 };
 

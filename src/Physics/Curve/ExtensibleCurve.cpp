@@ -21,7 +21,7 @@ double ExtensibleCurve::GetPotential() const {
         potential += 0.5 * _k * (e_current.norm() - _rest_length(i)) * (e_current.norm() - _rest_length(i));
 
         Vector3d kB = 2 * e_prev.cross(e_current) / (_rest_length(i - 1) * _rest_length(i) + e_prev.dot(e_current));
-        potential += kB.dot(kB) / _voronoi_length(i) * _alpha;
+        potential += kB.dot(kB) / _voronoi_length(i) * _alpha(i);
 
         e_prev = e_current;
         x_current = x_next;
@@ -48,7 +48,7 @@ VectorXd ExtensibleCurve::GetPotentialGradient() const {
         Matrix3d nabla_next = (2 * HatMatrix(e_prev) - kB * e_prev.transpose()) / denominator;
         Matrix3d nabla_current = - nabla_prev - nabla_next;
 
-        const double coefficient = 2 * _alpha / _rest_length(i);
+        const double coefficient = 2 * _alpha(i) / _rest_length(i);
         Vector3d contribute_prev = coefficient * kB.transpose() * nabla_prev;
         Vector3d contribute_current = coefficient * kB.transpose() * nabla_current;
         Vector3d contribute_next = coefficient * kB.transpose() * nabla_next;

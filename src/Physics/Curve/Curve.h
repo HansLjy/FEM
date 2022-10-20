@@ -12,8 +12,9 @@ class CurveGravity;
 class Curve : public ShapedObject {
 public:
     explicit Curve(const json& config);
-    Curve(double total_mass, double alpha, const Vector3d &start, const Vector3d &end, int num_segments);
-    Curve(double total_mass, double alpha, const VectorXd &x);
+    Curve(double total_mass, double alpha_max, double alpha_min, const Vector3d &start, const Vector3d &end,
+          int num_segments);
+    Curve(double total_mass, double alpha_max, double alpha_min, const VectorXd &x);
 
     void GetMass(COO &coo, int x_offset, int y_offset) const override;
 
@@ -30,7 +31,7 @@ public:
     friend class CurveGravity;
 
 protected:
-    double _alpha;              // elastic coefficient of the curve
+    VectorXd _alpha;
     int _num_points;            // number of sampled points (end points included)
     VectorXd _x_rest;           // rest shape of the curve
     VectorXd _mass;             // mass assigned to every sampled points

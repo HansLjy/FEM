@@ -9,11 +9,12 @@
 
 class ExtensibleCurve : public Curve {
 public:
-    explicit ExtensibleCurve(const json& config) : Curve(config), _k(1000 * _alpha * (_num_points - 1)) {};
-    ExtensibleCurve(double total_mass, double alpha, const Vector3d& start, const Vector3d& end, int num_segments)
-        : Curve(total_mass, alpha, start, end, num_segments), _k(1000 * _alpha * (_num_points - 1)) {};
-    ExtensibleCurve(double total_mass, double alpha, const VectorXd& x)
-        : Curve(total_mass, alpha, x), _k(1000 * _alpha * (_num_points - 1)) {};
+    explicit ExtensibleCurve(const json& config) : Curve(config), _k(1000 * double(config["alpha-max"]) * (_num_points - 1)) {};
+    ExtensibleCurve(double total_mass, double alpha_max, double alpha_min, const Vector3d &start, const Vector3d &end,
+                    int num_segments)
+        : Curve(total_mass, alpha_max, alpha_min, start, end, num_segments), _k(1000 * alpha_max * (_num_points - 1)) {};
+    ExtensibleCurve(double total_mass, double alpha_max, double alpha_min, const VectorXd &x)
+        : Curve(total_mass, alpha_max, alpha_min, x), _k(1000 * alpha_max * (_num_points - 1)) {};
 
     double GetPotential() const override;
     VectorXd GetPotentialGradient() const override;

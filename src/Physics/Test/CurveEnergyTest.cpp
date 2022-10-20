@@ -12,8 +12,8 @@
 
 class InextensibleCurveForTest : public InextensibleCurve {
 public:
-    InextensibleCurveForTest(const Vector3d &start, const Vector3d &end, int num_segments, double total_mass, double alpha)
-        : InextensibleCurve(total_mass, alpha, start, end, num_segments) {}
+    InextensibleCurveForTest(const Vector3d &start, const Vector3d &end, int num_segments, double total_mass, double alpha_max, double alpha_min)
+        : InextensibleCurve(total_mass, alpha_max, alpha_min, start, end, num_segments) {}
 
     FRIEND_TEST(CurveTest, CurveInitializationTest);
     FRIEND_TEST(CurveTest, CurveEnergyTest);
@@ -25,7 +25,7 @@ public:
 class ExtensibleCurveForTest : public ExtensibleCurve {
 public:
     ExtensibleCurveForTest(const Vector3d &start, const Vector3d &end, int num_segments, double total_mass, double alpha)
-        : ExtensibleCurve(total_mass, alpha, start, end, num_segments) {}
+        : ExtensibleCurve(total_mass, alpha, 0, start, end, num_segments) {}
 
     FRIEND_TEST(ExtensibleCurveTest, EnergyTest);
     FRIEND_TEST(ExtensibleCurveTest, EnergyGradientTest);
@@ -37,8 +37,8 @@ TEST(CurveTest, CurveInitializationTest) {
     Vector3d start, end;
     start << 0, 0, 0;
     end << 0, 0, 1;
-    InextensibleCurveForTest curve(start, end, 2, 3, 0.1);
-    EXPECT_EQ(curve._alpha, 0.1);
+    InextensibleCurveForTest curve(start, end, 2, 3, 0.1, 0.1);
+    EXPECT_EQ(curve._alpha(1), 0.1);
     EXPECT_EQ(curve._num_points, 3);
     EXPECT_EQ(curve._x_rest.size(), 9);
     EXPECT_EQ(curve._mass.size(), 3);
@@ -71,7 +71,8 @@ TEST(CurveTest, CurveEnergyTest) {
     Vector3d start, end;
     start << 0, 0, 0;
     end << 0, 0, 1;
-    InextensibleCurveForTest curve(start, end, 100, 3, 0.1);
+    const int num_segments = 100;
+    InextensibleCurveForTest curve(start, end, num_segments, 3, 0.1, 0.1);
 
     EXPECT_EQ(curve.GetEnergy(), 0);    // rest shape
 
@@ -81,9 +82,9 @@ TEST(CurveTest, CurveEnergyTest) {
     center.setRandom();
     b.setRandom();
     axis.setRandom();
-    R = AngleAxisd(100, axis);
+    R = AngleAxisd(num_segments, axis);
 
-    for (int i = 0; i < 101; i++) {
+    for (int i = 0; i <= num_segments; i++) {
         Vector3d x = curve._x.block<3, 1>(3 * i, 0);
         curve._x.block<3, 1>(3 * i, 0) = R * (x - center) + b;
     }
@@ -92,8 +93,8 @@ TEST(CurveTest, CurveEnergyTest) {
     EXPECT_LT(curve.GetEnergy(), 1e-10);
     EXPECT_GT(curve.GetEnergy(), -1e-10);
 
-    double length = 1.0 / 100;
-    for (int i = 1; i <= 100; i++) {
+    double length = 1.0 / num_segments;
+    for (int i = 1; i <= num_segments; i++) {
         Vector3d delta;
         delta.setRandom();
         delta.normalize();
@@ -102,10 +103,12 @@ TEST(CurveTest, CurveEnergyTest) {
     }
     EXPECT_GT(curve.GetEnergy(), 0);
 
-    curve._alpha = 0;
+    for (int i = 1; i < num_segments; i++) {
+        curve._alpha(i) = 0;
+    }
     EXPECT_EQ(curve.GetEnergy(), 0);
 
-    InextensibleCurveForTest simple_curve(start, end, 2, 1, 0.1);
+    InextensibleCurveForTest simple_curve(start, end, 2, 1, 0.1, 0.1);
     simple_curve._x.block<3, 1>(3, 0) << 0.5, 0, 0;
     simple_curve._x.block<3, 1>(6, 0) << 0.5, 0.5, 0;
 
@@ -119,7 +122,7 @@ TEST(CurveTest, CurveGradientTest) {
     Vector3d start, end;
     start << 0, 0, 0;
     end << 0, 0, 1;
-    InextensibleCurveForTest curve(start, end, num_segments, 3, 0.1);
+    InextensibleCurveForTest curve(start, end, num_segments, 3, 0.1, 0.1);
 
     auto func = [&curve] (const VectorXd& x) {
         curve._x = x;
@@ -158,7 +161,7 @@ TEST(CurveTest, CurveGravityTest) {
     end << 0, 0, -1;
     const int num_segments = 10;
     const double mass = 1;
-    InextensibleCurveForTest curve(start, end, num_segments, mass, 0.1);
+    InextensibleCurveForTest curve(start, end, num_segments, mass, 0.1, 0.1);
     curve.AddExternalForce(gravity);
     curve.AddExternalForce(gravity);
 
@@ -183,7 +186,7 @@ TEST(GravityTest, CurveGravityDerivativeTest) {
     end << 0, 0, 1;
     const int num_segments = 10;
     const double mass = 1;
-    InextensibleCurveForTest curve(start, end, num_segments, mass, 0.1);
+    InextensibleCurveForTest curve(start, end, num_segments, mass, 0.1, 0.1);
 
     double length = 1.0 / num_segments;
     for (int i = 1; i <= num_segments; i++) {

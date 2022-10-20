@@ -8,14 +8,6 @@
 
 DEFINE_CLONE(Object, InextensibleCurve)
 
-InextensibleCurve::InextensibleCurve(const nlohmann::json &config) : Curve(config) {}
-
-InextensibleCurve::InextensibleCurve(double total_mass, double alpha, const Eigen::VectorXd &x) : Curve(total_mass, alpha, x) {}
-
-InextensibleCurve::InextensibleCurve(double total_mass, double alpha, const Eigen::Vector3d &start,
-                                     const Eigen::Vector3d &end, int num_segments)
-                                     : Curve(total_mass, alpha, start, end, num_segments){}
-
 double InextensibleCurve::GetPotential() const {
     double potential = 0;
     Vector3d x_current = _x.block<3, 1>(3, 0);
@@ -27,12 +19,12 @@ double InextensibleCurve::GetPotential() const {
         Vector3d e_current = x_next - x_current;
 
         Vector3d kB = 2 * e_prev.cross(e_current) / (_rest_length(i - 1) * _rest_length(i) + e_prev.dot(e_current));
-        potential += kB.dot(kB) / _voronoi_length(i);
+        potential += kB.dot(kB) / _voronoi_length(i) * _alpha(i);
 
         e_prev = e_current;
         x_current = x_next;
     }
-    return potential * _alpha;
+    return potential;
 }
 
 VectorXd InextensibleCurve::GetPotentialGradient() const {
@@ -54,7 +46,7 @@ VectorXd InextensibleCurve::GetPotentialGradient() const {
         Matrix3d nabla_next = (2 * HatMatrix(e_prev) - kB * e_prev.transpose()) / denominator;
         Matrix3d nabla_current = - nabla_prev - nabla_next;
 
-        const double coefficient = 2 * _alpha / _rest_length(i);
+        const double coefficient = 2 * _alpha(i) / _rest_length(i);
         Vector3d contribute_prev = coefficient * kB.transpose() * nabla_prev;
         Vector3d contribute_current = coefficient * kB.transpose() * nabla_current;
         Vector3d contribute_next = coefficient * kB.transpose() * nabla_next;
