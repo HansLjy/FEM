@@ -114,10 +114,12 @@ const void ShapedObject::GetShape(Eigen::MatrixXd &vertices, Eigen::MatrixXi &to
 }
 
 
-#include "Curve/Curve.h"
+#include "Curve/InextensibleCurve.h"
 #include "ReducedObject/ReducedBezierCurve.h"
+#include "Curve/ExtensibleCurve.h"
 
 BEGIN_DEFINE_XXX_FACTORY(Object)
-    ADD_PRODUCT("elastic-curve", Curve)
+    ADD_PRODUCT("inextensible-curve", InextensibleCurve)
+    ADD_PRODUCT("extensible-curve", ExtensibleCurve)
     ADD_PRODUCT("reduced-bezier-curve", ReducedBezierCurve)
 END_DEFINE_XXX_FACTORY

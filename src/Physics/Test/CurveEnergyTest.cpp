@@ -3,16 +3,17 @@
 //
 
 #include "gtest/gtest.h"
-#include "Curve/Curve.h"
+#include "Curve/InextensibleCurve.h"
+#include "Curve/ExtensibleCurve.h"
 #include "spdlog/spdlog.h"
 #include "TestUtility/FiniteDifference.h"
 #include <functional>
 #include <iostream>
 
-class CurveForTest : public Curve {
+class InextensibleCurveForTest : public InextensibleCurve {
 public:
-    CurveForTest(const Vector3d &start, const Vector3d &end, int num_segments, double total_mass, double alpha)
-        : Curve(total_mass, alpha, start, end, num_segments) {}
+    InextensibleCurveForTest(const Vector3d &start, const Vector3d &end, int num_segments, double total_mass, double alpha)
+        : InextensibleCurve(total_mass, alpha, start, end, num_segments) {}
 
     FRIEND_TEST(CurveTest, CurveInitializationTest);
     FRIEND_TEST(CurveTest, CurveEnergyTest);
@@ -21,7 +22,14 @@ public:
     FRIEND_TEST(GravityTest, CurveGravityDerivativeTest);
 };
 
+class ExtensibleCurveForTest : public ExtensibleCurve {
+public:
+    ExtensibleCurveForTest(const Vector3d &start, const Vector3d &end, int num_segments, double total_mass, double alpha)
+        : ExtensibleCurve(total_mass, alpha, start, end, num_segments) {}
 
+    FRIEND_TEST(ExtensibleCurveTest, EnergyTest);
+    FRIEND_TEST(ExtensibleCurveTest, EnergyGradientTest);
+};
 
 const double eps = 1e-10;
 
@@ -29,7 +37,7 @@ TEST(CurveTest, CurveInitializationTest) {
     Vector3d start, end;
     start << 0, 0, 0;
     end << 0, 0, 1;
-    CurveForTest curve(start, end, 2, 3, 0.1);
+    InextensibleCurveForTest curve(start, end, 2, 3, 0.1);
     EXPECT_EQ(curve._alpha, 0.1);
     EXPECT_EQ(curve._num_points, 3);
     EXPECT_EQ(curve._x_rest.size(), 9);
@@ -63,7 +71,7 @@ TEST(CurveTest, CurveEnergyTest) {
     Vector3d start, end;
     start << 0, 0, 0;
     end << 0, 0, 1;
-    CurveForTest curve(start, end, 100, 3, 0.1);
+    InextensibleCurveForTest curve(start, end, 100, 3, 0.1);
 
     EXPECT_EQ(curve.GetEnergy(), 0);    // rest shape
 
@@ -97,7 +105,7 @@ TEST(CurveTest, CurveEnergyTest) {
     curve._alpha = 0;
     EXPECT_EQ(curve.GetEnergy(), 0);
 
-    CurveForTest simple_curve(start, end, 2, 1, 0.1);
+    InextensibleCurveForTest simple_curve(start, end, 2, 1, 0.1);
     simple_curve._x.block<3, 1>(3, 0) << 0.5, 0, 0;
     simple_curve._x.block<3, 1>(6, 0) << 0.5, 0.5, 0;
 
@@ -111,7 +119,7 @@ TEST(CurveTest, CurveGradientTest) {
     Vector3d start, end;
     start << 0, 0, 0;
     end << 0, 0, 1;
-    CurveForTest curve(start, end, num_segments, 3, 0.1);
+    InextensibleCurveForTest curve(start, end, num_segments, 3, 0.1);
 
     auto func = [&curve] (const VectorXd& x) {
         curve._x = x;
@@ -150,7 +158,7 @@ TEST(CurveTest, CurveGravityTest) {
     end << 0, 0, -1;
     const int num_segments = 10;
     const double mass = 1;
-    CurveForTest curve(start, end, num_segments, mass, 0.1);
+    InextensibleCurveForTest curve(start, end, num_segments, mass, 0.1);
     curve.AddExternalForce(gravity);
     curve.AddExternalForce(gravity);
 
@@ -175,7 +183,7 @@ TEST(GravityTest, CurveGravityDerivativeTest) {
     end << 0, 0, 1;
     const int num_segments = 10;
     const double mass = 1;
-    CurveForTest curve(start, end, num_segments, mass, 0.1);
+    InextensibleCurveForTest curve(start, end, num_segments, mass, 0.1);
 
     double length = 1.0 / num_segments;
     for (int i = 1; i <= num_segments; i++) {
@@ -206,4 +214,64 @@ TEST(GravityTest, CurveGravityDerivativeTest) {
     curve.GetExternalEnergyHessian(coo, 0, 0);
     analytic_hessian.setFromTriplets(coo.begin(), coo.end());
     EXPECT_NEAR((numeric_hessian - analytic_hessian).norm() / numeric_hessian.size(), 0, 1e-5);
+}
+
+TEST(ExtensibleCurveTest, EnergyTest) {
+    Vector3d start, end;
+    start << 0, 0, 0;
+    end << 0, 0, 1;
+    const int num_segments = 10;
+    const double mass = 1;
+    const double alpha = 0.1;
+
+    ExtensibleCurveForTest curve(start, end, num_segments, mass, alpha);
+
+    double k_total = alpha * 1000;
+
+    const auto& x_backup = curve._x;
+    curve._x *= 3;
+    spdlog::info("curve energy = {}", curve.GetEnergy());
+    EXPECT_NEAR(curve.GetEnergy(), 0.5 * k_total * 4, 1e-5);
+}
+
+#include <random>
+
+TEST(ExtensibleCurveTest, EnergyGradientTest) {
+    Vector3d start, end;
+    start << 0, 0, 0;
+    end << 0, 0, 1;
+    const int num_segments = 10;
+    const double mass = 1;
+    const double alpha = 0.1;
+
+    ExtensibleCurveForTest curve(start, end, num_segments, mass, alpha);
+
+    const double unit_length = 1.0 / num_segments;
+    std::default_random_engine generator;
+    std::uniform_real_distribution<double> distribution(0.8, 1.2);
+    for (int i = 1, j = 3; i <= num_segments; i++, j += 3) {
+        double length = distribution(generator) * unit_length;
+        Vector3d delta;
+        delta.setRandom().normalize();
+        delta *= length;
+        curve._x.segment<3>(j) = curve._x.segment<3>(j - 3) + delta;
+    }
+
+    const auto& x_backup = curve._x;
+
+    auto func = [&curve] (const VectorXd& x) {
+        curve._x = x;
+        return curve.GetEnergy();
+    };
+
+    const auto& numeric_derivative = FiniteDifferential(func, x_backup);
+    curve._x = x_backup;
+
+    const auto& analytic_derivative = curve.GetEnergyGradient();
+
+    std::cerr << "Analytic derivative: " << analytic_derivative.transpose() << std::endl;
+    std::cerr << "Numeric derivative: " << numeric_derivative.transpose() << std::endl;
+    std::cerr << "Difference: " << (analytic_derivative - numeric_derivative).transpose() << std::endl;
+
+    EXPECT_NEAR((analytic_derivative - numeric_derivative).norm() / curve.GetDOF(), 0, 1e-4);
 }

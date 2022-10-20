@@ -6,11 +6,11 @@
 #define FEM_REDUCEDBEZIERCURVE_H
 
 #include "ReducedObject.h"
-#include "Curve/Curve.h"
+#include "Curve/InextensibleCurve.h"
 
 class ReducedBezierCurve : public ReducedObject {
 public:
-    ReducedBezierCurve(const json& config);
+    explicit ReducedBezierCurve(const json& config);
     ReducedBezierCurve(int num_segments, double mass, double alpha,
                        const VectorXd &control_points);
 

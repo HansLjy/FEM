@@ -3,7 +3,7 @@
 //
 
 #include "gtest/gtest.h"
-#include "Curve/Curve.h"
+#include "Curve/InextensibleCurve.h"
 #include "Shape.h"
 
 TEST(ShapeTest, CurveShapeTest) {
@@ -13,7 +13,7 @@ TEST(ShapeTest, CurveShapeTest) {
     const int num_segments = 1;
     const int num_vertices = 8 * num_segments;
     const int num_faces = 12 * num_segments;
-    Curve curve(1, 1, start, end, num_segments);
+    InextensibleCurve curve(1, 1, start, end, num_segments);
     MatrixXd vertices;
     MatrixXi topo;
     curve.GetShape(vertices, topo);

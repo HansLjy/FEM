@@ -3,7 +3,7 @@
 //
 
 #include "CurveGravity.h"
-#include "Curve/Curve.h"
+#include "Curve/InextensibleCurve.h"
 #include "JsonUtil.h"
 
 DEFINE_CLONE(ExternalForce, CurveGravity)

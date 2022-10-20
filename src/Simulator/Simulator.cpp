@@ -3,7 +3,7 @@
 //
 
 #include "Simulator.h"
-#include "Curve/Curve.h"
+#include "Curve/InextensibleCurve.h"
 #include "Integrator/Integrator.h"
 #include "Shape.h"
 #include "nlohmann/json.hpp"

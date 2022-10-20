@@ -1,12 +1,11 @@
 //
-// Created by hansljy on 10/7/22.
+// Created by hansljy on 10/19/22.
 //
 
 #ifndef FEM_CURVE_H
 #define FEM_CURVE_H
 
 #include "Object.h"
-#include "EigenAll.h"
 
 class CurveGravity;
 
@@ -18,17 +17,15 @@ public:
 
     void GetMass(COO &coo, int x_offset, int y_offset) const override;
 
-    double GetPotential() const override;
-    VectorXd GetPotentialGradient() const override;
-    void GetPotentialHessian(COO &coo, int x_offset, int y_offset) const override;
+    double GetPotential() const override = 0;
+    VectorXd GetPotentialGradient() const override = 0;
+    void GetPotentialHessian(COO &coo, int x_offset, int y_offset) const override = 0;
 
     int GetConstraintSize() const override;
-    VectorXd GetInnerConstraint(const VectorXd &x) const override;
-    void GetInnerConstraintGradient(const VectorXd &x, COO &coo, int x_offset, int y_offset) const override;
+    VectorXd GetInnerConstraint(const Eigen::VectorXd &x) const override;
+    void GetInnerConstraintGradient(const Eigen::VectorXd &x, COO &coo, int x_offset, int y_offset) const override;
 
-    ~Curve() override = default;
-
-    DERIVED_DECLARE_CLONE(Object)
+    MIDDLE_DECLARE_CLONE(Object)
 
     friend class CurveGravity;
 

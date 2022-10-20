@@ -3,13 +3,13 @@
 //
 
 #include "gtest/gtest.h"
-#include "Curve/Curve.h"
+#include "Curve/InextensibleCurve.h"
 #include "Constraint/SampledObject/FixedPointConstraint.h"
 
-class CurveForTest : public Curve {
+class InextensibleCurveForTest : public InextensibleCurve {
 public:
-    CurveForTest(const Vector3d &start, const Vector3d &end, int num_segments, double total_mass, double alpha)
-            : Curve(total_mass, alpha, start, end, num_segments) {}
+    InextensibleCurveForTest(const Vector3d &start, const Vector3d &end, int num_segments, double total_mass, double alpha)
+            : InextensibleCurve(total_mass, alpha, start, end, num_segments) {}
     FRIEND_TEST(ConstraintTest, FixedPointTest);
 };
 
@@ -20,7 +20,7 @@ TEST(ConstraintTest, FixedPointTest) {
     start << 0, 0, 0;
     end << 0, 0, 1;
     const int num_segments = 1;
-    CurveForTest curve(start, end, num_segments, 1, 0.1);
+    InextensibleCurveForTest curve(start, end, num_segments, 1, 0.1);
     FixedPointConstraint fixed_point(start, 0, 0);
     fixed_point.SetOffset(0, 0);
 
