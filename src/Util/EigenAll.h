@@ -41,5 +41,6 @@ typedef Eigen::Quaternion<double> Quaterniond;
 
 Matrix3d HatMatrix(const Vector3d& vec);
 Vector3d FindPerpendicular(const Vector3d& vec);
+Matrix<double, 9, 3> GetVecHatMatrix();
 
 #endif

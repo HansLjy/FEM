@@ -37,7 +37,7 @@ const double alpha = 0.1;
 const double mass = 3;
 const Vector3d start((Vector3d() << 0, 0, 0).finished());
 const Vector3d end((Vector3d() << 0, 0, 1).finished());
-const int num_segments = 2;
+const int num_segments = 3;
 const double length = (start - end).norm() / num_segments;
 
 TEST(CurveTest, CurveInitializationTest) {
@@ -151,7 +151,7 @@ TEST(CurveTest, CurveGradientTest) {
     std::cerr << "Analytic Hessian: \n" << analytic_hessian.toDense() << std::endl;
     std::cerr << "Hessian Difference: \n" << numeric_hessian - analytic_hessian.toDense() << std::endl;
 
-    EXPECT_TRUE((numeric_hessian - analytic_hessian).norm() / (curve.GetDOF() * curve.GetDOF()) < 1);
+    EXPECT_TRUE((numeric_hessian - analytic_hessian).norm() / (curve.GetDOF() * curve.GetDOF()) < 0.01);
 }
 
 #include "ExternalForce/Curve/CurveGravity.h"
@@ -170,7 +170,7 @@ TEST(CurveTest, CurveGravityTest) {
     curve.AddExternalForce(gravity);
     curve.AddExternalForce(gravity);
 
-    EXPECT_NEAR(curve.GetExternalEnergy(), 0, 1e-15);  // neutral
+    EXPECT_NEAR(curve.GetExternalEnergy(), 0, 1e-10);  // neutral
 
     for (int i = 1; i <= num_segments; i++) {
         Eigen::Vector2d delta;
@@ -252,4 +252,18 @@ TEST(ExtensibleCurveTest, EnergyGradientTest) {
     std::cerr << "Difference: " << (analytic_derivative - numeric_derivative).transpose() << std::endl;
 
     EXPECT_NEAR((analytic_derivative - numeric_derivative).norm() / curve.GetDOF(), 0, 1e-4);
+
+    const auto numeric_hessian = FiniteDifferential2(func, x_backup);
+
+    curve._x = x_backup;
+    COO coo;
+    curve.GetEnergyHessian(coo, 0, 0);
+    SparseMatrixXd analytic_hessian(curve.GetDOF(), curve.GetDOF());
+    analytic_hessian.setFromTriplets(coo.begin(), coo.end());
+
+    std::cerr << "Analytic hessian: \n" << analytic_hessian.toDense() << std::endl;
+    std::cerr << "Numeric hessian: \n" << numeric_hessian << std::endl;
+    std::cerr << "Hessian difference: \n" << numeric_hessian - analytic_hessian.toDense() << std::endl;
+
+    EXPECT_TRUE((numeric_hessian - analytic_hessian).norm() / (curve.GetDOF() * curve.GetDOF()) < 0.01);
 }

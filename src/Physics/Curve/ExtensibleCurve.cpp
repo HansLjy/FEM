@@ -71,6 +71,114 @@ VectorXd ExtensibleCurve::GetPotentialGradient() const {
     return gradient;
 }
 
+#include "unsupported/Eigen/KroneckerProduct"
+
 void ExtensibleCurve::GetPotentialHessian(COO &coo, int x_offset, int y_offset) const {
-    throw std::logic_error("Sorry, implicit Euler for extensible curve is not currently available");
+    Vector3d x_current = _x.segment<3>(3);
+    Vector3d e_prev = x_current - _x.segment<3>(0);
+
+    // (i - 1) -- e_prev --> (i, x_current) -- e_current --> (i + 1, x_next)
+    for (int i = 1, ii = 0; i < _num_points - 1; i++, ii += 3) {
+        Vector3d x_next = _x.block<3, 1>(3 * (i + 1), 0);
+        Vector3d e_current = x_next - x_current;
+
+        const double denominator = _rest_length(i - 1) * _rest_length(i) + e_prev.dot(e_current);
+        Vector3d kB = 2 * e_prev.cross(e_current) / denominator;
+
+        const Matrix3d hat_e_current = HatMatrix(e_current);
+        const Matrix3d hat_e_prev = HatMatrix(e_prev);
+
+        Eigen::Vector<Matrix3d, 3> p_kB;
+
+        p_kB(0) = (- 2 * hat_e_current + e_current * kB.transpose()) / denominator;
+        p_kB(2) = (- 2 * hat_e_prev - e_prev * kB.transpose()) / denominator;
+        p_kB(1) = - p_kB(2) - p_kB(0);
+
+        Matrix9d hessian;
+        hessian.setZero();
+
+        static const Matrix3d I3 = Matrix3d::Identity();
+        const auto& kB_kron_I3 = Eigen::KroneckerProduct(kB, I3);
+        const auto& I3_kron_e_current = Eigen::KroneckerProduct(I3, e_current);
+        const auto& I3_kron_e_prev = Eigen::KroneckerProduct(I3, e_prev);
+        const auto& kB_kron_e_current = Eigen::KroneckerProduct(kB, e_current);
+        const auto& kB_kron_e_prev = Eigen::KroneckerProduct(kB, e_prev);
+
+
+        static const Matrix<double, 9, 3> vec_hat_matrix(GetVecHatMatrix());
+
+        Matrix<Matrix<double, 3, 9>, 3, 3> p2_kB;
+
+        p2_kB(0, 0) = ((
+           -(I3_kron_e_current) * (-2 * HatMatrix(e_current) - kB * e_current.transpose())
+           -(2 * vec_hat_matrix * e_current - kB_kron_e_current) * e_current.transpose()
+       ) / (denominator * denominator)).transpose();
+
+        p2_kB(2, 2) = ((
+           - I3_kron_e_prev * (2 * hat_e_prev - kB * e_prev.transpose())
+           + (2 * vec_hat_matrix * e_prev + kB_kron_e_prev) * e_prev.transpose()
+       ) / (denominator * denominator)).transpose();
+
+        p2_kB(0, 2) = (
+            - 2 * vec_hat_matrix / denominator
+            + I3_kron_e_current * (2 * hat_e_prev - kB * e_prev.transpose()) / (denominator * denominator)
+            + kB_kron_I3 / denominator
+            + (2 * vec_hat_matrix * e_current - kB_kron_e_current) * e_prev.transpose() / (denominator * denominator)
+        ).transpose();
+
+        p2_kB(2, 0) = (
+            2 * vec_hat_matrix / denominator
+            + (I3_kron_e_prev * (-2 * hat_e_current - kB * e_current.transpose())) / (denominator * denominator)
+            + kB_kron_I3 / denominator
+            - (2 * vec_hat_matrix * e_prev + kB_kron_e_prev) * e_current.transpose() / (denominator * denominator)
+        ).transpose();
+
+        p2_kB(1, 0) = - p2_kB(0, 0) - p2_kB(2, 0);
+        p2_kB(1, 2) = - p2_kB(0, 2) - p2_kB(2, 2);
+        p2_kB(0, 1) = - p2_kB(0, 0) - p2_kB(0, 2);
+        p2_kB(2, 1) = - p2_kB(2, 2) - p2_kB(2, 0);
+        p2_kB(1, 1) = p2_kB(0, 0) + p2_kB(2, 0) + p2_kB(0, 2) + p2_kB(2, 2);
+
+        const double coeff = 2 * _alpha(i) / _rest_length(i);
+        for (int j = 0, jj = 0; j < 3; j++, jj += 3) {
+            for (int k = 0, kk = 0; k < 3; k++, kk += 3) {
+                hessian.block<3, 3>(jj, kk) = coeff * (
+                        p2_kB(j, k) * kB_kron_I3
+                        + p_kB(k) * p_kB(j).transpose()
+                ).transpose();
+            }
+        }
+
+        for (int j = 0; j < 9; j++) {
+            for (int k = 0; k < 9; k++) {
+                if(hessian(j, k) != 0) {
+                    coo.push_back(Tripletd(ii + j + x_offset, ii + k + y_offset, hessian(j, k)));
+                }
+            }
+        }
+
+        e_prev = e_current;
+        x_current = x_next;
+    }
+
+    for (int i = 0, ii = 0; i < _num_points - 1; i++, ii += 3) {
+        Vector3d e = _x.segment<3>(ii + 3) - _x.segment<3>(ii);
+        const double e_norm = e.norm();
+        const Matrix3d I3 = Matrix3d::Identity();
+        Matrix6d hessian;
+        hessian.setZero();
+
+        Matrix3d sub_hessian = _k * (1 - _rest_length(i) / e.norm()) * I3
+                             + _k * _rest_length(i) / (e_norm * e_norm * e_norm) * e * e.transpose();
+        hessian.block<3, 3>(0, 0) = hessian.block<3, 3>(3, 3) = sub_hessian;
+        hessian.block<3, 3>(0, 3) = hessian.block<3, 3>(3, 0) = - sub_hessian;
+
+        for (int j = 0; j < 6; j++) {
+            for (int k = 0; k < 6; k++) {
+                if (hessian(j, k) != 0) {
+                    coo.push_back(Tripletd(x_offset + ii + j, y_offset + ii + k, hessian(j, k)));
+                }
+            }
+        }
+    }
 }

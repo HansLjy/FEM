@@ -11,13 +11,14 @@ FastProjectionIntegrator::FastProjectionIntegrator(const nlohmann::json &config)
 
 void FastProjectionIntegrator::Step(Target &target, double h, VectorXd &x_next, VectorXd &v_next) const {
     // step without constraint
-    SparseMatrixXd mass;
+    SparseMatrixXd mass, hessian;
     target.GetMass(mass);
-//    std::cout << mass.toDense() << std::endl;
+    target.GetEnergyHessian(hessian);
+    SparseMatrixXd A = mass + h * h * hessian;
+//    SparseMatrixXd A = mass;
+
     const VectorXd x = target.GetCoordinate();
     const VectorXd v = target.GetVelocity();
-
-    /* Currently, we only use sympletic euler */
 
     VectorXd energy_gradient = target.GetEnergyGradient();
 //    std::cout << energy_gradient.transpose() << std::endl;
@@ -26,7 +27,10 @@ void FastProjectionIntegrator::Step(Target &target, double h, VectorXd &x_next, 
 //    std::cout << b.transpose() << std::endl;
 
     Eigen::SimplicialLDLT<SparseMatrixXd> LDLT;
-    LDLT.compute(mass);
+    LDLT.compute(A);
+    if (LDLT.info() != Eigen::Success) {
+        spdlog::warn("A is not SPD!");
+    }
     v_next = LDLT.solve(b);
 //    std::cout << "v_next: \n" << v_next.transpose() << std::endl;
 

@@ -63,27 +63,12 @@ VectorXd InextensibleCurve::GetPotentialGradient() const {
 
 #include "unsupported/Eigen/KroneckerProduct"
 
-Matrix<double, 9, 3> GetVecHatMatrix() {
-    Matrix<double, 9, 3> vec_hat_matrix;
-    vec_hat_matrix <<
-        0, 0, 0,
-        0, 0, 1,
-        0, -1, 0,
-        0, 0, -1,
-        0, 0, 0,
-        1, 0, 0,
-        0, 1, 0,
-        -1, 0, 0,
-        0, 0, 0;
-    return vec_hat_matrix;
-}
-
 void InextensibleCurve::GetPotentialHessian(COO &coo, int x_offset, int y_offset) const {
     Vector3d x_current = _x.segment<3>(3);
     Vector3d e_prev = x_current - _x.segment<3>(0);
 
     // (i - 1) -- e_prev --> (i, x_current) -- e_current --> (i + 1, x_next)
-    for (int i = 1; i < _num_points - 1; i++) {
+    for (int i = 1, ii = 0; i < _num_points - 1; i++, ii += 3) {
         Vector3d x_next = _x.block<3, 1>(3 * (i + 1), 0);
         Vector3d e_current = x_next - x_current;
 
@@ -157,7 +142,7 @@ void InextensibleCurve::GetPotentialHessian(COO &coo, int x_offset, int y_offset
         for (int j = 0; j < 9; j++) {
             for (int k = 0; k < 9; k++) {
                 if(hessian(j, k) != 0) {
-                    coo.push_back(Tripletd(j + x_offset, k + y_offset, hessian(j, k)));
+                    coo.push_back(Tripletd(ii + j + x_offset, ii + k + y_offset, hessian(j, k)));
                 }
             }
         }

@@ -22,3 +22,18 @@ Vector3d FindPerpendicular(const Vector3d& vec) {
     }
     return answer.normalized();
 }
+
+Matrix<double, 9, 3> GetVecHatMatrix() {
+    Matrix<double, 9, 3> vec_hat_matrix;
+    vec_hat_matrix <<
+                   0, 0, 0,
+            0, 0, 1,
+            0, -1, 0,
+            0, 0, -1,
+            0, 0, 0,
+            1, 0, 0,
+            0, 1, 0,
+            -1, 0, 0,
+            0, 0, 0;
+    return vec_hat_matrix;
+}

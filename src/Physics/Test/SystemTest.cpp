@@ -61,9 +61,6 @@ TEST(SystemTest, SystemIOTest) {
     EXPECT_EQ(ball_idx, system.GetIndex("Ball"));
     EXPECT_EQ(floor_idx, system.GetIndex("Floor"));
 
-    std::cout << "Coordinate: " << system.GetCoordinate().transpose() << std::endl;
-    std::cout << "Velocity: " << system.GetVelocity().transpose() << std::endl;
-
     SparseMatrixXd hessian;
     system.GetEnergyHessian(hessian);
     std::cout << hessian.toDense();
@@ -72,9 +69,6 @@ TEST(SystemTest, SystemIOTest) {
     EXPECT_EQ(-1, system.GetIndex("Ball"));             // deleted objects
     EXPECT_EQ(false, system.DeleteObject("Ball"));      // deleted objects
     EXPECT_EQ(false, system.DeleteObject(ball_idx));    // deleted objects
-
-    std::cout << "Coordinate: " << system.GetCoordinate().transpose() << std::endl;
-    std::cout << "Velocity: " << system.GetVelocity().transpose() << std::endl;
 
     EXPECT_EQ(-1, system.GetIndex("Fuck"));             // non-existent objects
 
