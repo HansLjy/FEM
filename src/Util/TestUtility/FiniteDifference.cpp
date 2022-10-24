@@ -22,7 +22,7 @@ VectorXd FiniteDifferential(const std::function<double(const VectorXd&)>& func, 
 }
 
 MatrixXd FiniteDifferential2(const std::function<double(const VectorXd&)>& func, VectorXd x) {
-    const double h = 1e-5;
+    const double h = 1e-7;
     const double difference [] = {h, -h};
     int size = x.size();
     MatrixXd hessian(size, size);
