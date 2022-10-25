@@ -20,7 +20,7 @@ double ExtensibleCurve::GetPotential() const {
 
         potential += 0.5 * _k * (e_current.norm() - _rest_length(i)) * (e_current.norm() - _rest_length(i));
 
-        Vector3d kB = 2 * e_prev.cross(e_current) / (_rest_length(i - 1) * _rest_length(i) + e_prev.dot(e_current));
+        Vector3d kB = 2 * e_prev.cross(e_current) / (e_current.norm() * e_prev.norm() + e_prev.dot(e_current));
         potential += kB.dot(kB) / _voronoi_length(i) * _alpha(i);
 
         e_prev = e_current;
@@ -42,13 +42,17 @@ VectorXd ExtensibleCurve::GetPotentialGradient() const {
         Vector3d x_next = _x.block<3, 1>(3 * (i + 1), 0);
         Vector3d e_current = x_next - x_current;
 
-        const double denominator = _rest_length(i - 1) * _rest_length(i) + e_prev.dot(e_current);
+        const double cur_norm = e_current.norm();
+        const double prev_norm = e_prev.norm();
+        const double cur_div_prev = cur_norm / prev_norm;
+        const double prev_div_cur = prev_norm / cur_norm;
+        const double denominator = prev_norm * cur_norm + e_prev.dot(e_current);
         Vector3d kB = 2 * e_prev.cross(e_current) / denominator;
-        Matrix3d nabla_prev = (2 * HatMatrix(e_current) + kB * e_current.transpose()) / denominator;
-        Matrix3d nabla_next = (2 * HatMatrix(e_prev) - kB * e_prev.transpose()) / denominator;
+        Matrix3d nabla_prev = (2 * HatMatrix(e_current) + kB * e_current.transpose() + cur_div_prev * kB * e_prev.transpose()) / denominator;
+        Matrix3d nabla_next = (2 * HatMatrix(e_prev) - kB * e_prev.transpose() - prev_div_cur * kB * e_current.transpose()) / denominator;
         Matrix3d nabla_current = - nabla_prev - nabla_next;
 
-        const double coefficient = 2 * _alpha(i) / _rest_length(i);
+        const double coefficient = 2 * _alpha(i) / _voronoi_length(i);
         Vector3d contribute_prev = coefficient * kB.transpose() * nabla_prev;
         Vector3d contribute_current = coefficient * kB.transpose() * nabla_current;
         Vector3d contribute_next = coefficient * kB.transpose() * nabla_next;
@@ -82,7 +86,11 @@ void ExtensibleCurve::GetPotentialHessian(COO &coo, int x_offset, int y_offset) 
         Vector3d x_next = _x.block<3, 1>(3 * (i + 1), 0);
         Vector3d e_current = x_next - x_current;
 
-        const double denominator = _rest_length(i - 1) * _rest_length(i) + e_prev.dot(e_current);
+        const double prev_norm = e_prev.norm();
+        const double cur_norm = e_current.norm();
+        const double prev_div_cur = prev_norm / cur_norm;
+        const double cur_div_prev = cur_norm / prev_norm;
+        const double denominator = prev_norm * cur_norm + e_prev.dot(e_current);
         Vector3d kB = 2 * e_prev.cross(e_current) / denominator;
 
         const Matrix3d hat_e_current = HatMatrix(e_current);
@@ -90,8 +98,8 @@ void ExtensibleCurve::GetPotentialHessian(COO &coo, int x_offset, int y_offset) 
 
         Eigen::Vector<Matrix3d, 3> p_kB;
 
-        p_kB(0) = (- 2 * hat_e_current + e_current * kB.transpose()) / denominator;
-        p_kB(2) = (- 2 * hat_e_prev - e_prev * kB.transpose()) / denominator;
+        p_kB(0) = (- 2 * hat_e_current + e_current * kB.transpose() + cur_div_prev * e_prev * kB.transpose()) / denominator;
+        p_kB(2) = (- 2 * hat_e_prev - e_prev * kB.transpose() - prev_div_cur * e_current * kB.transpose()) / denominator;
         p_kB(1) = - p_kB(2) - p_kB(0);
 
         Matrix9d hessian;
@@ -104,33 +112,50 @@ void ExtensibleCurve::GetPotentialHessian(COO &coo, int x_offset, int y_offset) 
         const auto& kB_kron_e_current = Eigen::KroneckerProduct(kB, e_current);
         const auto& kB_kron_e_prev = Eigen::KroneckerProduct(kB, e_prev);
 
-
         static const Matrix<double, 9, 3> vec_hat_matrix(GetVecHatMatrix());
 
         Matrix<Matrix<double, 3, 9>, 3, 3> p2_kB;
 
-        p2_kB(0, 0) = ((
-           -(I3_kron_e_current) * (-2 * HatMatrix(e_current) - kB * e_current.transpose())
-           -(2 * vec_hat_matrix * e_current - kB_kron_e_current) * e_current.transpose()
-       ) / (denominator * denominator)).transpose();
+        Vector3d d_cur_div_prev = e_current + cur_div_prev * e_prev;
+        Vector3d d_prev_div_cur = e_prev + prev_div_cur * e_current;
 
-        p2_kB(2, 2) = ((
-           - I3_kron_e_prev * (2 * hat_e_prev - kB * e_prev.transpose())
-           + (2 * vec_hat_matrix * e_prev + kB_kron_e_prev) * e_prev.transpose()
-       ) / (denominator * denominator)).transpose();
+        Matrix<double, 9, 3> I3_prev_div_cur = (I3_kron_e_prev + prev_div_cur * I3_kron_e_current) / (denominator * denominator);
+        Matrix<double, 9, 3> I3_cur_div_prev = (I3_kron_e_current + cur_div_prev * I3_kron_e_prev) / (denominator * denominator);
+        Vector9d kB_prev_div_cur = kB_kron_e_prev + prev_div_cur * kB_kron_e_current;
+        Vector9d kB_cur_div_prev = kB_kron_e_current + cur_div_prev * kB_kron_e_prev;
+        Vector9d d_denominator_cur = (-2 * vec_hat_matrix * e_current + kB_cur_div_prev) / (denominator * denominator);
+        Vector9d d_denominator_prev = (-2 * vec_hat_matrix * e_prev - kB_prev_div_cur) / (denominator * denominator);
+        Matrix3d nominator_prev = 2 * hat_e_prev - kB * d_prev_div_cur.transpose();
+        Matrix3d nominator_cur = -2 * hat_e_current - kB * d_cur_div_prev.transpose();
+
+        p2_kB(0, 0) = -(
+            I3_cur_div_prev * nominator_cur
+            + cur_div_prev * kB_kron_I3 / denominator
+            - kB_kron_e_prev * e_prev.transpose() * cur_div_prev / denominator / (prev_norm * prev_norm)
+            - d_denominator_cur * d_cur_div_prev.transpose()
+        ).transpose();
+
+        p2_kB(2, 2) = (
+            - I3_prev_div_cur * nominator_prev
+            - prev_div_cur * kB_kron_I3 / denominator
+            + kB_kron_e_current * e_current.transpose() * prev_div_cur / denominator / (cur_norm * cur_norm)
+            - d_denominator_prev * d_prev_div_cur.transpose()
+        ).transpose();
 
         p2_kB(0, 2) = (
             - 2 * vec_hat_matrix / denominator
-            + I3_kron_e_current * (2 * hat_e_prev - kB * e_prev.transpose()) / (denominator * denominator)
             + kB_kron_I3 / denominator
-            + (2 * vec_hat_matrix * e_current - kB_kron_e_current) * e_prev.transpose() / (denominator * denominator)
+            + I3_cur_div_prev * nominator_prev
+            + kB_kron_e_prev * e_current.transpose() / (denominator * cur_norm * prev_norm)
+            - d_denominator_cur * d_prev_div_cur.transpose()
         ).transpose();
 
-        p2_kB(2, 0) = (
-            2 * vec_hat_matrix / denominator
-            + (I3_kron_e_prev * (-2 * hat_e_current - kB * e_current.transpose())) / (denominator * denominator)
-            + kB_kron_I3 / denominator
-            - (2 * vec_hat_matrix * e_prev + kB_kron_e_prev) * e_current.transpose() / (denominator * denominator)
+        p2_kB(2, 0) = -(
+            - 2 * vec_hat_matrix / denominator
+            - kB_kron_I3 / denominator
+            - I3_prev_div_cur * nominator_cur
+            - kB_kron_e_current * e_prev.transpose() / (denominator * cur_norm * prev_norm)
+            - d_denominator_prev * d_cur_div_prev.transpose()
         ).transpose();
 
         p2_kB(1, 0) = - p2_kB(0, 0) - p2_kB(2, 0);
