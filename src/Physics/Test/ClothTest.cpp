@@ -79,11 +79,13 @@ TEST(ClothTest, ClothInitializationTest) {
 
     MatrixXi topo(2, 3);
     topo << 0, 1, 2,
-            1, 2, 3;
+            1, 3, 2;
+
+    EXPECT_EQ(cloth._topo, topo);
 
     Matrix2d M1, M2;
     M1 << 2, 2, 0, 2;
-    M2 << 0, 2, 2, 2;
+    M2 << 2, 0, 2, 2;
 
     EXPECT_EQ(cloth._inv.size(), 2);
     EXPECT_NEAR((cloth._inv(0) * M1 - Matrix2d::Identity()).norm(), 0, 1e-5);

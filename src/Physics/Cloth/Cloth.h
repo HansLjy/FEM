@@ -7,6 +7,8 @@
 
 #include "Object.h"
 
+class ClothShape;
+
 class Cloth : public ShapedObject {
 public:
     explicit Cloth(const json& config);
@@ -38,6 +40,8 @@ public:
 
     DERIVED_DECLARE_CLONE(Object)
 
+    friend class ClothShape;
+
 protected:
     const int _num_points;
     const int _num_triangles;
@@ -50,7 +54,7 @@ protected:
     VectorXd _mass_sparse;
     VectorXd _uv_coord;
     VectorXd _area;             // area of each triangle
-    const MatrixXi _topo;       // each row contains the indices of
+    MatrixXi _topo;             // each row contains the indices of
                                 // three nodes that comprise the triangle
     VectorX<Matrix2d> _inv;     // inverse of (Delta u, Delta v) for every triangle
     VectorX<Matrix6d> _pFpx;    // derivative of F(deform gradient) against xj, xk for every triangle

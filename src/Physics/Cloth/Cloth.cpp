@@ -33,22 +33,34 @@ Cloth::Cloth(double rho, double k_stretch, double k_shear, double k_bend, const 
                _stretch_u(stretch_u), _stretch_v(stretch_v),
                _uv_coord(uv_corrd), _topo(topo)
                {
-    _area.resize(_num_triangles);
     _mass.resize(_num_points);
     _mass.setZero();
+
+    _area.resize(_num_triangles);
+    for (int i = 0; i < _num_triangles; i++) {
+        RowVector3i index = _topo.row(i);
+        Vector2d e1 = uv_corrd.segment<2>(index(1) * 2) - uv_corrd.segment<2>(index(0) * 2);
+        Vector2d e2 = uv_corrd.segment<2>(index(2) * 2) - uv_corrd.segment<2>(index(0) * 2);
+        const double S = (e1(0) * e2(1) - e1(1) * e2(0)) / 2;
+        if (S > 0) {
+            _area(i) = S;
+        } else {
+            _area(i) = -S;
+            std::swap(_topo(i, 1), _topo(i, 2));
+        }
+        for (int j = 0; j < 3; j++) {
+            _mass(index(j)) += _area(i) / 3 * rho;
+        }
+    }
 
     std::vector<std::tuple<int, int, int>> edges;
 
     _inv.resize(_num_triangles);
     _pFpx.resize(_num_triangles);
     for (int i = 0; i < _num_triangles; i++) {
-        RowVector3i index = topo.row(i);
+        RowVector3i index = _topo.row(i);
         Vector2d e1 = uv_corrd.segment<2>(index(1) * 2) - uv_corrd.segment<2>(index(0) * 2);
         Vector2d e2 = uv_corrd.segment<2>(index(2) * 2) - uv_corrd.segment<2>(index(0) * 2);
-        _area(i) = abs(e1(0) * e2(1) - e1(1) * e2(0)) / 2;
-        for (int j = 0; j < 3; j++) {
-            _mass(index(j)) += _area(i) / 3 * rho;
-        }
 
         Matrix2d F;
         F.col(0) = e1;
