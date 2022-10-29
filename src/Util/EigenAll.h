@@ -9,6 +9,8 @@
 using Eigen::Matrix;
 using Eigen::MatrixXd;
 using Eigen::VectorXd;
+using Eigen::Vector2d;
+using Eigen::Matrix2d;
 using Eigen::Matrix3d;
 using Eigen::Vector3d;
 using Eigen::Matrix4d;
@@ -18,9 +20,13 @@ using Eigen::VectorX;
 using Eigen::MatrixXi;
 
 using Eigen::RowVector3i;
+using Eigen::RowVector2i;
+using Eigen::RowVector4i;
 
 using Eigen::Dynamic;
 
+typedef Eigen::Vector<double, 5> Vector5d;
+typedef Eigen::Matrix<double, 5, 5> Matrix5d;
 typedef Eigen::Vector<double, 6> Vector6d;
 typedef Eigen::Matrix<double, 6, 6> Matrix6d;
 typedef Eigen::Vector<double, 7> Vector7d;

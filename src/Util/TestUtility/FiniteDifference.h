@@ -7,7 +7,7 @@
 
 #include "../EigenAll.h"
 
-VectorXd FiniteDifferential(const std::function<double(const VectorXd&)>& func, VectorXd x);
-MatrixXd FiniteDifferential2(const std::function<double(const VectorXd&)>& func, VectorXd x);
+VectorXd FiniteDifferential(const std::function<double(const VectorXd&)>& func, VectorXd x, double step);
+MatrixXd FiniteDifferential2(const std::function<double(const VectorXd&)>& func, VectorXd x, double step);
 
 #endif //FEM_FINITEDIFFERENCE_H

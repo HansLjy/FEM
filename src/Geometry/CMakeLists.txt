@@ -1,6 +1,11 @@
 cmake_minimum_required(VERSION 3.22)
 
-file(GLOB_RECURSE GEOMETRY_SOURCE_FILE CurveShape/*.cpp Mesh/*.cpp Rigid/*.cpp)
+file(GLOB_RECURSE GEOMETRY_SOURCE_FILE
+        CurveShape/*.cpp
+        ClothShape/*.cpp
+        Mesh/*.cpp
+        Rigid/*.cpp
+    )
 
 if(BUILD_TEST)
     add_subdirectory(Test)
