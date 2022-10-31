@@ -254,6 +254,10 @@ void Cloth::GetPotentialHessian(COO &coo, int x_offset, int y_offset) const {
 
         Vector6d pCpF[3];
 
+        for (auto & j : pCpF) {
+            j.setZero();
+        }
+
         pCpF[0].segment<3>(0) = area * F1.normalized();
         pCpF[0].segment<3>(3).setZero();
         pCpF[1].segment<3>(0).setZero();
@@ -262,6 +266,10 @@ void Cloth::GetPotentialHessian(COO &coo, int x_offset, int y_offset) const {
         pCpF[2].segment<3>(3) = area * F1;
 
         Matrix6d p2CpF2[3] = {Matrix6d::Zero(), Matrix6d::Zero(), Matrix6d::Zero()};
+        for (auto & j : p2CpF2) {
+            j.setZero();
+        }
+
         p2CpF2[0].block<3, 3>(0, 0) = area * (Matrix3d::Identity() / F1_norm - F1 * F1.transpose() / (F1_norm * F1_norm * F1_norm));
         p2CpF2[1].block<3, 3>(3, 3) = area * (Matrix3d::Identity() / F2_norm - F2 * F2.transpose() / (F2_norm * F2_norm * F2_norm));
         p2CpF2[2].block<3, 3>(0, 3) = p2CpF2[2].block<3, 3>(3, 0) = area * Matrix3d::Identity();
@@ -374,7 +382,7 @@ void Cloth::GetPotentialHessian(COO &coo, int x_offset, int y_offset) const {
 
         p2Fpx2[4].block<3, 3>(3, 6) = p2Fpx2[4].block<3, 3>(6, 3) = Matrix3d::Identity();
 
-        Matrix9d p2Cpx2;
+        Matrix9d p2Cpx2 = Matrix9d::Zero();
 
         for (int j = 0; j < 5; j++) {
             p2Cpx2 += p2Fpx2[j] * pCpF(j);
