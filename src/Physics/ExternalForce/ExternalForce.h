@@ -18,7 +18,7 @@ class ExternalForce {
 public:
     virtual double Energy(const Object& obj) const = 0;
     virtual VectorXd EnergyGradient(const Object& obj) const = 0;
-    virtual void EnergyHessian(const Object& obj, SparseMatrixXd& hessian) const = 0;
+
     virtual void EnergyHessian(const Object& obj, COO& coo, int x_offset, int y_offset) const = 0;
 
     virtual ~ExternalForce() = default;

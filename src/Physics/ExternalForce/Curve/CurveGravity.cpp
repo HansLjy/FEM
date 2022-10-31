@@ -31,11 +31,6 @@ VectorXd CurveGravity::EnergyGradient(const Object &obj) const {
     return gradient;
 }
 
-void CurveGravity::EnergyHessian(const Object &obj, SparseMatrixXd &hessian) const {
-    hessian.resize(obj.GetDOF(), obj.GetDOF());
-    hessian.setZero();
-}
-
 void CurveGravity::EnergyHessian(const Object &obj, COO &coo, int x_offset, int y_offset) const {
 
 }

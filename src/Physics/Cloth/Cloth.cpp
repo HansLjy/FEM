@@ -11,7 +11,7 @@
 DEFINE_CLONE(Object, Cloth)
 
 Cloth::Cloth(const json &config)
-    : Cloth(config["rho"], config["k-stretch"], config["k-shear"], config["k-bend"],
+    : Cloth(config["density"], config["k-stretch"], config["k-shear"], config["k-bend"],
             Json2Vec(config["start"]), Json2Vec(config["u-end"]), Json2Vec(config["v-end"]),
             config["u-segments"], config["v-segments"], config["stretch-u"], config["stretch-v"]){}
 
@@ -105,20 +105,20 @@ Cloth::Cloth(double rho, double k_stretch, double k_shear, double k_bend, const 
 
 double Cloth::GetPotential() const {
     double energy = 0;
-//    for (int i = 0; i < _num_triangles; i++) {
-//        RowVector3i index = _topo.row(i);
-//        Matrix<double, 3, 2> F;
-//        F.col(0) = _x.segment<3>(3 * index(1)) - _x.segment<3>(3 * index(0));
-//        F.col(1) = _x.segment<3>(3 * index(2)) - _x.segment<3>(3 * index(0));
-//        F = F * _inv(i);
-//        Vector3d F1 = F.col(0);
-//        Vector3d F2 = F.col(1);
-//        const double C1 = (F1.norm() - _stretch_u) * _area(i);
-//        const double C2 = (F2.norm() - _stretch_v) * _area(i);
-//        const double C3 = _area(i) * F1.dot(F2);
-//
-//        energy += 0.5 * _k_stretch * (C1 * C1 + C2 * C2) + 0.5 * _k_shear * C3 * C3;
-//    }
+    for (int i = 0; i < _num_triangles; i++) {
+        RowVector3i index = _topo.row(i);
+        Matrix<double, 3, 2> F;
+        F.col(0) = _x.segment<3>(3 * index(1)) - _x.segment<3>(3 * index(0));
+        F.col(1) = _x.segment<3>(3 * index(2)) - _x.segment<3>(3 * index(0));
+        F = F * _inv(i);
+        Vector3d F1 = F.col(0);
+        Vector3d F2 = F.col(1);
+        const double C1 = (F1.norm() - _stretch_u) * _area(i);
+        const double C2 = (F2.norm() - _stretch_v) * _area(i);
+        const double C3 = _area(i) * F1.dot(F2);
+
+        energy += 0.5 * _k_stretch * (C1 * C1 + C2 * C2) + 0.5 * _k_shear * C3 * C3;
+    }
 
     for (int i = 0; i < _num_internal_edges; i++) {
         RowVector4i edge_index = _internal_edge.row(i);
@@ -128,7 +128,7 @@ double Cloth::GetPotential() const {
         Vector3d e2 = _x.segment<3>(3 * edge_index(3)) - xi;
 
         const double X = _internal_edge_length(i) * (
-                  e0.dot(e2) * e0.dot(e1)
+                e0.dot(e2) * e0.dot(e1)
                 - e0.dot(e0) * e1.dot(e2)
 
         );
@@ -159,39 +159,39 @@ Cloth::CalculatePFPX(const Eigen::Vector3d &e0, const Eigen::Vector3d &e1, const
 VectorXd Cloth::GetPotentialGradient() const {
     VectorXd gradient(_x.size());
     gradient.setZero();
-//    for (int i = 0; i < _num_triangles; i++) {
-//        RowVector3i index = _topo.row(i);
-//        Vector3d xi = _x.segment<3>(3 * index(0));
-//        Matrix<double, 3, 2> F;
-//        F.col(0) = _x.segment<3>(3 * index(1)) - xi;
-//        F.col(1) = _x.segment<3>(3 * index(2)) - xi;
-//        F *= _inv(i);
-//        Vector3d F1 = F.col(0);
-//        Vector3d F2 = F.col(1);
-//
-//        Vector6d pCpF[3];
-//        double C[3];
-//        const double area = _area(i);
-//        C[0] = area * (F1.norm() - _stretch_u);
-//        pCpF[0].segment<3>(0) = area * F1.normalized();
-//        pCpF[0].segment<3>(3).setZero();
-//        C[1] = area * (F2.norm() - _stretch_v);
-//        pCpF[1].segment<3>(0).setZero();
-//        pCpF[1].segment<3>(3) = area * F2.normalized();
-//        C[2] = area * F1.dot(F2);
-//        pCpF[2].segment<3>(0) = area * F2;
-//        pCpF[2].segment<3>(3) = area * F1;
-//        Vector6d pCpX[3];
-//        const Matrix6d pFpX = _pFpx[i];
-//        for (int j = 0; j < 3; j++) {
-//            pCpX[j] = pFpX * pCpF[j];
-//        }
-//        Vector6d pEpX = _k_stretch * (C[0] * pCpX[0] + C[1] * pCpX[1]) + _k_shear * C[2] * pCpX[2];
-//
-//        gradient.segment<3>(3 * index[1]) += pEpX.segment<3>(0);
-//        gradient.segment<3>(3 * index[2]) += pEpX.segment<3>(3);
-//        gradient.segment<3>(3 * index[0]) += - pEpX.segment<3>(0) - pEpX.segment<3>(3);
-//    }
+    for (int i = 0; i < _num_triangles; i++) {
+        RowVector3i index = _topo.row(i);
+        Vector3d xi = _x.segment<3>(3 * index(0));
+        Matrix<double, 3, 2> F;
+        F.col(0) = _x.segment<3>(3 * index(1)) - xi;
+        F.col(1) = _x.segment<3>(3 * index(2)) - xi;
+        F *= _inv(i);
+        Vector3d F1 = F.col(0);
+        Vector3d F2 = F.col(1);
+
+        Vector6d pCpF[3];
+        double C[3];
+        const double area = _area(i);
+        C[0] = area * (F1.norm() - _stretch_u);
+        pCpF[0].segment<3>(0) = area * F1.normalized();
+        pCpF[0].segment<3>(3).setZero();
+        C[1] = area * (F2.norm() - _stretch_v);
+        pCpF[1].segment<3>(0).setZero();
+        pCpF[1].segment<3>(3) = area * F2.normalized();
+        C[2] = area * F1.dot(F2);
+        pCpF[2].segment<3>(0) = area * F2;
+        pCpF[2].segment<3>(3) = area * F1;
+        Vector6d pCpX[3];
+        const Matrix6d pFpX = _pFpx[i];
+        for (int j = 0; j < 3; j++) {
+            pCpX[j] = pFpX * pCpF[j];
+        }
+        Vector6d pEpX = _k_stretch * (C[0] * pCpX[0] + C[1] * pCpX[1]) + _k_shear * C[2] * pCpX[2];
+
+        gradient.segment<3>(3 * index[1]) += pEpX.segment<3>(0);
+        gradient.segment<3>(3 * index[2]) += pEpX.segment<3>(3);
+        gradient.segment<3>(3 * index[0]) += - pEpX.segment<3>(0) - pEpX.segment<3>(3);
+    }
 
     for (int i = 0; i < _num_internal_edges; i++) {
         RowVector4i index = _internal_edge.row(i);
@@ -234,70 +234,70 @@ VectorXd Cloth::GetPotentialGradient() const {
 }
 
 void Cloth::GetPotentialHessian(COO &coo, int x_offset, int y_offset) const {
-//    for (int i = 0; i < _num_triangles; i++) {
-//        RowVector3i index = _topo.row(i);
-//        Vector3d xi = _x.segment<3>(3 * index(0));
-//        Matrix<double, 3, 2> F;
-//        F.col(0) = _x.segment<3>(3 * index(1)) - xi;
-//        F.col(1) = _x.segment<3>(3 * index(2)) - xi;
-//        F *= _inv(i);
-//        const Vector3d F1 = F.col(0);
-//        const Vector3d F2 = F.col(1);
-//        const double F1_norm = F1.norm();
-//        const double F2_norm = F2.norm();
-//
-//        const double area = _area(i);
-//        double C[3];
-//        C[0] = area * (F1_norm - _stretch_u);
-//        C[1] = area * (F2_norm - _stretch_v);
-//        C[2] = area * F1.dot(F2);
-//
-//        Vector6d pCpF[3];
-//
-//        pCpF[0].segment<3>(0) = area * F1.normalized();
-//        pCpF[0].segment<3>(3).setZero();
-//        pCpF[1].segment<3>(0).setZero();
-//        pCpF[1].segment<3>(3) = area * F2.normalized();
-//        pCpF[2].segment<3>(0) = area * F2;
-//        pCpF[2].segment<3>(3) = area * F1;
-//
-//        Matrix6d p2CpF2[3] = {Matrix6d::Zero(), Matrix6d::Zero(), Matrix6d::Zero()};
-//        p2CpF2[0].block<3, 3>(0, 0) = area * (Matrix3d::Identity() / F1_norm - F1 * F1.transpose() / (F1_norm * F1_norm * F1_norm));
-//        p2CpF2[1].block<3, 3>(3, 3) = area * (Matrix3d::Identity() / F2_norm - F2 * F2.transpose() / (F2_norm * F2_norm * F2_norm));
-//        p2CpF2[2].block<3, 3>(0, 3) = p2CpF2[2].block<3, 3>(3, 0) = area * Matrix3d::Identity();
-//
-//        Matrix6d p2CpF2_total =
-//                _k_stretch * (pCpF[0] * pCpF[0].transpose() + pCpF[1] * pCpF[1].transpose())
-//              + _k_shear * pCpF[2] * pCpF[2].transpose()
-//              + _k_stretch * (C[0] * p2CpF2[0] + C[1] * p2CpF2[1])
-//              + _k_shear * C[2] * p2CpF2[2];
-//
-//        const auto& pFpX = _pFpx(i);
-//        Matrix6d p2EpX2 = pFpX * p2CpF2_total * pFpX.transpose();
-//        Matrix9d p2EpX2_full = Matrix9d::Zero();
-//        p2EpX2_full.block<6, 6>(3, 3) = p2EpX2;
-//        p2EpX2_full.block<6, 3>(3, 0) = - p2EpX2.block<6, 3>(0, 0) - p2EpX2.block<6, 3>(0, 3);
-//        p2EpX2_full.block<3, 9>(0, 0) = - p2EpX2_full.block<3, 9>(3, 0) - p2EpX2_full.block<3, 9>(6, 0);
-//
-//        for (int j = 0; j < 3; j++) {
-//            const int global_offset_j = index(j) * 3;
-//            const int local_offset_j = 3 * j;
-//            for (int k = 0; k < 3; k++) {
-//                const int global_offset_k = index(k) * 3;
-//                const int local_offset_k = 3 * k;
-//                for (int row = 0; row < 3; row++) {
-//                    for (int col = 0; col < 3; col++) {
-//                        coo.push_back(
-//                            Tripletd(
-//                                global_offset_j + row, global_offset_k + col,
-//                                p2EpX2_full(local_offset_j + row, local_offset_k + col)
-//                            )
-//                        );
-//                    }
-//                }
-//            }
-//        }
-//    }
+    for (int i = 0; i < _num_triangles; i++) {
+        RowVector3i index = _topo.row(i);
+        Vector3d xi = _x.segment<3>(3 * index(0));
+        Matrix<double, 3, 2> F;
+        F.col(0) = _x.segment<3>(3 * index(1)) - xi;
+        F.col(1) = _x.segment<3>(3 * index(2)) - xi;
+        F *= _inv(i);
+        const Vector3d F1 = F.col(0);
+        const Vector3d F2 = F.col(1);
+        const double F1_norm = F1.norm();
+        const double F2_norm = F2.norm();
+
+        const double area = _area(i);
+        double C[3];
+        C[0] = area * (F1_norm - _stretch_u);
+        C[1] = area * (F2_norm - _stretch_v);
+        C[2] = area * F1.dot(F2);
+
+        Vector6d pCpF[3];
+
+        pCpF[0].segment<3>(0) = area * F1.normalized();
+        pCpF[0].segment<3>(3).setZero();
+        pCpF[1].segment<3>(0).setZero();
+        pCpF[1].segment<3>(3) = area * F2.normalized();
+        pCpF[2].segment<3>(0) = area * F2;
+        pCpF[2].segment<3>(3) = area * F1;
+
+        Matrix6d p2CpF2[3] = {Matrix6d::Zero(), Matrix6d::Zero(), Matrix6d::Zero()};
+        p2CpF2[0].block<3, 3>(0, 0) = area * (Matrix3d::Identity() / F1_norm - F1 * F1.transpose() / (F1_norm * F1_norm * F1_norm));
+        p2CpF2[1].block<3, 3>(3, 3) = area * (Matrix3d::Identity() / F2_norm - F2 * F2.transpose() / (F2_norm * F2_norm * F2_norm));
+        p2CpF2[2].block<3, 3>(0, 3) = p2CpF2[2].block<3, 3>(3, 0) = area * Matrix3d::Identity();
+
+        Matrix6d p2CpF2_total =
+                _k_stretch * (pCpF[0] * pCpF[0].transpose() + pCpF[1] * pCpF[1].transpose())
+              + _k_shear * pCpF[2] * pCpF[2].transpose()
+              + _k_stretch * (C[0] * p2CpF2[0] + C[1] * p2CpF2[1])
+              + _k_shear * C[2] * p2CpF2[2];
+
+        Matrix6d pFpX = _pFpx(i);
+        Matrix6d p2EpX2 = pFpX * p2CpF2_total * pFpX.transpose();
+        Matrix9d p2EpX2_full = Matrix9d::Zero();
+        p2EpX2_full.block<6, 6>(3, 3) = p2EpX2;
+        p2EpX2_full.block<6, 3>(3, 0) = - p2EpX2.block<6, 3>(0, 0) - p2EpX2.block<6, 3>(0, 3);
+        p2EpX2_full.block<3, 9>(0, 0) = - p2EpX2_full.block<3, 9>(3, 0) - p2EpX2_full.block<3, 9>(6, 0);
+
+        for (int j = 0; j < 3; j++) {
+            const int global_offset_j = index(j) * 3;
+            const int local_offset_j = 3 * j;
+            for (int k = 0; k < 3; k++) {
+                const int global_offset_k = index(k) * 3;
+                const int local_offset_k = 3 * k;
+                for (int row = 0; row < 3; row++) {
+                    for (int col = 0; col < 3; col++) {
+                        coo.push_back(
+                            Tripletd(
+                                global_offset_j + row, global_offset_k + col,
+                                p2EpX2_full(local_offset_j + row, local_offset_k + col)
+                            )
+                        );
+                    }
+                }
+            }
+        }
+    }
 
     for (int i = 0; i < _num_internal_edges; i++) {
         RowVector4i index = _internal_edge.row(i);
@@ -332,17 +332,21 @@ void Cloth::GetPotentialHessian(COO &coo, int x_offset, int y_offset) const {
         const double square_diff = X * X - Y * Y;
         const double square_sum = X * X + Y * Y;
 
+        Vector5d F1, F2;
+        F1 << b, a, 0, 0, 0;
+        F2 << 0, e, -d, -c, b;
+
         Vector5d p2CpFpX = (
-                square_diff / (square_sum * square_sum) * (Vector5d() << b, a, 0, 0, 0).finished()
-                - N * 2 * X * Y / (square_sum * square_sum) * (Vector5d() << 0, e, -d, -c, b).finished()
+                square_diff / (square_sum * square_sum) * F1
+                - N * 2 * X * Y / (square_sum * square_sum) * F2
         );
         Vector5d p2CpFpY = (
-                2 * X * Y / (square_sum * square_sum) * (Vector5d() << b, a, 0, 0, 0).finished()
-                + N * square_diff / (square_sum * square_sum) * (Vector5d() << 0, e, -d, -c, b).finished()
+                2 * X * Y / (square_sum * square_sum) * F1
+                + N * square_diff / (square_sum * square_sum) * F2
         );
 
-        Vector5d pXpF = N * (Vector5d() << 0, -e, d, c, -b).finished();
-        Vector5d pYpF = (Vector5d() << -b, -a, 0, 0, 0).finished();
+        Vector5d pXpF = -N * F2;
+        Vector5d pYpF = -F1;
 
         Matrix5d p2CpF2 = Matrix5d::Zero();
         p2CpF2(0, 1) = p2CpF2(1, 0) = - X / square_sum;
@@ -402,7 +406,6 @@ void Cloth::GetPotentialHessian(COO &coo, int x_offset, int y_offset) const {
             }
         }
     }
-    //TODO: Make this more efficient by reducing redundant calculation
 }
 
 VectorXd

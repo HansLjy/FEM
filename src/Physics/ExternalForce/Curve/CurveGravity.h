@@ -17,7 +17,6 @@ public:
     double Energy(const Object &obj) const override;
     VectorXd EnergyGradient(const Object& obj) const override;
     void EnergyHessian(const Object &obj, COO &coo, int x_offset, int y_offset) const override;
-    void EnergyHessian(const Object &obj, SparseMatrixXd &hessian) const override;
 
     DERIVED_DECLARE_CLONE(ExternalForce)
 protected:

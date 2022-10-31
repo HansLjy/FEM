@@ -95,6 +95,8 @@ protected:
     const Shape* _shape;
 };
 
+class SampledObjectGravity;
+
 class SampledObject : virtual public Object {
 public:
     explicit SampledObject(const VectorXd& mass);
@@ -102,6 +104,8 @@ public:
 
     ~SampledObject() override = default;
     MIDDLE_DECLARE_CLONE(Object)
+
+    friend class SampledObjectGravity;
 
 protected:
     const VectorXd _mass;
