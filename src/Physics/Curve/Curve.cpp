@@ -15,10 +15,9 @@ VectorXd Curve::GetX(const Vector3d &start, const Vector3d &end, int num_segment
     return x;
 }
 
-Curve::Curve(double total_mass, double alpha_max, double alpha_min, const Vector3d &start, const Vector3d &end,
-             int num_segments) : Curve(total_mass, alpha_max, alpha_min, GetX(start, end, num_segments)) {}
-
-Curve::Curve(double total_mass, double alpha_max, double alpha_min, const VectorXd &x) : ShapedObject(x, CurveShape()), _num_points(x.size() / 3) {
+Curve::Curve(double rho, double alpha_max, double alpha_min, const VectorXd &x)
+    : ShapedObject(CurveShape()), SampledObject(GenerateMass(rho, x)),
+      _num_points(x.size() / 3) {
     _alpha.resize(_num_points - 1);
     if (_num_points > 2) {
         const double delta_alpha = (alpha_min - alpha_max) / (_num_points - 3);
@@ -30,10 +29,6 @@ Curve::Curve(double total_mass, double alpha_max, double alpha_min, const Vector
     }
 
     _x_rest = x;
-    _mass.resize(_num_points);
-    _mass.setConstant(total_mass / _num_points);
-    _mass_sparse.resize(_num_points * 3);
-    _mass_sparse.setConstant(total_mass / _num_points);
     _rest_length.resize(_num_points - 1);
     for (int i = 0, j = 0; i < _num_points - 1; i++, j += 3) {
         _rest_length(i) = (_x_rest.block<3, 1>(j + 3, 0) - _x_rest.block<3, 1>(j, 0)).norm();
@@ -47,10 +42,6 @@ Curve::Curve(double total_mass, double alpha_max, double alpha_min, const Vector
 }
 
 #include "JsonUtil.h"
-
-Curve::Curve(const nlohmann::json &config)
-    : Curve(config["mass"], config["alpha-max"], config["alpha-min"], Json2Vec(config["start"]),
-            Json2Vec(config["end"]), config["segments"]) {}
 
 void Curve::GetMass(COO &coo, int x_offset, int y_offset) const {
     for (int i = 0, j = 0; i < _num_points; i++, j += 3) {
@@ -70,4 +61,16 @@ VectorXd Curve::GetInnerConstraint(const VectorXd &x) const {
 
 void Curve::GetInnerConstraintGradient(const VectorXd &x, COO &coo, int x_offset, int y_offset) const {
     Object::GetInnerConstraintGradient(x, coo, x_offset, y_offset);
+}
+
+VectorXd Curve::GenerateMass(double rho, const Eigen::VectorXd &x) {
+    int num_points = x.size() / 3;
+    VectorXd mass(num_points);
+    mass.setZero();
+    for (int i = 0, j = 0; i < num_points - 1; i++, j += 3) {
+        Vector3d e = x.segment<3>(j + 3) - x.segment<3>(j);
+        mass(i) += e.norm() * rho / 2;
+        mass(i + 1) += e.norm() * rho / 2;
+    }
+    return mass;
 }

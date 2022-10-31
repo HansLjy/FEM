@@ -11,7 +11,7 @@
 class ReducedBezierCurve : public ReducedObject {
 public:
     explicit ReducedBezierCurve(const json& config);
-    ReducedBezierCurve(int num_segments, double mass, double alpha_max, double alpha_min,
+    ReducedBezierCurve(int num_segments, double rho, double alpha_max, double alpha_min,
                        const VectorXd &control_points);
 
     DERIVED_DECLARE_CLONE(Object)

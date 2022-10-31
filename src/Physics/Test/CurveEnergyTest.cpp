@@ -12,8 +12,8 @@
 
 class InextensibleCurveForTest : public InextensibleCurve {
 public:
-    InextensibleCurveForTest(const Vector3d &start, const Vector3d &end, int num_segments, double total_mass, double alpha)
-        : InextensibleCurve(total_mass, alpha, alpha, start, end, num_segments) {}
+    InextensibleCurveForTest(const Vector3d &start, const Vector3d &end, int num_segments, double rho, double alpha)
+        : Object(Curve::GetX(start, end, num_segments)), InextensibleCurve(rho, alpha, alpha, start, end, num_segments) {}
 
     FRIEND_TEST(CurveTest, CurveInitializationTest);
     FRIEND_TEST(CurveTest, CurveEnergyTest);
@@ -24,8 +24,8 @@ public:
 
 class ExtensibleCurveForTest : public ExtensibleCurve {
 public:
-    ExtensibleCurveForTest(const Vector3d &start, const Vector3d &end, int num_segments, double total_mass, double alpha)
-        : ExtensibleCurve(total_mass, alpha, alpha, start, end, num_segments) {}
+    ExtensibleCurveForTest(const Vector3d &start, const Vector3d &end, int num_segments, double rho, double alpha)
+        : Object(Curve::GetX(start, end, num_segments)), ExtensibleCurve(rho, alpha, alpha, start, end, num_segments) {}
 
     FRIEND_TEST(ExtensibleCurveTest, EnergyTest);
     FRIEND_TEST(ExtensibleCurveTest, EnergyGradientTest);
@@ -34,24 +34,23 @@ public:
 const double eps = 1e-10;
 
 const double alpha = 0.1;
-const double mass = 3;
+const double rho = 3;
 const Vector3d start((Vector3d() << 0, 0, 0).finished());
 const Vector3d end((Vector3d() << 0, 0, 1).finished());
 const int num_segments = 3;
 const double length = (start - end).norm() / num_segments;
 
 TEST(CurveTest, CurveInitializationTest) {
-    InextensibleCurveForTest curve(start, end, num_segments, mass, alpha);
+    InextensibleCurveForTest curve(start, end, num_segments, rho, alpha);
     EXPECT_DOUBLE_EQ(curve._alpha(1), alpha);
     EXPECT_DOUBLE_EQ(curve._num_points, num_segments + 1);
     EXPECT_DOUBLE_EQ(curve._x_rest.size(), 3 * (num_segments + 1));
     EXPECT_DOUBLE_EQ(curve._mass.size(), num_segments + 1);
-    EXPECT_DOUBLE_EQ(curve._mass_sparse.size(), 3 * (num_segments + 1));
     EXPECT_DOUBLE_EQ(curve._rest_length.size(), num_segments);
     EXPECT_DOUBLE_EQ(curve._voronoi_length.size(), num_segments + 1);
 
     for (int i = 0; i <= num_segments; i++) {
-        EXPECT_DOUBLE_EQ(curve._mass(i), mass / (num_segments + 1));
+        EXPECT_DOUBLE_EQ(curve._mass(i), rho * curve._voronoi_length(i));
     }
 
     EXPECT_DOUBLE_EQ(curve._voronoi_length(0), length / 2);
@@ -62,10 +61,6 @@ TEST(CurveTest, CurveInitializationTest) {
 
     for (int i = 0; i < num_segments; i++) {
         EXPECT_DOUBLE_EQ(curve._rest_length(i), length);
-    }
-
-    for (int i = 0; i < 3 * (num_segments + 1); i++) {
-        EXPECT_DOUBLE_EQ(curve._mass_sparse(i), mass / (num_segments + 1));
     }
 
     EXPECT_EQ(curve._x_rest, curve._x);
@@ -82,7 +77,7 @@ void Randomize(Curve& curve) {
 }
 
 TEST(CurveTest, CurveEnergyTest) {
-    InextensibleCurveForTest curve(start, end, num_segments, mass, alpha);
+    InextensibleCurveForTest curve(start, end, num_segments, rho, alpha);
 
     EXPECT_EQ(curve.GetEnergy(), 0);    // rest shape
 
@@ -122,7 +117,7 @@ TEST(CurveTest, CurveEnergyTest) {
 #include "DerivativeTest.h"
 
 TEST(CurveTest, CurveGradientTest) {
-    InextensibleCurveForTest curve(start, end, num_segments, mass, alpha);
+    InextensibleCurveForTest curve(start, end, num_segments, rho, alpha);
 
     GenerateDerivatives(curve, Energy, Randomize, 1e-8, 1e-4)
 
@@ -149,7 +144,7 @@ TEST(CurveTest, CurveGravityTest) {
     cur_start << 0, 0, 1;
     cur_end << 0, 0, -1;
 
-    InextensibleCurveForTest curve(cur_start, cur_end, num_segments, mass, alpha);
+    InextensibleCurveForTest curve(cur_start, cur_end, num_segments, rho, alpha);
     curve.AddExternalForce(gravity);
     curve.AddExternalForce(gravity);
 
@@ -164,11 +159,11 @@ TEST(CurveTest, CurveGravityTest) {
         delta_3d << delta(0), delta(1), 0;
         curve._x.block<3, 1>(3 * i, 0) = curve._x.block<3, 1>(3 * (i - 1), 0) + delta_3d;
     }
-    EXPECT_NEAR(curve.GetExternalEnergy(), mass * g_norm * 1 * 2, 1e-10);
+    EXPECT_NEAR(curve.GetExternalEnergy(), rho * (cur_end - cur_start).norm() * g_norm * 1 * 2, 1e-10);
 }
 
 TEST(GravityTest, CurveGravityDerivativeTest) {
-    InextensibleCurveForTest curve(start, end, num_segments, mass, alpha);
+    InextensibleCurveForTest curve(start, end, num_segments, rho, alpha);
     CurveGravity gravity((Vector3d() << 0, 0, -9.8).finished());
     curve.AddExternalForce(gravity);
     curve.AddExternalForce(gravity);
@@ -194,7 +189,7 @@ void ExtensibleRandomize(Curve& curve) {
 }
 
 TEST(ExtensibleCurveTest, EnergyGradientTest) {
-    ExtensibleCurveForTest curve(start, end, num_segments, mass, alpha);
+    ExtensibleCurveForTest curve(start, end, num_segments, rho, alpha);
 
     GenerateDerivatives(curve, Energy, ExtensibleRandomize, 1e-8, 1e-4)
 

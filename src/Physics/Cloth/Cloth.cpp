@@ -26,16 +26,13 @@ Cloth::Cloth(double rho, double k_stretch, double k_shear, double k_bend, const 
 
 Cloth::Cloth(double rho, double k_stretch, double k_shear, double k_bend, const VectorXd &x, const VectorXd &uv_corrd,
              const MatrixXi &topo, double stretch_u, double stretch_v)
-             : ShapedObject(x, ClothShape()),
+             : Object(x), ShapedObject(ClothShape()), SampledObject(GenerateMass(rho, uv_corrd, topo)),
                _num_points(x.size() / 3),
                _num_triangles(topo.rows()),
                _k_stretch(k_stretch), _k_shear(k_shear), _k_bend(k_bend),
                _stretch_u(stretch_u), _stretch_v(stretch_v),
                _uv_coord(uv_corrd), _topo(topo)
                {
-    _mass.resize(_num_points);
-    _mass.setZero();
-
     _area.resize(_num_triangles);
     for (int i = 0; i < _num_triangles; i++) {
         RowVector3i index = _topo.row(i);
@@ -47,9 +44,6 @@ Cloth::Cloth(double rho, double k_stretch, double k_shear, double k_bend, const 
         } else {
             _area(i) = -S;
             std::swap(_topo(i, 1), _topo(i, 2));
-        }
-        for (int j = 0; j < 3; j++) {
-            _mass(index(j)) += _area(i) / 3 * rho;
         }
     }
 
@@ -107,16 +101,6 @@ Cloth::Cloth(double rho, double k_stretch, double k_shear, double k_bend, const 
         }
     }
 
-    _mass_sparse.resize(3 * _num_points);
-    for (int i = 0, j = 0; i < _num_points; i++, j += 3){
-        _mass_sparse(j) = _mass_sparse(j + 1) = _mass_sparse(j + 2) = _mass(i);
-    }
-}
-
-void Cloth::GetMass(COO &coo, int x_offset, int y_offset) const {
-    for (int i = 0; i < _num_points * 3; i++) {
-        coo.push_back(Tripletd(x_offset + i, y_offset + i, _mass_sparse(i)));
-    }
 }
 
 double Cloth::GetPotential() const {
@@ -475,4 +459,21 @@ MatrixXi Cloth::GenerateTopo(int num_u_segments, int num_v_segments) {
         }
     }
     return topo;
+}
+
+VectorXd Cloth::GenerateMass(double rho, const VectorXd &uv_coord, const MatrixXi &topo) {
+    int num_triangles = topo.rows();
+    int num_points = uv_coord.size() / 2;
+    VectorXd mass(num_points);
+    mass.setZero();
+    for (int i = 0; i < num_triangles; i++) {
+        RowVector3i index = topo.row(i);
+        Vector2d e1 = uv_coord.segment<2>(index(1) * 2) - uv_coord.segment<2>(index(0) * 2);
+        Vector2d e2 = uv_coord.segment<2>(index(2) * 2) - uv_coord.segment<2>(index(0) * 2);
+        const double S = abs(e1(0) * e2(1) - e1(1) * e2(0)) / 2;
+        for (int j = 0; j < 3; j++) {
+            mass(index(j)) += S * rho / 3;
+        }
+    }
+    return mass;
 }

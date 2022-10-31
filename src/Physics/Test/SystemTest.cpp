@@ -32,7 +32,7 @@ public:
         }
     }
 
-    const void GetShape(Eigen::MatrixXd &vertices, Eigen::MatrixXi &topo) const override {
+    void GetShape(Eigen::MatrixXd &vertices, Eigen::MatrixXi &topo) const override {
 
     }
 

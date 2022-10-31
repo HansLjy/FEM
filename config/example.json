@@ -6,33 +6,51 @@
   "integrator": {
     "type": "fast-projection",
     "tolerance": 1e-5,
-    "max_step": 100
+    "max_step": 500
   },
   "objects": [
     {
+      "type": "extensible-curve",
+      "name": "curve",
+      "density": 0.1,
+      "alpha-max": 100,
+      "alpha-min": 1,
+      "start": [0, 0, 10],
+      "end": [10, 0, 10],
+      "segments": 10
+    },
+    {
       "type": "reduced-bezier-curve",
       "name": "reduced-curve",
+      "density": 0.1,
+      "alpha-max": 10,
+      "alpha-min": 1,
       "control-points": [
         0, 0, 10,
         3, 0, 10,
-        6, 0, 10,
-        9, 0, 10
+        7, 0, 10,
+        10, 0, 10
       ],
-      "segments": 10,
-      "mass": 1,
-      "alpha": 0.1
-    },
-    {
-      "type": "elastic-curve",
-      "name": "curve",
-      "mass": 1.0,
-      "alpha": 0.1,
-      "start": [0, 0, 10],
-      "end": [9, 0, 10],
       "segments": 10
     }
   ],
   "constraints": [
+    {
+      "type": "fixed-point",
+      "object-names": [
+        "curve"
+      ],
+      "fixed-point": [0, 0, 10],
+      "fixed-point-index": 0
+    },
+    {
+      "type": "fixed-point",
+      "object-names": [
+        "curve"
+      ],
+      "fixed-point": [1, 0, 10],
+      "fixed-point-index": 1
+    },
     {
       "type": "fixed-point",
       "object-names": [
@@ -44,27 +62,27 @@
     {
       "type": "fixed-point",
       "object-names": [
-        "curve"
+        "reduced-curve"
       ],
-      "fixed-point": [0, 0, 10],
-      "fixed-point-index": 0
+      "fixed-point": [3, 0, 10],
+      "fixed-point-index": 1
     }
   ],
   "external-forces": [
     {
       "type": "curve-gravity",
-      "object-name": "reduced-curve",
+      "object-name": "curve",
       "g": [0, 0, -9.8]
     },
     {
       "type": "curve-gravity",
-      "object-name": "curve",
+      "object-name": "reduced-curve",
       "g": [0, 0, -9.8]
     }
   ],
   "renderer": {
     "camera":  {
-      "position": [0, 5, 5],
+      "position": [0, 10, 5],
       "look": [0, -1, 0],
       "up": [0, 0, 1]
     },

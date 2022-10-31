@@ -12,7 +12,8 @@ public:
     ClothForTest(double rho, double k_stretch, double k_shear, double k_bend,
                  const Vector3d& start, const Vector3d& u_end, const Vector3d& v_end,
                  int num_u_segments, int num_v_segments, double stretch_u, double stretch_v)
-                 : Cloth(rho, k_stretch, k_shear, k_bend,
+                 : Object(Cloth::GeneratePosition(start, u_end, v_end, num_u_segments, num_v_segments)),
+                   Cloth(rho, k_stretch, k_shear, k_bend,
                          start, u_end, v_end,
                          num_u_segments, num_v_segments,
                          stretch_u, stretch_v) {}
@@ -51,14 +52,6 @@ TEST(ClothTest, ClothInitializationTest) {
     EXPECT_DOUBLE_EQ(cloth._mass(3), rho * 2 / 3);
     EXPECT_DOUBLE_EQ(cloth._mass(1), rho * 4 / 3);
     EXPECT_DOUBLE_EQ(cloth._mass(2), rho * 4 / 3);
-
-    EXPECT_EQ(cloth._mass_sparse.size(), 12);
-    for (int i = 0; i < 3; i++) {
-        EXPECT_DOUBLE_EQ(cloth._mass_sparse(i), rho * 2 / 3);
-        EXPECT_DOUBLE_EQ(cloth._mass_sparse(i + 9), rho * 2 / 3);
-        EXPECT_DOUBLE_EQ(cloth._mass_sparse(i + 6), rho * 4 / 3);
-        EXPECT_DOUBLE_EQ(cloth._mass_sparse(i + 3), rho * 4 / 3);
-    }
 
     spdlog::info("UV coordinates:");
     std::cerr << cloth._uv_coord << std::endl;

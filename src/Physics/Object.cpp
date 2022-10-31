@@ -71,55 +71,38 @@ Object::Object(const Object &rhs) {
     }
 }
 
-Object &Object::operator=(const Object &rhs) {
-    if (this == &rhs) {
-        return *this;
-    }
-    _x = rhs._x;
-    _v = rhs._v;
-    for (const auto& ext_force : _external_forces) {
-        delete ext_force;
-    }
-    _external_forces.clear();
-    for (const auto& ext_force : rhs._external_forces) {
-        _external_forces.push_back(ext_force->Clone());
-    }
-    return *this;
-}
-
-ShapedObject::ShapedObject(const VectorXd& x, const VectorXd& v, const Shape& shape)
-    : Object(x, v), _shape(shape.Clone()) {}
-
-ShapedObject::ShapedObject(const Eigen::VectorXd &x, const Shape &shape)
-    : Object(x), _shape(shape.Clone()) {}
+ShapedObject::ShapedObject(const Shape &shape)
+    : _shape(shape.Clone()) {}
 
 ShapedObject::~ShapedObject() noexcept {
     delete _shape;
 }
 
-ShapedObject::ShapedObject(const ShapedObject &rhs) : Object(rhs), _shape(rhs._shape->Clone()){}
+ShapedObject::ShapedObject(const ShapedObject &rhs) : _shape(rhs._shape->Clone()){}
 
-ShapedObject &ShapedObject::operator=(const ShapedObject &rhs) {
-    if (this == &rhs) {
-        return *this;
-    }
-    Object::operator=(rhs);
-    delete _shape;
-    _shape = rhs._shape->Clone();
-    return *this;
-}
-
-const void ShapedObject::GetShape(Eigen::MatrixXd &vertices, Eigen::MatrixXi &topo) const {
+void ShapedObject::GetShape(Eigen::MatrixXd &vertices, Eigen::MatrixXi &topo) const {
     _shape->GetSurface(*this, vertices, topo);
 }
 
+SampledObject::SampledObject(const Eigen::VectorXd &mass) : _mass(mass) {}
+
+void SampledObject::GetMass(COO &coo, int x_offset, int y_offset) const {
+    int num_points = _mass.size();
+    for (int i = 0, j = 0; i < num_points; i++, j += 3) {
+        coo.push_back(Tripletd(x_offset + j, y_offset + j, _mass(i)));
+        coo.push_back(Tripletd(x_offset + j + 1, y_offset + j + 1, _mass(i)));
+        coo.push_back(Tripletd(x_offset + j + 2, y_offset + j + 2, _mass(i)));
+    }
+}
 
 #include "Curve/InextensibleCurve.h"
 #include "ReducedObject/ReducedBezierCurve.h"
 #include "Curve/ExtensibleCurve.h"
+#include "Cloth/Cloth.h"
 
 BEGIN_DEFINE_XXX_FACTORY(Object)
     ADD_PRODUCT("inextensible-curve", InextensibleCurve)
     ADD_PRODUCT("extensible-curve", ExtensibleCurve)
     ADD_PRODUCT("reduced-bezier-curve", ReducedBezierCurve)
+    ADD_PRODUCT("cloth", Cloth)
 END_DEFINE_XXX_FACTORY

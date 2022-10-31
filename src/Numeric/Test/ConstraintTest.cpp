@@ -8,8 +8,8 @@
 
 class InextensibleCurveForTest : public InextensibleCurve {
 public:
-    InextensibleCurveForTest(const Vector3d &start, const Vector3d &end, int num_segments, double total_mass, double alpha)
-            : InextensibleCurve(total_mass, alpha, alpha, start, end, num_segments) {}
+    InextensibleCurveForTest(const Vector3d &start, const Vector3d &end, int num_segments, double rho, double alpha)
+            : Object(Curve::GetX(start, end, num_segments)), InextensibleCurve(rho, alpha, alpha, start, end, num_segments) {}
     FRIEND_TEST(ConstraintTest, FixedPointTest);
 };
 

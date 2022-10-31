@@ -3,8 +3,13 @@
 //
 
 #include "ExtensibleCurve.h"
+#include "JsonUtil.h"
 
 DEFINE_CLONE(Object, ExtensibleCurve)
+
+ExtensibleCurve::ExtensibleCurve(const nlohmann::json &config)
+    : ExtensibleCurve(config["density"], config["alpha-max"], config["alpha-min"],
+                      Json2Vec(config["start"]), Json2Vec(config["end"]), config["segments"]) {}
 
 double ExtensibleCurve::GetPotential() const {
     double potential = 0;

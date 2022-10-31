@@ -4,9 +4,14 @@
 
 #include "InextensibleCurve.h"
 #include "CurveShape/CurveShape.h"
+#include "JsonUtil.h"
 #include <exception>
 
 DEFINE_CLONE(Object, InextensibleCurve)
+
+InextensibleCurve::InextensibleCurve(const nlohmann::json &config)
+    : InextensibleCurve(config["density"], config["alpha-max"], config["alpha-min"],
+                        Json2Vec(config["start"]), Json2Vec(config["end"]), config["segments"]){}
 
 double InextensibleCurve::GetPotential() const {
     double potential = 0;

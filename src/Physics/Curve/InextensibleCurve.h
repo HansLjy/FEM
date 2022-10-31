@@ -11,11 +11,11 @@
 
 class InextensibleCurve : public Curve {
 public:
-    explicit InextensibleCurve(const json& config) : Curve(config) {};
-    InextensibleCurve(double total_mass, double alpha_max, double alpha_min, const Vector3d &start, const Vector3d &end, int num_segments)
-        : Curve(total_mass, alpha_max, alpha_min, start, end, num_segments) {};
-    InextensibleCurve(double total_mass, double alpha_max, double alpha_min, const VectorXd &x)
-        : Curve(total_mass, alpha_max, alpha_min, x) {};
+    explicit InextensibleCurve(const json& config);
+    InextensibleCurve(double rho, double alpha_max, double alpha_min, const Vector3d &start, const Vector3d &end, int num_segments)
+        : InextensibleCurve(rho, alpha_max, alpha_min, GetX(start, end, num_segments)) {};
+    InextensibleCurve(double rho, double alpha_max, double alpha_min, const VectorXd &x)
+        : Object(x), Curve(rho, alpha_max, alpha_min, x) {};
 
     double GetPotential() const override;
     VectorXd GetPotentialGradient() const override;

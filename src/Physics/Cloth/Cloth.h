@@ -9,7 +9,7 @@
 
 class ClothShape;
 
-class Cloth : public ShapedObject {
+class Cloth : public ShapedObject, public SampledObject {
 public:
     explicit Cloth(const json& config);
 
@@ -33,7 +33,6 @@ public:
     Cloth(double rho, double k_stretch, double k_shear, double k_bend, const VectorXd &x, const VectorXd &uv_corrd,
           const MatrixXi &topo, double stretch_u = 1, double stretch_v = 1);
 
-    void GetMass(COO &coo, int x_offset, int y_offset) const override;
     double GetPotential() const override;
     VectorXd GetPotentialGradient() const override;
     void GetPotentialHessian(COO &coo, int x_offset, int y_offset) const override;
@@ -50,8 +49,6 @@ protected:
     const double _k_shear;
     const double _k_bend;
     const double _stretch_u, _stretch_v;
-    VectorXd _mass;
-    VectorXd _mass_sparse;
     VectorXd _uv_coord;
     VectorXd _area;             // area of each triangle
     MatrixXi _topo;             // each row contains the indices of
@@ -64,13 +61,14 @@ protected:
                                 // of this edge together with their two connecting nodes
     VectorXd _internal_edge_length;
 
-private:
+protected:
     static Eigen::Matrix<double, 9, 5> CalculatePFPX(const Vector3d& e0, const Vector3d& e1, const Vector3d& e2);
     static VectorXd GeneratePosition(const Vector3d& start, const Vector3d& u_end, const Vector3d& v_end,
                                      int num_u_segments, int num_v_segments);
     static VectorXd GenerateUVCoord(const Vector3d& start, const Vector3d& u_end, const Vector3d& v_end,
                                     int num_u_segments, int num_v_segments);
     static MatrixXi GenerateTopo(int num_u_segments, int num_v_segments);
+    static VectorXd GenerateMass(double rho, const VectorXd &uv_coord, const MatrixXi &topo);
 };
 
 #endif //FEM_CLOTH_H

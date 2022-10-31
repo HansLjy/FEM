@@ -61,7 +61,7 @@ public:
     virtual VectorXd GetExternalEnergyGradient() const;
     virtual void GetExternalEnergyHessian(COO& coo, int x_offset, int y_offset) const;
 
-    virtual const void GetShape(MatrixXd& vertices, MatrixXi& topo) const = 0;
+    virtual void GetShape(MatrixXd& vertices, MatrixXi& topo) const = 0;
 
     virtual int GetConstraintSize() const;
     virtual VectorXd GetInnerConstraint(const VectorXd &x) const;
@@ -69,7 +69,7 @@ public:
 
     virtual ~Object();
     Object(const Object& rhs);
-    Object& operator=(const Object& rhs);
+    Object& operator=(const Object& rhs) = delete;
 
     BASE_DECLARE_CLONE(Object)
 
@@ -82,18 +82,29 @@ protected:
 
 class Shape;
 
-class ShapedObject : public Object {
+class ShapedObject : virtual public Object {
 public:
-    ShapedObject(const VectorXd& x, const Shape& shape);
-    ShapedObject(const VectorXd& x, const VectorXd& v, const Shape& shape);
-    const void GetShape(Eigen::MatrixXd &vertices, Eigen::MatrixXi &topo) const override;
+    explicit ShapedObject(const Shape &shape);
+    void GetShape(Eigen::MatrixXd &vertices, Eigen::MatrixXi &topo) const override;
 
     ~ShapedObject() override;
     ShapedObject(const ShapedObject& rhs);
-    ShapedObject& operator=(const ShapedObject& rhs);
+    ShapedObject& operator=(const ShapedObject& rhs) = delete;
 
 protected:
     const Shape* _shape;
+};
+
+class SampledObject : virtual public Object {
+public:
+    explicit SampledObject(const VectorXd& mass);
+    void GetMass(COO &coo, int x_offset, int y_offset) const override;
+
+    ~SampledObject() override = default;
+    MIDDLE_DECLARE_CLONE(Object)
+
+protected:
+    const VectorXd _mass;
 };
 
 DECLARE_XXX_FACTORY(Object)

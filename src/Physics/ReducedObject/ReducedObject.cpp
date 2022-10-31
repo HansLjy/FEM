@@ -90,7 +90,7 @@ void ReducedObject::GetInnerConstraintGradient(const Eigen::VectorXd &x, COO &co
     }
 }
 
-const void ReducedObject::GetShape(Eigen::MatrixXd &vertices, Eigen::MatrixXi &topo) const {
+void ReducedObject::GetShape(Eigen::MatrixXd &vertices, Eigen::MatrixXi &topo) const {
     _proxy->GetShape(vertices, topo);
 }
 
