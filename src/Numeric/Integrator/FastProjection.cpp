@@ -5,15 +5,20 @@
 #include "FastProjection.h"
 #include "Eigen/SparseCholesky"
 #include "spdlog/spdlog.h"
+#include "Timer.h"
 
 FastProjectionIntegrator::FastProjectionIntegrator(double tolerance, int max_step) : _tolerance(tolerance), _max_step(max_step) {}
 FastProjectionIntegrator::FastProjectionIntegrator(const nlohmann::json &config) : FastProjectionIntegrator(config["tolerance"], config["max_step"]) {}
 
 void FastProjectionIntegrator::Step(Target &target, double h, VectorXd &x_next, VectorXd &v_next) const {
+    START_TIMING(stepping)
+
     // step without constraint
     SparseMatrixXd mass, hessian;
     target.GetMass(mass);
+    START_TIMING(hessian_calculation)
     target.GetEnergyHessian(hessian);
+    STOP_TIMING("hessian calculation", hessian_calculation)
     SparseMatrixXd A = mass + h * h * hessian;
 //    SparseMatrixXd A = mass;
 
@@ -69,4 +74,6 @@ void FastProjectionIntegrator::Step(Target &target, double h, VectorXd &x_next, 
 
     v_next = (x_next - x) / h;
 //    std::cout << "Coordinate: " << x_next.transpose() << std::endl;
+
+    STOP_TIMING("stepping", stepping)
 }
