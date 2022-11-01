@@ -15,63 +15,16 @@ public:
     FRIEND_TEST(ReducedObjectTest, ReducedBezierSurfaceInitializationTest);
 };
 
-TEST(ReducedObjectTest, ReducedBezierSurfaceInitializationTest) {
-    VectorXd control_points = (VectorXd(27) <<
-        0, 0, 20,
-        5, 0, 20,
-        10, 0, 20,
-        0, 5, 20,
-        5, 5, 20,
-        10, 5, 20,
-        0, 10, 20,
-        5, 10, 20,
-        10, 10, 20
-    ).finished();
-    VectorXd uv_coord = (VectorXd(18) <<
-        0, 0,
-        5, 0,
-        10, 0,
-        0, 5,
-        5, 5,
-        10, 5,
-        0, 10,
-        5, 10,
-        10, 10
-    ).finished();
-
-    const int num_u_segments = 2;
-    const int num_v_segments = 2;
-
-    auto x = ReducedBezierSurfaceForTest::GenerateX(control_points, num_u_segments, num_v_segments);
-    spdlog::info("X: ");
-    for (int i = 0; i < (num_u_segments + 1) * (num_v_segments + 1); i++) {
-        std::cout << x.segment<3>(i * 3).transpose() << std::endl;
-    }
-    EXPECT_NEAR((control_points - x).norm(), 0, 1e-5);
-
-    auto topo = ReducedBezierSurfaceForTest::GenerateTopo(num_u_segments, num_v_segments);
-    spdlog::info("Topo: ");
-    std::cout << topo << std::endl;
-
-    auto uv = ReducedBezierSurfaceForTest::GenerateUVCoord(control_points, num_u_segments, num_v_segments);
-    spdlog::info("UV: ");
-    for (int i = 0; i < (num_u_segments + 1) * (num_v_segments + 1); i++) {
-        std::cerr << uv.segment<2>(2 * i).transpose() << std::endl;
-    }
-    EXPECT_NEAR((uv - uv_coord).norm(), 0, 1e-5);
-}
-
-
 const VectorXd surface_control_points = (VectorXd(27) <<
-    0, 0, 20,
-    5, 0, 20,
-    10, 0, 20,
-    0, 5, 20,
-    5, 5, 20,
-    10, 5, 20,
-    0, 10, 20,
-    5, 10, 20,
-    10, 10, 20
+        0, 0, 20,
+        7.5, 0, 20,
+        15, 0, 20,
+        0, 5, 20,
+        7.5, 5, 20,
+        15, 5, 20,
+        0, 10, 20,
+        7.5, 10, 20,
+        15, 10, 20
 ).finished();
 
 const double rho = 1;
@@ -82,6 +35,59 @@ const int num_u_segments = 3;
 const int num_v_segments = 3;
 const double stretch_u = 1;
 const double stretch_v = 1;
+
+#include "RandomMatrix.h"
+
+TEST(ReducedObjectTest, ReducedBezierSurfaceInitializationTest) {
+    int num_u_segments = 3;
+    int num_v_segments = 2;
+    int num_sample_points = (num_u_segments + 1) * (num_v_segments + 1);
+
+    Vector3d lower_left = surface_control_points.segment<3>(0);
+    VectorXd x_correct(num_sample_points * 3);
+    double delta_x = 5;
+    double delta_y = 5;
+    for (int i = 0; i <= num_u_segments; i++) {
+        for (int j = 0; j <= num_v_segments; j++) {
+            x_correct.segment<3>((j * (num_u_segments + 1) + i) * 3)
+                    << delta_x * i + lower_left(0), delta_y * j + lower_left(1), lower_left(2);
+        }
+    }
+    VectorXd uv_correct(num_sample_points * 2);
+    for (int i = 0; i <= num_u_segments; i++) {
+        for (int j = 0; j <= num_v_segments; j++) {
+            uv_correct.segment<2>((j * (num_u_segments + 1) + i) * 2)
+                    << delta_x * i, delta_y * j;
+        }
+    }
+
+    auto x = ReducedBezierSurfaceForTest::GenerateX(surface_control_points, num_u_segments, num_v_segments);
+    spdlog::info("X: ");
+    for (int i = 0; i < num_sample_points; i++) {
+        std::cout << x.segment<3>(i * 3).transpose() << std::endl;
+    }
+    EXPECT_NEAR((x_correct - x).norm(), 0, 1e-5);
+
+    auto uv = ReducedBezierSurfaceForTest::GenerateUVCoord(surface_control_points, num_u_segments, num_v_segments);
+    spdlog::info("UV: ");
+    for (int i = 0; i < (num_u_segments + 1) * (num_v_segments + 1); i++) {
+        std::cerr << uv.segment<2>(2 * i).transpose() << std::endl;
+    }
+    EXPECT_NEAR((uv_correct - uv).norm(), 0, 1e-5);
+
+    Matrix3d R = GetRandomRotationMatrix();
+    Vector3d b = Vector3d::Random();
+
+    // Rigid motion won't change uv space
+    VectorXd control_points = surface_control_points;
+    for (int i = 0; i < 9; i++) {
+        control_points.segment<3>(3 * i) = R * control_points.segment<3>(3 * i) + b;
+    }
+    auto uv_same = ReducedBezierSurfaceForTest::GenerateUVCoord(control_points, num_u_segments, num_v_segments);
+    EXPECT_NEAR((uv_correct - uv_same).norm(), 0, 1e-5);
+}
+
+
 
 void Randomize(ReducedBezierSurfaceForTest& surface) {
     surface.SetCoordinate(Eigen::Vector<double, 27>::Random());
