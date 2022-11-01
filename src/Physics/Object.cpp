@@ -99,10 +99,12 @@ void SampledObject::GetMass(COO &coo, int x_offset, int y_offset) const {
 #include "ReducedObject/ReducedBezierCurve.h"
 #include "Curve/ExtensibleCurve.h"
 #include "Cloth/Cloth.h"
+#include "ReducedObject/ReducedBezierSurface.h"
 
 BEGIN_DEFINE_XXX_FACTORY(Object)
     ADD_PRODUCT("inextensible-curve", InextensibleCurve)
     ADD_PRODUCT("extensible-curve", ExtensibleCurve)
     ADD_PRODUCT("reduced-bezier-curve", ReducedBezierCurve)
     ADD_PRODUCT("cloth", Cloth)
+    ADD_PRODUCT("reduced-bezier-surface", ReducedBezierSurface)
 END_DEFINE_XXX_FACTORY

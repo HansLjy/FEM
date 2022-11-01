@@ -8,6 +8,7 @@
 #include "Object.h"
 
 class ClothShape;
+class ReducedBezierSurface;
 
 class Cloth : public ShapedObject, public SampledObject {
 public:
@@ -40,6 +41,7 @@ public:
     DERIVED_DECLARE_CLONE(Object)
 
     friend class ClothShape;
+    friend class ReducedBezierSurface;
 
 protected:
     const int _num_points;

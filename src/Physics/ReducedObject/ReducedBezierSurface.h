@@ -9,17 +9,15 @@
 
 class ReducedBezierSurface : public ReducedObject {
 public:
+    explicit ReducedBezierSurface(const json& config);
+
     /**
-     * @param control_points a list of x_size, y_size control points in a row-first way
-     *                       ^ v direction
-     *                       |
-     *                       6 7 8
-     *                       3 4 5
-     *                       0 1 2 -> u direction
      * @warning TODO: currently, control points should fall into the same plane
      */
     ReducedBezierSurface(const VectorXd &control_points, double rho, double k_stretch, double k_shear, double k_bend,
                          int num_u_segments, int num_v_segments, double stretch_u = 1, double stretch_v = 1);
+
+    DERIVED_DECLARE_CLONE(Object)
 
 protected:
     static SparseMatrixXd GetBase(int num_u_segments, int num_v_segments);

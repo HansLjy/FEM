@@ -5,9 +5,11 @@
 #ifndef FEM_DERIVATIVETEST_H
 #define FEM_DERIVATIVETEST_H
 
+#include "FiniteDifference.h"
+
 #define GetEnergyFunction(func, ValueName, obj)  \
     auto func = [&obj] (const VectorXd& x) {        \
-        obj.GetCoordinate() = x;                    \
+        obj.SetCoordinate(x);                       \
         return obj.Get##ValueName();                  \
     };
 
@@ -17,11 +19,11 @@
     Randomize(obj);                                                                 \
     VectorXd x(obj.GetCoordinate());                                                \
     auto numeric_gradient = FiniteDifferential(func, x, step_gradient);             \
-    obj.GetCoordinate() = x;                                                        \
+    obj.SetCoordinate(x);                                                           \
     auto analytic_gradient = obj.Get##ValueName##Gradient();                        \
                                                                                     \
     auto numeric_hessian = FiniteDifferential2(func, x, step_hessian);              \
-    obj.GetCoordinate() = x;                                                        \
+    obj.SetCoordinate(x);                                                           \
     COO coo;                                                                        \
     obj.Get##ValueName##Hessian(coo, 0, 0);                                         \
     SparseMatrixXd analytic_hessian(obj.GetDOF(), obj.GetDOF());                    \
