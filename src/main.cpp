@@ -6,7 +6,7 @@
 
 int main() {
     Simulator simulator("FEM Simulator");
-    simulator.LoadScene(CONFIG_PATH "/static-curve.json");
+    simulator.LoadScene(CONFIG_PATH "/test.json");
     simulator.MainLoop();
 //    simulator.Simulate();
 }

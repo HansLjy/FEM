@@ -132,13 +132,13 @@ TEST(CurveTest, CurveGradientTest) {
     EXPECT_NEAR((numeric_hessian - analytic_hessian).norm() / numeric_hessian.size(), 0, 0.1);
 }
 
-#include "ExternalForce/Curve/CurveGravity.h"
+#include "ExternalForce/SampledObject/SampledObjectGravity.h"
 
 TEST(CurveTest, CurveGravityTest) {
     Vector3d g;
     double g_norm = 9.8;
     g << 0, 0, -g_norm;
-    CurveGravity gravity(g);
+    SampledObjectGravity gravity(g);
 
     Vector3d cur_start, cur_end;
     cur_start << 0, 0, 1;
@@ -164,7 +164,7 @@ TEST(CurveTest, CurveGravityTest) {
 
 TEST(GravityTest, CurveGravityDerivativeTest) {
     InextensibleCurveForTest curve(start, end, num_segments, rho, alpha);
-    CurveGravity gravity((Vector3d() << 0, 0, -9.8).finished());
+    SampledObjectGravity gravity((Vector3d() << 0, 0, -9.8).finished());
     curve.AddExternalForce(gravity);
     curve.AddExternalForce(gravity);
 
