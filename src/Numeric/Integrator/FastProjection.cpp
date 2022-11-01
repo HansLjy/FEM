@@ -17,8 +17,8 @@ void FastProjectionIntegrator::Step(Target &target, double h, VectorXd &x_next, 
     SparseMatrixXd A = mass + h * h * hessian;
 //    SparseMatrixXd A = mass;
 
-    const VectorXd x = target.GetCoordinate();
-    const VectorXd v = target.GetVelocity();
+    const VectorXd& x = target.GetCoordinate();
+    const VectorXd& v = target.GetVelocity();
 
     VectorXd energy_gradient = target.GetEnergyGradient();
 //    std::cout << energy_gradient.transpose() << std::endl;
