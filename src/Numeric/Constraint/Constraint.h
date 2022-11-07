@@ -34,9 +34,9 @@ public:
 
 protected:
     const int _num_objects;
-    const int _size;
-    std::vector<int> _index;
-    std::vector<int> _offsets;
+    const int _constraint_size;
+    std::vector<int> _object_index;
+    std::vector<int> _object_offsets;
 };
 
 class ConstraintFactory {

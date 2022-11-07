@@ -4,14 +4,15 @@
 
 #include "Constraint.h"
 #include "SampledObject/FixedPointConstraint.h"
+#include "SampledObject/JointConstraint.h"
 #include "JsonUtil.h"
 
-Constraint::Constraint(int num_objects, int size, const std::vector<int>& indices) : _num_objects(num_objects), _size(size), _index(indices) {
-    _offsets.resize(num_objects);
+Constraint::Constraint(int num_objects, int size, const std::vector<int>& indices) : _num_objects(num_objects), _constraint_size(size), _object_index(indices) {
+    _object_offsets.resize(num_objects);
 }
 
 int Constraint::GetSize() const {
-    return _size;
+    return _constraint_size;
 }
 
 int Constraint::GetObjectsNum() const {
@@ -19,11 +20,11 @@ int Constraint::GetObjectsNum() const {
 }
 
 int Constraint::GetObjectIndex(int object_id) const {
-    return _index[object_id];
+    return _object_index[object_id];
 }
 
 void Constraint::SetOffset(int offset_id, int offset) {
-    _offsets[offset_id] = offset;
+    _object_offsets[offset_id] = offset;
 }
 
 Constraint *
@@ -36,6 +37,9 @@ ConstraintFactory::GetConstraint(const System &system, const nlohmann::json &con
     }
     if (type == "fixed-point") {
         return new FixedPointConstraint(Json2Vec(config["fixed-point"]), object_idx[0], config["fixed-point-index"]);
+    }
+    if (type == "joint") {
+        return new JointConstraint(object_idx[0], config["joint-point-indices"][0], object_idx[1], config["joint-point-indices"][1]);
     }
     return nullptr;
 }
