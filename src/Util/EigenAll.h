@@ -46,6 +46,7 @@ using Eigen::AngleAxisd;
 typedef Eigen::Quaternion<double> Quaterniond;
 
 Matrix3d HatMatrix(const Vector3d& vec);
+Vector3d SkewVector(const Matrix3d& mat);
 Vector3d FindPerpendicular(const Vector3d& vec);
 Matrix<double, 9, 3> GetVecHatMatrix();
 
