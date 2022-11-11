@@ -97,9 +97,9 @@ void Randomize(ReducedBezierSurfaceForTest& surface) {
 
 TEST(ReducedObjectTest, ReducedObjectEnergyDerivativeTest) {
     ReducedBezierSurfaceForTest surface(surface_control_points, rho, k_stretch, k_shear, k_bend, num_u_segments, num_v_segments, stretch_u, stretch_v);
-    GenerateDerivatives(surface, Energy, Randomize, 1e-8, 1e-4)
+    GenerateDerivativesWithInfo(surface, Energy, Randomize, 1e-8, 1e-4)
 
-    std::cout << "Energy: " << surface.GetEnergy() << std::endl;
+    std::cout << "Energy: " << surface.GetEnergy(Matrix3d::Identity(), Vector3d::Zero()) << std::endl;
 
 //    PrintGradient()
     EXPECT_NEAR((numeric_gradient - analytic_gradient).norm() / numeric_gradient.norm(), 0, 1e-2);

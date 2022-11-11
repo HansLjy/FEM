@@ -28,10 +28,11 @@ public:
 
     void AddExternalForce(const ExternalForce &force) override;
 
-    double GetExternalEnergy() const override;
-    VectorXd GetExternalEnergyGradient() const override;
-    Vector3d GetTotalExternalForce() const override;
-    void GetExternalEnergyHessian(COO &coo, int x_offset, int y_offset) const override;
+    double GetExternalEnergy(const Matrix3d &rotation, const Vector3d &position) const override;
+    VectorXd GetExternalEnergyGradient(const Matrix3d &rotation, const Vector3d &position) const override;
+    Vector3d GetTotalExternalForce(const Matrix3d &rotation, const Vector3d &position) const override;
+    void GetExternalEnergyHessian(const Matrix3d &rotation, const Vector3d &position, COO &coo, int x_offset,
+                                  int y_offset) const override;
 
     VectorXd GetInertialForce(const Eigen::Vector3d &v, const Eigen::Vector3d &a, const Eigen::Vector3d &omega, const Eigen::Vector3d &alpha, const Eigen::Matrix3d &rotation) const override;
 

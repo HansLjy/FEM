@@ -48,9 +48,10 @@ public:
     virtual void GetMass(COO &coo, int x_offset, int y_offset) const = 0;           // General mass (coo form)
     virtual double GetTotalMass() const = 0;
 
-    double GetEnergy() const;
-    VectorXd GetEnergyGradient() const;
-    void GetEnergyHessian(COO& coo, int x_offset, int y_offset) const;
+    double GetEnergy(const Matrix3d &rotation, const Vector3d &position) const;
+    VectorXd GetEnergyGradient(const Matrix3d &rotation, const Vector3d &position) const;
+    void
+    GetEnergyHessian(const Matrix3d &rotation, const Vector3d &position, COO &coo, int x_offset, int y_offset) const;
 
     virtual double GetPotential() const = 0;
     virtual VectorXd GetPotentialGradient() const = 0;
@@ -62,10 +63,11 @@ public:
 
     virtual void AddExternalForce(const ExternalForce& force);
 
-    virtual double GetExternalEnergy() const;
-    virtual VectorXd GetExternalEnergyGradient() const;
-    virtual Vector3d GetTotalExternalForce() const = 0;
-    virtual void GetExternalEnergyHessian(COO& coo, int x_offset, int y_offset) const;
+    virtual double GetExternalEnergy(const Matrix3d &rotation, const Vector3d &position) const;
+    virtual VectorXd GetExternalEnergyGradient(const Matrix3d &rotation, const Vector3d &position) const;
+    virtual Vector3d GetTotalExternalForce(const Matrix3d &rotation, const Vector3d &position) const = 0;
+    virtual void GetExternalEnergyHessian(const Matrix3d &rotation, const Vector3d &position, COO &coo, int x_offset,
+                                          int y_offset) const;
 
     virtual void GetShape(MatrixXd& vertices, MatrixXi& topo) const = 0;
 
@@ -108,7 +110,7 @@ public:
     explicit SampledObject(const VectorXd& mass);
     void GetMass(COO &coo, int x_offset, int y_offset) const override;
     double GetTotalMass() const override;
-    Vector3d GetTotalExternalForce() const override;
+    Vector3d GetTotalExternalForce(const Matrix3d &rotation, const Vector3d &position) const override;
 
     VectorXd GetInertialForce(const Vector3d &v, const Vector3d &a, const Vector3d &omega, const Vector3d &alpha,
                               const Matrix3d &rotation) const override;

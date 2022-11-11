@@ -32,7 +32,7 @@ public:
 
     double GetEnergy() const override;
     VectorXd GetEnergyGradient() const override;
-    void GetEnergyHessian(SparseMatrixXd& hessian) const override {_system.GetEnergyHessian(hessian);}
+    void GetEnergyHessian(SparseMatrixXd& hessian) const override {_system.GetEnergyHessian(_frame_rotation, _frame_x, hessian);}
 
     VectorXd GetConstraint(const VectorXd &x) const override {return _system.GetConstraint(x);}
     void GetConstraintGradient(SparseMatrixXd &gradient, const VectorXd &x) const override {_system.GetConstraintGradient(gradient, x);}

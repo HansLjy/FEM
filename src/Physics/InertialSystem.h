@@ -43,13 +43,19 @@ public:
     void SetVelocity(const VectorXd& v) override;
 
     void GetMass(SparseMatrixXd& mass) const override;
-    double GetTotalMass() const;
-
     double GetEnergy() const override;
+
     VectorXd GetEnergyGradient() const override;
     void GetEnergyHessian(SparseMatrixXd& hessian) const override;
 
+    double GetTotalMass() const;
     Vector3d GetTotalExternalForce() const;
+
+    /** Utility **/
+    double GetEnergy(const Matrix3d& rotation, const Vector3d& position) const;
+    VectorXd GetEnergyGradient(const Matrix3d& rotation, const Vector3d& position) const;
+    void GetEnergyHessian(const Matrix3d &rotation, const Vector3d &position, SparseMatrixXd &hessian) const;
+    Vector3d GetTotalExternalForce(const Matrix3d& rotation, const Vector3d& position) const;
 
     int AddConstraint(const Constraint& constraint) override;
 

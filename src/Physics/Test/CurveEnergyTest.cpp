@@ -79,7 +79,7 @@ void Randomize(Curve& curve) {
 TEST(CurveTest, CurveEnergyTest) {
     InextensibleCurveForTest curve(start, end, num_segments, rho, alpha);
 
-    EXPECT_EQ(curve.GetEnergy(), 0);    // rest shape
+    EXPECT_EQ(curve.GetEnergy(Matrix3d::Identity(), Vector3d::Zero()), 0);    // rest shape
 
     Matrix3d R;
     Vector3d b, center, axis;
@@ -95,23 +95,23 @@ TEST(CurveTest, CurveEnergyTest) {
     }
 
     // rigid motion
-    EXPECT_LT(curve.GetEnergy(), 1e-10);
-    EXPECT_GT(curve.GetEnergy(), -1e-10);
+    EXPECT_LT(curve.GetEnergy(Matrix3d::Identity(), Vector3d::Zero()), 1e-10);
+    EXPECT_GT(curve.GetEnergy(Matrix3d::Identity(), Vector3d::Zero()), -1e-10);
 
     Randomize(curve);
-    EXPECT_GT(curve.GetEnergy(), 0);
+    EXPECT_GT(curve.GetEnergy(Matrix3d::Identity(), Vector3d::Zero()), 0);
 
     for (int i = 1; i < num_segments; i++) {
         curve._alpha(i) = 0;
     }
-    EXPECT_EQ(curve.GetEnergy(), 0);
+    EXPECT_EQ(curve.GetEnergy(Matrix3d::Identity(), Vector3d::Zero()), 0);
 
     InextensibleCurveForTest simple_curve(start, end, 2, 1, 0.1);
     simple_curve._x.block<3, 1>(3, 0) << 0.5, 0, 0;
     simple_curve._x.block<3, 1>(6, 0) << 0.5, 0.5, 0;
 
     double k = 2 * tan(EIGEN_PI / 4);
-    EXPECT_FLOAT_EQ(0.1 * k * k / 0.5, simple_curve.GetEnergy());
+    EXPECT_FLOAT_EQ(0.1 * k * k / 0.5, simple_curve.GetEnergy(Matrix3d::Identity(), Vector3d::Zero()));
 }
 
 #include "DerivativeTest.h"
@@ -119,7 +119,7 @@ TEST(CurveTest, CurveEnergyTest) {
 TEST(CurveTest, CurveGradientTest) {
     InextensibleCurveForTest curve(start, end, num_segments, rho, alpha);
 
-    GenerateDerivatives(curve, Energy, Randomize, 1e-8, 1e-4)
+    GenerateDerivativesWithInfo(curve, Energy, Randomize, 1e-8, 1e-4)
 
     std::cout << "Analytic gradient: \n" << analytic_gradient.transpose() << std::endl;
     std::cout << "Numeric gradient: \n" << numeric_gradient.transpose() << std::endl;
@@ -148,7 +148,7 @@ TEST(CurveTest, CurveGravityTest) {
     curve.AddExternalForce(gravity);
     curve.AddExternalForce(gravity);
 
-    EXPECT_NEAR(curve.GetExternalEnergy(), 0, 1e-10);  // neutral
+    EXPECT_NEAR(curve.GetExternalEnergy(Matrix3d::Identity(), Vector3d::Zero()), 0, 1e-10);  // neutral
 
     for (int i = 1; i <= num_segments; i++) {
         Eigen::Vector2d delta;
@@ -159,7 +159,7 @@ TEST(CurveTest, CurveGravityTest) {
         delta_3d << delta(0), delta(1), 0;
         curve._x.block<3, 1>(3 * i, 0) = curve._x.block<3, 1>(3 * (i - 1), 0) + delta_3d;
     }
-    EXPECT_NEAR(curve.GetExternalEnergy(), rho * (cur_end - cur_start).norm() * g_norm * 1 * 2, 1e-10);
+    EXPECT_NEAR(curve.GetExternalEnergy(Matrix3d::Identity(), Vector3d::Zero()), rho * (cur_end - cur_start).norm() * g_norm * 1 * 2, 1e-10);
 }
 
 TEST(GravityTest, CurveGravityDerivativeTest) {
@@ -168,7 +168,7 @@ TEST(GravityTest, CurveGravityDerivativeTest) {
     curve.AddExternalForce(gravity);
     curve.AddExternalForce(gravity);
 
-    GenerateDerivatives(curve, ExternalEnergy, Randomize, 1e-8, 1e-4)
+    GenerateDerivativesWithInfo(curve, ExternalEnergy, Randomize, 1e-8, 1e-4)
 
     EXPECT_NEAR((numeric_gradient - analytic_gradient).norm() / numeric_gradient.size(), 0, 1e-2);
     EXPECT_NEAR((numeric_hessian - analytic_hessian).norm() / numeric_hessian.size(), 0, 1e-2);
@@ -191,7 +191,7 @@ void ExtensibleRandomize(Curve& curve) {
 TEST(ExtensibleCurveTest, EnergyGradientTest) {
     ExtensibleCurveForTest curve(start, end, num_segments, rho, alpha);
 
-    GenerateDerivatives(curve, Energy, ExtensibleRandomize, 1e-8, 1e-4)
+    GenerateDerivativesWithInfo(curve, Energy, ExtensibleRandomize, 1e-8, 1e-4)
 
     std::cerr << "Analytic derivative: " << analytic_gradient.transpose() << std::endl;
     std::cerr << "Numeric derivative: " << numeric_gradient.transpose() << std::endl;

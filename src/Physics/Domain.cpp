@@ -64,10 +64,10 @@ void Domain::CalculateTotalMass() {
 }
 
 void Domain::CalculateTotalExternalForce() {
-    _total_external_force = _system.GetTotalExternalForce();
+    _total_external_force = _system.GetTotalExternalForce(_frame_rotation, _frame_x);
     for (const auto& subdomain : _subdomains) {
         subdomain->CalculateTotalExternalForce();
-        _total_external_force += subdomain->_total_external_force;
+        _total_external_force += _frame_rotation.transpose() * subdomain->_frame_rotation * subdomain->_total_external_force;
     }
 }
 
@@ -83,10 +83,18 @@ void Domain::CalculateInterfaceForce() {
     }
     _interface_force.setZero();
     const int num_subdomains = _subdomains.size();
+    Matrix3d frame_angular_velocity = HatMatrix(_frame_angular_velocity);
+    Matrix3d omega = _frame_rotation.transpose() * frame_angular_velocity;
+    Matrix3d omega2 = omega * frame_angular_velocity;
+    Matrix3d alpha = _frame_rotation.transpose() * HatMatrix(_frame_angular_acceleration);
     for (int i = 0; i < num_subdomains; i++) {
+        Vector3d v_rel = _subdomains[i]->_frame_v - _frame_v;
+        Vector3d x_rel = _subdomains[i]->_frame_x - _frame_x;
         _interface_force += _subdomain_projections[i].transpose()
                           * _frame_rotation.transpose() * _subdomains[i]->_frame_rotation
                           * _subdomains[i]->_total_external_force;
+        _interface_force -= _subdomain_projections[i].transpose()
+                          * _subdomains[i]->_total_mass * (_frame_a + 2 * omega * v_rel + alpha * x_rel + omega2 * x_rel);
     }
 }
 
@@ -131,11 +139,11 @@ void Domain::GetMass(SparseMatrixXd &mass) const {
 
 double Domain::GetEnergy() const {
     VectorXd x = _system.GetCoordinate();
-    return _system.GetEnergy() - x.dot(_interface_force + _inertial_force);
+    return _system.GetEnergy(_frame_rotation, _frame_x) - x.dot(_interface_force + _inertial_force);
 }
 
 VectorXd Domain::GetEnergyGradient() const {
-    return _system.GetEnergyGradient() - _interface_force - _inertial_force;
+    return _system.GetEnergyGradient(_frame_rotation, _frame_x) - _interface_force - _inertial_force;
 }
 
 void Domain::UpdateSettings(const json &config) {

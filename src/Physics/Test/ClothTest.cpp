@@ -109,7 +109,7 @@ TEST(ClothTest, ClothEnergyTest) {
         cloth._x.segment<3>(j) = R * cloth._x.segment<3>(j) + b;
     }
 
-    EXPECT_NEAR(cloth.GetEnergy(), 0, 1e-10);
+    EXPECT_NEAR(cloth.GetEnergy(Matrix3d::Identity(), Vector3d::Zero()), 0, 1e-10);
 }
 
 #include "DerivativeTest.h"
@@ -123,7 +123,7 @@ TEST(ClothTest, ClothEnergyDerivativeTest) {
     const int num_v_segments = 1;
     ClothForTest cloth(rho, 1, 1, 1, start, u_end, v_end, num_u_segments, num_v_segments, stretch_u, stretch_v);
 
-    GenerateDerivatives(cloth, Energy, Randomize, 1e-8, 1e-4)
+    GenerateDerivativesWithInfo(cloth, Energy, Randomize, 1e-8, 1e-4)
 
     PrintGradient()
     PrintHessian()

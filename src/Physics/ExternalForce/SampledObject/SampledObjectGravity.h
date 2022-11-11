@@ -12,9 +12,10 @@ public:
     SampledObjectGravity(const json& config);
 
     SampledObjectGravity(const Vector3d& g);
-    double Energy(const Object &obj) const override;
-    VectorXd EnergyGradient(const Object &obj) const override;
-    void EnergyHessian(const Object &obj, COO &coo, int x_offset, int y_offset) const override;
+    double Energy(const Object &obj, const Matrix3d &rotation, const Vector3d &position) const override;
+    VectorXd EnergyGradient(const Object &obj, const Matrix3d &rotation, const Vector3d &position) const override;
+    void EnergyHessian(const Object &obj, const Matrix3d &rotation, const Vector3d &position, COO &coo, int x_offset,
+                       int y_offset) const override;
 
     DERIVED_DECLARE_CLONE(ExternalForce)
 protected:
