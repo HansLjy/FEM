@@ -4,13 +4,14 @@
 #include "EigenAll.h"
 #include <vector>
 #include "RenderObject/RendererObject.hpp"
+#include "Shader/Shader.hpp"
 
 class Scene {
 public:
     /**
      * @brief Draw the whole scene
      */
-    void Draw();
+    void Draw(Shader& shader);
 
     /**
      * @brief Add a new slot for meshes into the scene
@@ -30,9 +31,9 @@ public:
      * @brief Set the Mesh for the seleted mesh
      * 
      */
-    void SetMesh(const MatrixXd& vertices, const MatrixXi& topo);
+    void SetMesh(const MatrixXd& vertices, const MatrixXi& topo, const Matrix3d& R, const Vector3d& b);
 
-    int AddMesh(const MatrixXd& vertices, const MatrixXi& topo);
+    int AddMesh(const MatrixXd& vertices, const MatrixXi& topo, const Matrix3d& R, const Vector3d& b);
 
 private:
     std::vector<RendererObject> _meshes;

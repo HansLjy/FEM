@@ -95,11 +95,49 @@ void SampledObject::GetMass(COO &coo, int x_offset, int y_offset) const {
     }
 }
 
+double SampledObject::GetTotalMass() const {
+    int num_points = _mass.size();
+    double total_mass = 0;
+    for (int i = 0; i < num_points; i++) {
+        total_mass += _mass(i);
+    }
+    return total_mass;
+}
+
+Vector3d SampledObject::GetTotalExternalForce() const {
+    VectorXd force = -GetExternalEnergyGradient();
+    int num_points = force.size() / 3;
+    Vector3d total_force = Vector3d::Zero();
+    for (int i = 0, j = 0; i < num_points; i++, j += 3) {
+        total_force += force.segment<3>(j);
+    }
+    return total_force;
+}
+
+VectorXd
+SampledObject::GetInertialForce(const Vector3d &v, const Vector3d &a, const Vector3d &omega, const Vector3d &alpha,
+                                const Matrix3d &rotation) const {
+    VectorXd inertial_force(_x.size());
+    int num_points = _x.size() / 3;
+    for (int i = 0, j = 0; i < num_points; i++, j += 3) {
+        Vector3d x_object = rotation * _x.segment<3>(j);
+        Vector3d v_object = rotation * _v.segment<3>(j);
+        inertial_force.segment<3>(j) = - _mass(i) * rotation.transpose() * (
+            alpha.cross(x_object)
+            + omega.cross(omega.cross(x_object))
+            + 2 * omega.cross(v_object)
+            + a
+        );
+    }
+    return inertial_force;
+}
+
 #include "Curve/InextensibleCurve.h"
 #include "ReducedObject/ReducedBezierCurve.h"
 #include "Curve/ExtensibleCurve.h"
 #include "Cloth/Cloth.h"
 #include "ReducedObject/ReducedBezierSurface.h"
+#include "Tree/TreeTrunk.h"
 
 BEGIN_DEFINE_XXX_FACTORY(Object)
     ADD_PRODUCT("inextensible-curve", InextensibleCurve)
@@ -107,4 +145,5 @@ BEGIN_DEFINE_XXX_FACTORY(Object)
     ADD_PRODUCT("reduced-bezier-curve", ReducedBezierCurve)
     ADD_PRODUCT("cloth", Cloth)
     ADD_PRODUCT("reduced-bezier-surface", ReducedBezierSurface)
+    ADD_PRODUCT("tree-trunk", TreeTrunk)
 END_DEFINE_XXX_FACTORY

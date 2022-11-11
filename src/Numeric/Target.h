@@ -16,6 +16,9 @@ public:
     virtual VectorXd GetCoordinate() const = 0;
     virtual VectorXd GetVelocity() const = 0;
 
+    virtual void SetCoordinate(const VectorXd& x) = 0;
+    virtual void SetVelocity(const VectorXd& v) = 0;
+
     virtual void GetMass(SparseMatrixXd& mass) const = 0;
 
     virtual double GetEnergy() const = 0;

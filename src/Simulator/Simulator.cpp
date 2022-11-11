@@ -26,24 +26,9 @@ void Simulator::LoadScene(const std::string &config) {
     const auto& integrator_config = config_json["integrator"];
     _integrator = IntegratorFactory::GetIntegrator(integrator_config["type"], integrator_config);
 
-    const auto& objects_config = config_json["objects"];
-    for (const auto& object_config : objects_config) {
-        _system.AddObject(*ObjectFactory::GetObject(object_config["type"], object_config), object_config["name"]);
-    }
-
-    const auto& constraints_config = config_json["constraints"];
-    for (const auto& constraint_config : constraints_config) {
-        _system.AddConstraint(*ConstraintFactory::GetConstraint(_system, constraint_config));
-    }
-
-    const auto& external_forces_config = config_json["external-forces"];
-    for (const auto& external_force_config : external_forces_config) {
-        int idx = _system.GetIndex(external_force_config["object-name"]);
-        const auto& external_force = ExternalForceFactory::GetExternalForce(external_force_config["type"], external_force_config);
-        _system.GetObject(idx)->AddExternalForce(*external_force);
-    }
-
-    _system.UpdateSettings();
+    const auto& system_config = config_json["system"];
+    _system = PhysicsSystemFactory::GetPhysicsSystem(system_config["type"], system_config);
+    _system->UpdateSettings(system_config);
 
     const auto& renderer_config_json = config_json["renderer"];
     const auto& camera_config_json = renderer_config_json["camera"];
@@ -65,11 +50,7 @@ void Simulator::LoadScene(const std::string &config) {
 void Simulator::Simulate() {
     double current_time = 0;
     while(current_time < _duration) {
-        VectorXd x_next, v_next;
-        _integrator->Step(_system, _time_step, x_next, v_next);
-        _system.SetCoordinate(x_next);
-        _system.SetVelocity(v_next);
-
+        _integrator->Step(*_system, _time_step);
         current_time += _time_step;
     }
 }
@@ -92,33 +73,31 @@ void Simulator::InitializeScene(Scene &scene) {
         _light_Kc, _light_Kl, _light_Kq
     );
 
-    const auto& objs = _system._objs;
-    _obj_scene_id.resize(_system._size);
-    for (int i = 0; i < _system._size; i++) {
-        if (_system._used[i]) {
-            const auto& obj = objs[i];
-            MatrixXd vertices;
-            MatrixXi topo;
-            obj->GetShape(vertices, topo);
-            _obj_scene_id[i] = scene.AddMesh(vertices, topo);
-        }
+    int id = 0;
+    for (auto itr = _system->GetIterator(); !itr->IsDone(); itr->Forward(), id++) {
+        const auto obj = itr->GetObject();
+        MatrixXd vertices;
+        MatrixXi topo;
+        obj->GetShape(vertices, topo);
+//        std::cerr << "Rotation " << id << ":\n" << itr->GetRotation() << std::endl;
+//        std::cerr << "Translation " << id << ":\n" << itr->GetTranslation().transpose() << std::endl;
+        _obj_id2scene_id.push_back(scene.AddMesh(vertices, topo, itr->GetRotation(), itr->GetTranslation()));
     }
 }
 
 void Simulator::Processing(Scene &scene) {
-    VectorXd x_next, v_next;
-    _integrator->Step(_system, _time_step, x_next, v_next);
-    _system.SetCoordinate(x_next);
-    _system.SetVelocity(v_next);
-    const auto& objs = _system._objs;
-    for (int i = 0; i < _system._size; i++) {
-        if (_system._used[i]) {
-            const auto& obj = objs[i];
-            MatrixXd vertices;
-            MatrixXi topo;
-            obj->GetShape(vertices, topo);
-            scene.SelectData(_obj_scene_id[i]);
-            scene.SetMesh(vertices, topo);
-        }
+    _integrator->Step(*_system, _time_step);
+    int id = 0;
+    for (auto itr = _system->GetIterator(); !itr->IsDone(); itr->Forward(), id++) {
+        const auto obj = itr->GetObject();
+        MatrixXd vertices;
+        MatrixXi topo;
+        obj->GetShape(vertices, topo);
+        scene.SelectData(_obj_id2scene_id[id]);
+//        if (id == 1) {
+//            std::cerr << "Rotation " << id << ":\n" << itr->GetRotation() << std::endl;
+//            std::cerr << "Translation " << id << ":\n" << itr->GetTranslation().transpose() << std::endl;
+//        }
+        scene.SetMesh(vertices, topo, itr->GetRotation(), itr->GetTranslation());
     }
 }

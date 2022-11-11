@@ -6,7 +6,7 @@
 #define FEM_SIMULATOR_H
 
 #include "GUI/GUI.hpp"
-#include "System.h"
+#include "InertialSystem.h"
 #include "Integrator/FastProjection.h"
 
 #include <string>
@@ -28,10 +28,10 @@ public:
 private:
     double _duration;
     double _time_step;
-    System _system;
+    PhysicsSystem *_system;
     const Integrator* _integrator;
 
-    std::vector<int> _obj_scene_id; // from id in system to id in scene
+    std::vector<int> _obj_id2scene_id; // from id in system to id in scene
 
     glm::vec3 _camera_position, _camera_look, _camera_up;
     glm::vec3 _light_position, _light_ambient, _light_diffuse, _light_specular;

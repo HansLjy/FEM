@@ -20,6 +20,7 @@ public:
     // note: if any derived class found that mass is a constant matrix
     //       it should override it. This function will evaluate every time
     void GetMass(COO &coo, int x_offset, int y_offset) const override;
+    double GetTotalMass() const override;
 
     double GetPotential() const override;
     VectorXd GetPotentialGradient() const override;
@@ -29,7 +30,10 @@ public:
 
     double GetExternalEnergy() const override;
     VectorXd GetExternalEnergyGradient() const override;
+    Vector3d GetTotalExternalForce() const override;
     void GetExternalEnergyHessian(COO &coo, int x_offset, int y_offset) const override;
+
+    VectorXd GetInertialForce(const Eigen::Vector3d &v, const Eigen::Vector3d &a, const Eigen::Vector3d &omega, const Eigen::Vector3d &alpha, const Eigen::Matrix3d &rotation) const override;
 
     int GetConstraintSize() const override;
     VectorXd GetInnerConstraint(const VectorXd &x) const override;

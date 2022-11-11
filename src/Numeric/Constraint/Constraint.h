@@ -5,9 +5,11 @@
 #ifndef FEM_CONSTRAINT_H
 #define FEM_CONSTRAINT_H
 
-#include "System.h"
 #include "EigenAll.h"
+#include "Pattern.h"
 #include <exception>
+
+class InertialSystem;
 
 class Constraint {
 public:
@@ -41,7 +43,7 @@ protected:
 
 class ConstraintFactory {
 public:
-    static Constraint *GetConstraint(const System &system, const nlohmann::json &config);
+    static Constraint *GetConstraint(const InertialSystem &system, const nlohmann::json &config);
 };
 
 #endif //FEM_CONSTRAINT_H

@@ -41,6 +41,10 @@ void ReducedObject::GetMass(COO &coo, int x_offset, int y_offset) const {
     LUMP2D(Mass, mass)
 }
 
+double ReducedObject::GetTotalMass() const {
+    return _proxy->GetTotalMass();
+}
+
 double ReducedObject::GetPotential() const {
     return _proxy->GetPotential();
 }
@@ -65,8 +69,18 @@ VectorXd ReducedObject::GetExternalEnergyGradient() const {
     return _base.transpose() * _proxy->GetExternalEnergyGradient();
 }
 
+Vector3d ReducedObject::GetTotalExternalForce() const {
+    return _proxy->GetTotalExternalForce();
+}
+
 void ReducedObject::GetExternalEnergyHessian(COO &coo, int x_offset, int y_offset) const {
     LUMP2D(ExternalEnergyHessian, hessian)
+}
+
+VectorXd
+ReducedObject::GetInertialForce(const Eigen::Vector3d &v, const Eigen::Vector3d &a, const Eigen::Vector3d &omega,
+                                const Eigen::Vector3d &alpha, const Eigen::Matrix3d &rotation) const {
+    return _base.transpose() * _proxy->GetInertialForce(v, a, omega, alpha, rotation);
 }
 
 int ReducedObject::GetConstraintSize() const {

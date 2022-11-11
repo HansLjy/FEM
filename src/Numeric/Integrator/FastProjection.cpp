@@ -10,7 +10,7 @@
 FastProjectionIntegrator::FastProjectionIntegrator(double tolerance, int max_step) : _tolerance(tolerance), _max_step(max_step) {}
 FastProjectionIntegrator::FastProjectionIntegrator(const nlohmann::json &config) : FastProjectionIntegrator(config["tolerance"], config["max_step"]) {}
 
-void FastProjectionIntegrator::Step(Target &target, double h, VectorXd &x_next, VectorXd &v_next) const {
+void FastProjectionIntegrator::Step(Target &target, double h) const {
     START_TIMING(stepping)
 
     // step without constraint
@@ -36,11 +36,11 @@ void FastProjectionIntegrator::Step(Target &target, double h, VectorXd &x_next, 
     if (LDLT.info() != Eigen::Success) {
         spdlog::warn("A is not SPD!");
     }
-    v_next = LDLT.solve(b);
+    VectorXd v_next = LDLT.solve(b);
 //    std::cout << "v_next: \n" << v_next.transpose() << std::endl;
 
     // Project back to constraint manifold
-    x_next = x + h * v_next;
+    VectorXd x_next = x + h * v_next;
     VectorXd C = target.GetConstraint(x_next);
 
     Eigen::LDLT<MatrixXd> LDLT_dense;
@@ -75,5 +75,7 @@ void FastProjectionIntegrator::Step(Target &target, double h, VectorXd &x_next, 
     v_next = (x_next - x) / h;
 //    std::cout << "Coordinate: " << x_next.transpose() << std::endl;
 
+    target.SetVelocity(v_next);
+    target.SetCoordinate(x_next);
     STOP_TIMING("stepping", stepping)
 }

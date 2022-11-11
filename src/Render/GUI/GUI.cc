@@ -144,17 +144,17 @@ void GUI::MainLoop() {
 
         Processing(scene);
 
-        scene.Draw();
+        scene.Draw(object_shader);
 
         // TODO draw floor
-        floor_shader.Use();
-        floor_shader.SetFloat("view", view);
-        floor_shader.SetFloat("projection", projection);
-
-        floor_shader.SetFloat("near", _camera->_near);
-        floor_shader.SetFloat("far", _camera->_far);
-        glBindVertexArray(_floor_VAO);
-        glDrawArrays(GL_TRIANGLES, 0, 6);
+//        floor_shader.Use();
+//        floor_shader.SetFloat("view", view);
+//        floor_shader.SetFloat("projection", projection);
+//
+//        floor_shader.SetFloat("near", _camera->_near);
+//        floor_shader.SetFloat("far", _camera->_far);
+//        glBindVertexArray(_floor_VAO);
+//        glDrawArrays(GL_TRIANGLES, 0, 6);
 
         glfwSwapBuffers(_window);
         glfwPollEvents();

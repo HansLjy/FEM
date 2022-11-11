@@ -15,6 +15,7 @@ void ExampleApp::InitializeScene(Scene &scene) {
         1.0f, 0.35f, 0.44f
     );
     id1 = scene.AddMesh();
+    id2 = scene.AddMesh();
 }
 
 void ExampleApp::Processing(Scene &scene) {
@@ -27,8 +28,6 @@ void ExampleApp::Processing(Scene &scene) {
                 -0.5, +0.5, -0.5,
                 +0.5, -0.5, -0.5,
                 -0.5, -0.5, -0.5;
-
-    vertices.array() += 1;
 
     Eigen::MatrixXi topo(12, 3);
     topo << 0, 1, 3,
@@ -45,7 +44,10 @@ void ExampleApp::Processing(Scene &scene) {
             3, 5, 7;
 
     scene.SelectData(id1);
-    scene.SetMesh(vertices, topo);
+    scene.SetMesh(vertices, topo, Matrix3d::Identity(), Vector3d::Zero());
 
-
+    Matrix3d R = Matrix3d(AngleAxisd(EIGEN_PI / 12, Vector3d::UnitX()));
+    Vector3d b = (Vector3d() << 1, 1, 1).finished();
+    scene.SelectData(id2);
+    scene.SetMesh(vertices, topo, R, b);
 }

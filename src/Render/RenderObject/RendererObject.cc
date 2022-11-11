@@ -7,7 +7,8 @@ RendererObject::RendererObject() {
     glGenVertexArrays(1, &_VAO);
 }
 
-void RendererObject::SetMesh(const MatrixXd &vertices, const MatrixXi &topos) {
+void RendererObject::SetMesh(const Eigen::MatrixXd &vertices, const Eigen::MatrixXi &topos, const Eigen::Matrix3d &R,
+                             const Eigen::Vector3d &b) {
     // TODO: make this more efficient
     if (_vertex_array_data.rows() != topos.size() || _vertex_array_data.cols() != 6) {
         _vertex_array_data.resize(topos.size(), 6);
@@ -26,6 +27,14 @@ void RendererObject::SetMesh(const MatrixXd &vertices, const MatrixXi &topos) {
             _vertex_array_data.block<1, 3>(cnt_rows + j, 0) = vertex[j];
             _vertex_array_data.block<1, 3>(cnt_rows + j, 3) = normal;
         }
+    }
+
+    for (int i = 0; i < 3; i++) {
+        for (int j = 0; j < 3; j++) {
+            _rotation[i][j] = R(j, i);  // This is because _rotation[i] means ith column,
+                                        // not row. GLM is fucking shit
+        }
+        _shift[i] = b(i);
     }
 
     BindVertexArray();

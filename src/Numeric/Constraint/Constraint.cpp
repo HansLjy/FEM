@@ -6,6 +6,7 @@
 #include "SampledObject/FixedPointConstraint.h"
 #include "SampledObject/JointConstraint.h"
 #include "JsonUtil.h"
+#include "InertialSystem.h"
 
 Constraint::Constraint(int num_objects, int size, const std::vector<int>& indices) : _num_objects(num_objects), _constraint_size(size), _object_index(indices) {
     _object_offsets.resize(num_objects);
@@ -28,7 +29,7 @@ void Constraint::SetOffset(int offset_id, int offset) {
 }
 
 Constraint *
-ConstraintFactory::GetConstraint(const System &system, const nlohmann::json &config) {
+ConstraintFactory::GetConstraint(const InertialSystem &system, const nlohmann::json &config) {
     std::string type = config["type"];
     const auto& object_names = config["object-names"];
     std::vector<int> object_idx;

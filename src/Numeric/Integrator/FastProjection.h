@@ -11,7 +11,7 @@ class FastProjectionIntegrator final : public Integrator {
 public:
     explicit FastProjectionIntegrator(const json& config);
     FastProjectionIntegrator(double tolerance, int max_step);
-    void Step(Target &target, double h, VectorXd &x_next, VectorXd &v_next) const override;
+    void Step(Target &target, double h) const override;
 
 private:
     double _tolerance;

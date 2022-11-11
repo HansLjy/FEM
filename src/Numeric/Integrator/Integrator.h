@@ -12,7 +12,7 @@
 
 class Integrator {
 public:
-    virtual void Step(Target &target, double h, VectorXd &x_next, VectorXd &v_next) const = 0;
+    virtual void Step(Target &target, double h) const = 0;
     virtual ~Integrator() = default;
 };
 
