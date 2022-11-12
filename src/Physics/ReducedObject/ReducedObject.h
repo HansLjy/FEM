@@ -10,7 +10,7 @@
 
 class ReducedObject : public Object {
 public:
-    ReducedObject(const VectorXd &x, const Object &proxy, const SparseMatrixXd &base);
+    ReducedObject(const VectorXd &x, const Object &proxy, const SparseMatrixXd &base, const VectorXd &shift);
 
     void SetCoordinate(const Eigen::VectorXd &x) override;
     void SetVelocity(const Eigen::VectorXd &v) override;
@@ -34,7 +34,8 @@ public:
     void GetExternalEnergyHessian(const Matrix3d &rotation, const Vector3d &position, COO &coo, int x_offset,
                                   int y_offset) const override;
 
-    VectorXd GetInertialForce(const Eigen::Vector3d &v, const Eigen::Vector3d &a, const Eigen::Vector3d &omega, const Eigen::Vector3d &alpha, const Eigen::Matrix3d &rotation) const override;
+    VectorXd GetInertialForce(const Eigen::Vector3d &v, const Eigen::Vector3d &a, const Eigen::Vector3d &omega,
+                              const Eigen::Vector3d &alpha, const Eigen::Matrix3d &rotation) const override;
 
     int GetConstraintSize() const override;
     VectorXd GetInnerConstraint(const VectorXd &x) const override;
@@ -51,6 +52,7 @@ public:
 protected:
     Object* _proxy;
     SparseMatrixXd _base;
+    VectorXd _shift;
 };
 
 #endif //FEM_REDUCEDOBJECT_H

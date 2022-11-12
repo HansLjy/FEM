@@ -23,6 +23,8 @@ using Eigen::RowVector3i;
 using Eigen::RowVector2i;
 using Eigen::RowVector4i;
 
+using Eigen::Ref;
+
 using Eigen::Dynamic;
 
 typedef Eigen::Vector<double, 5> Vector5d;

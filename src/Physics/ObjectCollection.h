@@ -22,6 +22,8 @@ public:
     virtual int AddConstraint(const Constraint& constraint) = 0;
     virtual int GetIndex(const std::string& name) const = 0;
 
+    virtual int GetOffset(int idx) const = 0;
+
     virtual ObjectIterator* GetIterator() = 0;
 };
 

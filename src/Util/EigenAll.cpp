@@ -40,5 +40,5 @@ Matrix<double, 9, 3> GetVecHatMatrix() {
 
 Vector3d SkewVector(const Matrix3d& mat) {
     Matrix3d skew_matrix = (mat - mat.transpose()) / 2;
-    return (Vector3d() << mat(2, 1), mat(0, 2), mat(1, 0)).finished();
+    return (Vector3d() << skew_matrix(2, 1), skew_matrix(0, 2), skew_matrix(1, 0)).finished();
 }

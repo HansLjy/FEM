@@ -28,14 +28,6 @@ public:
         return _v;
     }
 
-    VectorXd& GetCoordinate() {
-        return _x;
-    }
-
-    VectorXd& GetVelocity() {
-        return _v;
-    }
-
     virtual void SetCoordinate(const VectorXd& x) {
         _x = x;
     }
@@ -104,6 +96,7 @@ protected:
 };
 
 class SampledObjectGravity;
+class TreeTrunkGravity;
 
 class SampledObject : virtual public Object {
 public:
@@ -119,6 +112,7 @@ public:
     MIDDLE_DECLARE_CLONE(Object)
 
     friend class SampledObjectGravity;
+    friend class TreeTrunkGravity;
 
 protected:
     const VectorXd _mass;

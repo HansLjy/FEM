@@ -8,6 +8,8 @@
 #include "ReducedObject.h"
 #include "Curve/InextensibleCurve.h"
 
+class ReducedTreeTrunk;
+
 class ReducedBezierCurve : public ReducedObject {
 public:
     explicit ReducedBezierCurve(const json& config);
@@ -16,9 +18,12 @@ public:
 
     DERIVED_DECLARE_CLONE(Object)
 
+    friend class ReducedTreeTrunk;
 private:
     static VectorXd GenerateSamplePoints(int num_segments, const VectorXd& control_points);
     static SparseMatrixXd GenerateBase(int num_segment);
+    static VectorXd GenerateShift(int num_segments);
+
 };
 
 #endif //FEM_REDUCEDBEZIERCURVE_H

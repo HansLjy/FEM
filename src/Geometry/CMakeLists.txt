@@ -5,6 +5,7 @@ file(GLOB_RECURSE GEOMETRY_SOURCE_FILE
         ClothShape/*.cpp
         Mesh/*.cpp
         Rigid/*.cpp
+        TreeShape/*.cpp
     )
 
 if(BUILD_TEST)

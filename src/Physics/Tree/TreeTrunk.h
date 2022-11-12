@@ -1,26 +1,38 @@
 //
-// Created by hansljy on 11/10/22.
+// Created by hansljy on 11/11/22.
 //
 
 #ifndef FEM_TREETRUNK_H
 #define FEM_TREETRUNK_H
 
-#include "ReducedObject/ReducedBezierCurve.h"
+#include "Curve/ExtensibleCurve.h"
 
-class TreeDomain;
+class TreeTrunkGravity;
+class TreeTrunkShape;
 
-class TreeTrunk : public ReducedBezierCurve {
+class TreeTrunk : public SampledObject, public ShapedObject {
 public:
-    explicit TreeTrunk(const json& json);
-    TreeTrunk(int num_segments, double rho, double alpha_max, double alpha_min,
-              const VectorXd &control_points, const Vector3d& x_root);
+    TreeTrunk(double rho, double alpha_max, double alpha_min, double radius_max, double radius_min, double k, const VectorXd &x, const Vector3d& root);
+    double GetPotential() const override;
+    VectorXd GetPotentialGradient() const override;
+    void GetPotentialHessian(COO &coo, int x_offset, int y_offset) const override;
 
-    friend class TreeDomain;
     DERIVED_DECLARE_CLONE(Object)
+
+    friend class TreeTrunkGravity;
+    friend class TreeTrunkShape;
+
 protected:
-    const Vector3d _x_root; // every tree trunk has a root, which is supposed
-                            // to be in fixed position in the material frame
-                            // the root will move along with the parent component
+    const int _num_points;            // number of sampled points (end points included)
+    const double _k;
+    const Vector3d _root;
+    VectorXd _alpha;
+    VectorXd _x_rest;           // rest shape of the curve
+    VectorXd _rest_length;      // length of every edge in the rest shape
+    VectorXd _voronoi_length;   // length under the government of one point
+
+private:
+    static VectorXd GenerateMass(const VectorXd& x, double rho);
 };
 
 #endif //FEM_TREETRUNK_H

@@ -46,6 +46,8 @@ public:
     int AddConstraint(const Constraint& constraint) override {return _system.AddConstraint(constraint);}
     int GetIndex(const std::string& name) const override {return _system.GetIndex(name);}
 
+    int GetOffset(int idx) const override {return _system.GetOffset(idx);};
+
     ObjectIterator* GetIterator() override;
 
     /* domain */

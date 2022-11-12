@@ -48,6 +48,8 @@ public:
     VectorXd GetEnergyGradient() const override;
     void GetEnergyHessian(SparseMatrixXd& hessian) const override;
 
+    int GetOffset(int idx) const override;
+
     double GetTotalMass() const;
     Vector3d GetTotalExternalForce() const;
 

@@ -43,14 +43,6 @@ Curve::Curve(double rho, double alpha_max, double alpha_min, const VectorXd &x)
 
 #include "JsonUtil.h"
 
-void Curve::GetMass(COO &coo, int x_offset, int y_offset) const {
-    for (int i = 0, j = 0; i < _num_points; i++, j += 3) {
-        coo.push_back(Tripletd(x_offset + j, y_offset + j, _mass(i)));
-        coo.push_back(Tripletd(x_offset + j + 1, y_offset + j + 1, _mass(i)));
-        coo.push_back(Tripletd(x_offset + j + 2, y_offset + j + 2, _mass(i)));
-    }
-}
-
 int Curve::GetConstraintSize() const {
     return Object::GetConstraintSize();
 }

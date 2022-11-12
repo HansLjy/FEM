@@ -7,6 +7,9 @@
 #include "gtest/gtest.h"
 #include "spdlog/spdlog.h"
 
+class ClothForTest;
+void ClothRandomize(ClothForTest& cloth);
+
 class ClothForTest : public Cloth {
 public:
     ClothForTest(double rho, double k_stretch, double k_shear, double k_bend,
@@ -20,6 +23,7 @@ public:
 
     FRIEND_TEST(ClothTest, ClothInitializationTest);
     FRIEND_TEST(ClothTest, ClothEnergyTest);
+    friend void ClothRandomize(ClothForTest& cloth);
 };
 
 const double rho = 1;
@@ -114,8 +118,8 @@ TEST(ClothTest, ClothEnergyTest) {
 
 #include "DerivativeTest.h"
 
-void Randomize(Cloth& cloth) {
-    cloth.GetCoordinate().setRandom();
+void ClothRandomize(ClothForTest& cloth) {
+    cloth._x.setRandom();
 }
 
 TEST(ClothTest, ClothEnergyDerivativeTest) {
@@ -123,7 +127,7 @@ TEST(ClothTest, ClothEnergyDerivativeTest) {
     const int num_v_segments = 1;
     ClothForTest cloth(rho, 1, 1, 1, start, u_end, v_end, num_u_segments, num_v_segments, stretch_u, stretch_v);
 
-    GenerateDerivativesWithInfo(cloth, Energy, Randomize, 1e-8, 1e-4)
+    GenerateDerivativesWithInfo(cloth, Energy, ClothRandomize, 1e-8, 1e-4)
 
     PrintGradient()
     PrintHessian()
