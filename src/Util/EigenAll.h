@@ -52,4 +52,18 @@ Vector3d SkewVector(const Matrix3d& mat);
 Vector3d FindPerpendicular(const Vector3d& vec);
 Matrix<double, 9, 3> GetVecHatMatrix();
 
+template<int dim>
+Matrix<double, dim, dim> PositiveProject(const Eigen::Matrix<double, dim, dim>& matrix) {
+    typedef Eigen::Matrix<double, dim, dim> MatrixOfSize;
+    typedef Eigen::Vector<double, dim> VectorOfSize;
+    Eigen::SelfAdjointEigenSolver<MatrixOfSize> eigens(matrix);
+    MatrixOfSize eigen_vectors = eigens.eigenvectors();
+    VectorOfSize eigen_values = eigens.eigenvalues();
+    for (int i = 0; i < dim; i++) {
+        if (eigen_values[i] < 0) {
+            eigen_values[i] = 0;
+        }
+    }
+    return eigen_vectors * eigen_values.asDiagonal() * eigen_vectors.transpose();
+}
 #endif

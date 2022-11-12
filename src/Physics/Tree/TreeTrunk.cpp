@@ -203,6 +203,9 @@ void TreeTrunk::GetPotentialHessian(COO &coo, int x_offset, int y_offset) const 
                 ).transpose();
             }
         }
+#ifndef BUILD_TEST
+        hessian = PositiveProject(hessian);
+#endif
 
         if (i > 0) {
             for (int j = 0; j < 9; j++) {
@@ -233,6 +236,10 @@ void TreeTrunk::GetPotentialHessian(COO &coo, int x_offset, int y_offset) const 
                                + _k * _rest_length(i) / (e_norm * e_norm * e_norm) * e * e.transpose();
         hessian.block<3, 3>(0, 0) = hessian.block<3, 3>(3, 3) = sub_hessian;
         hessian.block<3, 3>(0, 3) = hessian.block<3, 3>(3, 0) = - sub_hessian;
+
+#ifndef BUILD_TEST
+        hessian = PositiveProject(hessian);
+#endif
 
         for (int j = 0; j < 6; j++) {
             for (int k = 0; k < 6; k++) {

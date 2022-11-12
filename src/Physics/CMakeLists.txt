@@ -20,4 +20,5 @@ target_link_libraries(Physics PRIVATE Numeric)
 
 if(BUILD_TEST)
     add_subdirectory(Test)
+    add_definitions(-DBUILD_TEST)
 endif()

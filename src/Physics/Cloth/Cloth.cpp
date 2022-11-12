@@ -277,6 +277,9 @@ void Cloth::GetPotentialHessian(COO &coo, int x_offset, int y_offset) const {
 
         Matrix6d pFpX = _pFpx(i);
         Matrix6d p2EpX2 = pFpX * p2CpF2_total * pFpX.transpose();
+#ifndef BUILD_TEST
+        p2EpX2 = PositiveProject(p2EpX2);
+#endif
         Matrix9d p2EpX2_full = Matrix9d::Zero();
         p2EpX2_full.block<6, 6>(3, 3) = p2EpX2;
         p2EpX2_full.block<6, 3>(3, 0) = - p2EpX2.block<6, 3>(0, 0) - p2EpX2.block<6, 3>(0, 3);
@@ -380,6 +383,9 @@ void Cloth::GetPotentialHessian(COO &coo, int x_offset, int y_offset) const {
         p2Cpx2 += pFpx * p2CpF2 * pFpx.transpose();
 
         Matrix9d p2Epx2 = _k_bend * pCpx * pCpx.transpose() + _k_bend * C * p2Cpx2;
+#ifndef BUILD_TEST
+        p2Epx2 = PositiveProject(p2Epx2);
+#endif
         Matrix12d p2Epx2_full;
         p2Epx2_full.block<9, 9>(3, 3) = p2Epx2;
         p2Epx2_full.block<9, 3>(3, 0) = - p2Epx2.block<9, 3>(0, 0) - p2Epx2.block<9, 3>(0, 3) - p2Epx2.block<9, 3>(0, 6);
