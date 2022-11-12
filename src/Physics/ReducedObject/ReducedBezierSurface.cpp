@@ -18,16 +18,21 @@ ReducedBezierSurface::ReducedBezierSurface(const json &config)
 ReducedBezierSurface::ReducedBezierSurface(const VectorXd &control_points, double rho, double k_stretch, double k_shear,
                                            double k_bend, int num_u_segments, int num_v_segments, double stretch_u, double stretch_v)
     : ReducedObject(control_points,
-        Cloth(rho, k_stretch, k_shear, k_bend,
-              GenerateX(control_points, num_u_segments, num_v_segments),
-              GenerateUVCoord(control_points, num_u_segments, num_v_segments),
-              GenerateTopo(num_u_segments, num_v_segments),
-              stretch_u,
-              stretch_v
-        ),
-      GetBase(num_u_segments, num_v_segments)) {}
+                    Cloth(rho, k_stretch, k_shear, k_bend,
+                          GenerateX(control_points, num_u_segments, num_v_segments),
+                          GenerateUVCoord(control_points, num_u_segments, num_v_segments),
+                          GenerateTopo(num_u_segments, num_v_segments),
+                          stretch_u,
+                          stretch_v
+                    ),
+                    GetBase(num_u_segments, num_v_segments),
+                    GetShift(num_u_segments, num_v_segments)) {}
 
-
+VectorXd ReducedBezierSurface::GetShift(int num_u_segments, int num_v_segments) {
+    VectorXd shift(3 * (num_u_segments + 1) * (num_v_segments + 1));
+    shift.setZero();
+    return shift;
+}
 
 SparseMatrixXd ReducedBezierSurface::GetBase(int num_u_segments, int num_v_segments) {
     const int num_u_control_points = 3;
@@ -87,9 +92,6 @@ MatrixXi ReducedBezierSurface::GenerateTopo(int num_u_segments, int num_v_segmen
 }
 
 VectorXd ReducedBezierSurface::GenerateUVCoord(const Eigen::VectorXd &control_points, int num_u_segments, int num_v_segments) {
-    const int num_u_control_points = 3;
-    const int num_v_control_points = 3;
-
     VectorXd x = GenerateX(control_points, num_u_segments, num_v_segments);
     Vector3d lower_left = x.segment<3>(0);
     Vector3d u_dir = (x.segment<3>(3) - lower_left).normalized();

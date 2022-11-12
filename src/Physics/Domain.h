@@ -19,7 +19,6 @@ class DomainIterator;
 class Domain : public PhysicsSystem {
 public:
     Domain(const json& config);
-    void Initialize(const json& config);
 
     /* Target Part */
     VectorXd GetCoordinate() const override {return _system.GetCoordinate();}
@@ -45,6 +44,8 @@ public:
 
     int AddConstraint(const Constraint& constraint) override {return _system.AddConstraint(constraint);}
     int GetIndex(const std::string& name) const override {return _system.GetIndex(name);}
+
+    int GetOffset(int idx) const override {return _system.GetOffset(idx);};
 
     ObjectIterator* GetIterator() override;
 

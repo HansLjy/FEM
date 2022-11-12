@@ -6,7 +6,7 @@
 #include "Constraint/Constraint.h"
 #include "spdlog/spdlog.h"
 
-InertialSystem::InertialSystem(const nlohmann::json &config) {
+InertialSystem::InertialSystem(const nlohmann::json &config) : _DOF(0), _constraint_size(0) {
     const auto& objects_config = config["objects"];
     for (const auto& object_config : objects_config) {
         AddObject(*ObjectFactory::GetObject(object_config["type"], object_config), object_config["name"]);
@@ -45,6 +45,9 @@ const Object *InertialSystem::GetObject(int idx) const {
     return _objs[idx];
 }
 
+int InertialSystem::GetOffset(int idx) const {
+    return _offset[idx];
+}
 
 #define Assemble1DWithInfo(Value)                                                       \
     VectorXd var(_DOF);                                                                 \

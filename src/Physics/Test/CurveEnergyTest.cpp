@@ -10,6 +10,10 @@
 #include <functional>
 #include <iostream>
 
+
+class InextensibleCurveForTest;
+void InextensibleRandomize(InextensibleCurveForTest& curve);
+
 class InextensibleCurveForTest : public InextensibleCurve {
 public:
     InextensibleCurveForTest(const Vector3d &start, const Vector3d &end, int num_segments, double rho, double alpha)
@@ -20,7 +24,12 @@ public:
     FRIEND_TEST(CurveTest, CurveGradientTest);
     FRIEND_TEST(CurveTest, CurveGravityTest);
     FRIEND_TEST(GravityTest, CurveGravityDerivativeTest);
+
+    friend void InextensibleRandomize(InextensibleCurveForTest& curve);
 };
+
+class ExtensibleCurveForTest;
+void ExtensibleRandomize(ExtensibleCurveForTest& curve);
 
 class ExtensibleCurveForTest : public ExtensibleCurve {
 public:
@@ -29,6 +38,8 @@ public:
 
     FRIEND_TEST(ExtensibleCurveTest, EnergyTest);
     FRIEND_TEST(ExtensibleCurveTest, EnergyGradientTest);
+
+    friend void ExtensibleRandomize(ExtensibleCurveForTest& curve);
 };
 
 const double eps = 1e-10;
@@ -66,13 +77,13 @@ TEST(CurveTest, CurveInitializationTest) {
     EXPECT_EQ(curve._x_rest, curve._x);
 }
 
-void Randomize(Curve& curve) {
+void InextensibleRandomize(InextensibleCurveForTest& curve) {
     for (int i = 1; i <= num_segments; i++) {
         Vector3d delta;
         delta.setRandom();
         delta.normalize();
         delta *= length;
-        curve.GetCoordinate().block<3, 1>(3 * i, 0) = curve.GetCoordinate().block<3, 1>(3 * (i - 1), 0) + delta;
+        curve._x.block<3, 1>(3 * i, 0) = curve.GetCoordinate().block<3, 1>(3 * (i - 1), 0) + delta;
     }
 }
 
@@ -98,7 +109,7 @@ TEST(CurveTest, CurveEnergyTest) {
     EXPECT_LT(curve.GetEnergy(Matrix3d::Identity(), Vector3d::Zero()), 1e-10);
     EXPECT_GT(curve.GetEnergy(Matrix3d::Identity(), Vector3d::Zero()), -1e-10);
 
-    Randomize(curve);
+    InextensibleRandomize(curve);
     EXPECT_GT(curve.GetEnergy(Matrix3d::Identity(), Vector3d::Zero()), 0);
 
     for (int i = 1; i < num_segments; i++) {
@@ -119,7 +130,7 @@ TEST(CurveTest, CurveEnergyTest) {
 TEST(CurveTest, CurveGradientTest) {
     InextensibleCurveForTest curve(start, end, num_segments, rho, alpha);
 
-    GenerateDerivativesWithInfo(curve, Energy, Randomize, 1e-8, 1e-4)
+    GenerateDerivativesWithInfo(curve, Energy, InextensibleRandomize, 1e-8, 1e-4)
 
     std::cout << "Analytic gradient: \n" << analytic_gradient.transpose() << std::endl;
     std::cout << "Numeric gradient: \n" << numeric_gradient.transpose() << std::endl;
@@ -168,7 +179,7 @@ TEST(GravityTest, CurveGravityDerivativeTest) {
     curve.AddExternalForce(gravity);
     curve.AddExternalForce(gravity);
 
-    GenerateDerivativesWithInfo(curve, ExternalEnergy, Randomize, 1e-8, 1e-4)
+    GenerateDerivativesWithInfo(curve, ExternalEnergy, InextensibleRandomize, 1e-8, 1e-4)
 
     EXPECT_NEAR((numeric_gradient - analytic_gradient).norm() / numeric_gradient.size(), 0, 1e-2);
     EXPECT_NEAR((numeric_hessian - analytic_hessian).norm() / numeric_hessian.size(), 0, 1e-2);
@@ -176,7 +187,7 @@ TEST(GravityTest, CurveGravityDerivativeTest) {
 
 #include <random>
 
-void ExtensibleRandomize(Curve& curve) {
+void ExtensibleRandomize(ExtensibleCurveForTest& curve) {
     std::default_random_engine generator;
     std::uniform_real_distribution<double> distribution(0.8, 1.2);
     for (int i = 1, j = 3; i <= num_segments; i++, j += 3) {
@@ -184,7 +195,7 @@ void ExtensibleRandomize(Curve& curve) {
         Vector3d delta;
         delta.setRandom().normalize();
         delta *= cur_length;
-        curve.GetCoordinate().segment<3>(j) = curve.GetCoordinate().segment<3>(j - 3) + delta;
+        curve._x.segment<3>(j) = curve.GetCoordinate().segment<3>(j - 3) + delta;
     }
 }
 

@@ -33,7 +33,16 @@ ReducedBezierCurve::GenerateSamplePoints(int num_segments, const VectorXd &contr
 
 ReducedBezierCurve::ReducedBezierCurve(int num_segments, double rho, double alpha_max, double alpha_min,
                                        const VectorXd &control_points)
-        : ReducedObject(control_points, ExtensibleCurve(rho, alpha_max, alpha_min, GenerateSamplePoints(num_segments, control_points)), GenerateBase(num_segments)) {}
+        : ReducedObject(control_points,
+                        ExtensibleCurve(rho, alpha_max, alpha_min, GenerateSamplePoints(num_segments, control_points)),
+                        GenerateBase(num_segments),
+                        GenerateShift(num_segments)) {}
+
+VectorXd ReducedBezierCurve::GenerateShift(int num_segments) {
+    VectorXd shift(3 * (num_segments + 1));
+    shift.setZero();
+    return shift;
+}
 
 SparseMatrixXd ReducedBezierCurve::GenerateBase(int num_segments) {
     SparseMatrixXd base((num_segments + 1) * 3, 12);

@@ -33,7 +33,7 @@ void FastProjectionIntegrator::Step(Target &target, double h) const {
 
     Eigen::SimplicialLDLT<SparseMatrixXd> LDLT;
     LDLT.compute(A);
-    if (LDLT.info() != Eigen::Success) {
+    if (LDLT.info() == Eigen::NumericalIssue) {
         spdlog::warn("A is not SPD!");
     }
     VectorXd v_next = LDLT.solve(b);

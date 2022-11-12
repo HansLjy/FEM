@@ -134,7 +134,7 @@ void InextensibleCurve::GetPotentialHessian(COO &coo, int x_offset, int y_offset
         p2_kB(2, 1) = - p2_kB(2, 2) - p2_kB(2, 0);
         p2_kB(1, 1) = p2_kB(0, 0) + p2_kB(2, 0) + p2_kB(0, 2) + p2_kB(2, 2);
 
-        const double coeff = 2 * _alpha(i) / _rest_length(i);
+        const double coeff = 2 * _alpha(i) / _voronoi_length(i);
         for (int j = 0, jj = 0; j < 3; j++, jj += 3) {
             for (int k = 0, kk = 0; k < 3; k++, kk += 3) {
                 hessian.block<3, 3>(jj, kk) = coeff * (

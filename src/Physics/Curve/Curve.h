@@ -13,8 +13,6 @@ class Curve : public ShapedObject, public SampledObject {
 public:
     Curve(double rho, double alpha_max, double alpha_min, const VectorXd &x);
 
-    void GetMass(COO &coo, int x_offset, int y_offset) const override;
-
     double GetPotential() const override = 0;
     VectorXd GetPotentialGradient() const override = 0;
     void GetPotentialHessian(COO &coo, int x_offset, int y_offset) const override = 0;

@@ -4,8 +4,8 @@
 
 #include "ReducedObject.h"
 
-ReducedObject::ReducedObject(const VectorXd &x, const Object &proxy, const SparseMatrixXd &base)
-    : Object(x), _proxy(proxy.Clone()), _base(base) {}
+ReducedObject::ReducedObject(const VectorXd &x, const Object &proxy, const SparseMatrixXd &base, const VectorXd &shift)
+    : Object(x), _proxy(proxy.Clone()), _base(base), _shift(shift) {}
 
 void ReducedObject::SetCoordinate(const Eigen::VectorXd &x) {
     Object::SetCoordinate(x);
@@ -18,7 +18,7 @@ void ReducedObject::SetVelocity(const Eigen::VectorXd &v) {
 }
 
 void ReducedObject::SetProxyCoordinate() {
-    _proxy->SetCoordinate(_base * _x);
+    _proxy->SetCoordinate(_base * _x + _shift);
 }
 
 void ReducedObject::SetProxyVelocity() {
@@ -128,6 +128,7 @@ ReducedObject::~ReducedObject() {
 ReducedObject::ReducedObject(const ReducedObject &rhs)  : Object(rhs) {
     _proxy = rhs._proxy->Clone();
     _base = rhs._base;
+    _shift = rhs._shift;
 }
 
 ReducedObject &ReducedObject::operator=(const ReducedObject &rhs) {

@@ -21,6 +21,7 @@ public:
 
 protected:
     static SparseMatrixXd GetBase(int num_u_segments, int num_v_segments);
+    static VectorXd GetShift(int num_u_segments, int num_v_segments);
     static VectorXd GenerateX(const VectorXd& control_points, int num_u_segments, int num_v_segments);
     static MatrixXi GenerateTopo(int num_u_segments, int num_v_segments);
     static VectorXd GenerateUVCoord(const VectorXd& control_points, int num_u_segments, int num_v_segments);
