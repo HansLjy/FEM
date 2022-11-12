@@ -5,8 +5,13 @@
 #include "Object.h"
 #include "Shape.h"
 
-double Object::GetEnergy(const Matrix3d &rotation, const Vector3d &position) const {
+double Object::GetEnergy(const Eigen::Matrix3d &rotation, const Eigen::Vector3d &position) const {
     return GetPotential() + GetExternalEnergy(rotation, position);
+}
+
+double Object::GetEnergy(const Ref<const Eigen::VectorXd>& x, const Eigen::Matrix3d &rotation,
+                         const Eigen::Vector3d &position) const {
+    return GetPotential(x) + GetExternalEnergy(x, rotation, position);
 }
 
 VectorXd Object::GetEnergyGradient(const Matrix3d &rotation, const Vector3d &position) const {
@@ -23,10 +28,11 @@ void Object::AddExternalForce(const ExternalForce &force) {
     _external_forces.push_back(force.Clone());
 }
 
-double Object::GetExternalEnergy(const Matrix3d &rotation, const Vector3d &position) const {
+double Object::GetExternalEnergy(const Ref<const Eigen::VectorXd> &x, const Eigen::Matrix3d &rotation,
+                                 const Eigen::Vector3d &position) const {
     double energy = 0;
     for (const auto& ext_force : _external_forces) {
-        energy += ext_force->Energy(*this, rotation, position);
+        energy += ext_force->Energy(*this, x, rotation, position);
     }
     return energy;
 }

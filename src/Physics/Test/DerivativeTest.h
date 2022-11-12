@@ -9,8 +9,7 @@
 
 #define GetEnergyFunction(func, ValueName, obj)  \
     auto func = [&obj] (const VectorXd& x) {        \
-        obj.SetCoordinate(x);                       \
-        return obj.Get##ValueName();                  \
+        return obj.Get##ValueName(x);               \
     };
 
 #define GenerateDerivatives(obj, ValueName, Randomize, step_gradient, step_hessian) \
@@ -31,8 +30,7 @@
 
 #define GetEnergyFunctionWithInfo(func, ValueName, obj)                             \
     auto func = [&obj] (const VectorXd& x) {                                        \
-        obj.SetCoordinate(x);                                                       \
-        return obj.Get##ValueName(Matrix3d::Identity(), Vector3d::Zero());          \
+        return obj.Get##ValueName(x, Matrix3d::Identity(), Vector3d::Zero());       \
     };
 
 

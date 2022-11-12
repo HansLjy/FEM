@@ -13,14 +13,14 @@ InextensibleCurve::InextensibleCurve(const nlohmann::json &config)
     : InextensibleCurve(config["density"], config["alpha-max"], config["alpha-min"],
                         Json2Vec(config["start"]), Json2Vec(config["end"]), config["segments"]){}
 
-double InextensibleCurve::GetPotential() const {
+double InextensibleCurve::GetPotential(const Ref<const Eigen::VectorXd> &x) const {
     double potential = 0;
-    Vector3d x_current = _x.block<3, 1>(3, 0);
-    Vector3d e_prev = x_current - _x.block<3, 1>(0, 0);
+    Vector3d x_current = x.block<3, 1>(3, 0);
+    Vector3d e_prev = x_current - x.block<3, 1>(0, 0);
 
     // (i - 1) -- e_prev --> (i, x_current) -- e_current --> (i + 1, x_next)
     for (int i = 1; i < _num_points - 1; i++) {
-        Vector3d x_next = _x.block<3, 1>(3 * (i + 1), 0);
+        Vector3d x_next = x.block<3, 1>(3 * (i + 1), 0);
         Vector3d e_current = x_next - x_current;
 
         Vector3d kB = 2 * e_prev.cross(e_current) / (_rest_length(i - 1) * _rest_length(i) + e_prev.dot(e_current));

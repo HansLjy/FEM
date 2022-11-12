@@ -13,14 +13,15 @@ SampledObjectGravity::SampledObjectGravity(const nlohmann::json &config) : Sampl
 
 SampledObjectGravity::SampledObjectGravity(const Eigen::Vector3d &g) : _g(g) {}
 
-double SampledObjectGravity::Energy(const Object &obj, const Matrix3d &rotation, const Vector3d &position) const {
+double SampledObjectGravity::Energy(const Object &obj, const Eigen::VectorXd &x, const Eigen::Matrix3d &rotation,
+                                    const Eigen::Vector3d &position) const {
     const auto& sampled_obj = dynamic_cast<const SampledObject&>(obj);
     double energy = 0;
     const int num_points = sampled_obj._mass.size();
     const Vector3d g_current = rotation.transpose() * _g;
     const double base_potential = _g.dot(position);
     for (int i = 0, j = 0; i < num_points; i++, j += 3) {
-        energy -= (g_current.dot(sampled_obj._x.segment<3>(j)) + base_potential) * sampled_obj._mass(i);
+        energy -= (g_current.dot(x.segment<3>(j)) + base_potential) * sampled_obj._mass(i);
     }
     return energy;
 }

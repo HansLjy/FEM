@@ -30,6 +30,7 @@ public:
     void GetMass(SparseMatrixXd& mass) const override;
 
     double GetEnergy() const override;
+    double GetEnergy(const VectorXd& x) const;
     VectorXd GetEnergyGradient() const override;
     void GetEnergyHessian(SparseMatrixXd& hessian) const override {_system.GetEnergyHessian(_frame_rotation, _frame_x, hessian);}
 

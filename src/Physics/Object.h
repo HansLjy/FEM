@@ -41,11 +41,14 @@ public:
     virtual double GetTotalMass() const = 0;
 
     double GetEnergy(const Matrix3d &rotation, const Vector3d &position) const;
+    double GetEnergy(const Ref<const VectorXd>& x, const Matrix3d& rotation, const Vector3d& position) const;
     VectorXd GetEnergyGradient(const Matrix3d &rotation, const Vector3d &position) const;
-    void
-    GetEnergyHessian(const Matrix3d &rotation, const Vector3d &position, COO &coo, int x_offset, int y_offset) const;
+    void GetEnergyHessian(const Matrix3d &rotation, const Vector3d &position, COO &coo, int x_offset, int y_offset) const;
 
-    virtual double GetPotential() const = 0;
+    virtual double GetPotential() const {
+        return GetPotential(_x);
+    }
+    virtual double GetPotential(const Ref<const VectorXd>& x) const = 0;
     virtual VectorXd GetPotentialGradient() const = 0;
     virtual void GetPotentialHessian(COO &coo, int x_offset, int y_offset) const = 0;
 
@@ -55,7 +58,10 @@ public:
 
     virtual void AddExternalForce(const ExternalForce& force);
 
-    virtual double GetExternalEnergy(const Matrix3d &rotation, const Vector3d &position) const;
+    virtual double GetExternalEnergy(const Matrix3d &rotation, const Vector3d &position) const {
+        return GetExternalEnergy(_x, rotation, position);
+    }
+    virtual double GetExternalEnergy(const Ref<const VectorXd>& x, const Matrix3d &rotation, const Vector3d& position) const;
     virtual VectorXd GetExternalEnergyGradient(const Matrix3d &rotation, const Vector3d &position) const;
     virtual Vector3d GetTotalExternalForce(const Matrix3d &rotation, const Vector3d &position) const = 0;
     virtual void GetExternalEnergyHessian(const Matrix3d &rotation, const Vector3d &position, COO &coo, int x_offset,

@@ -13,7 +13,7 @@ class TreeTrunkShape;
 class TreeTrunk : public SampledObject, public ShapedObject {
 public:
     TreeTrunk(double rho, double alpha_max, double alpha_min, double radius_max, double radius_min, double k, const VectorXd &x, const Vector3d& root);
-    double GetPotential() const override;
+    double GetPotential(const Ref<const VectorXd>& x) const override;
     VectorXd GetPotentialGradient() const override;
     void GetPotentialHessian(COO &coo, int x_offset, int y_offset) const override;
 

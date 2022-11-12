@@ -35,15 +35,15 @@ TreeTrunk::TreeTrunk(double rho, double alpha_max, double alpha_min, double radi
     _voronoi_length(_num_points - 1) = _rest_length(_num_points - 2) / 2;
 }
 
-double TreeTrunk::GetPotential() const {
+double TreeTrunk::GetPotential(const Ref<const Eigen::VectorXd> &x) const {
     double potential = 0;
 
-    Vector3d x_current = _x.segment<3>(0);
+    Vector3d x_current = x.segment<3>(0);
     Vector3d e_prev = x_current - _root;
 
     // (i - 1) -- e_prev --> (i, x_current) -- e_current --> (i + 1, x_next)
     for (int i = 0, j = 0; i < _num_points - 1; i++, j += 3) {
-        Vector3d x_next = _x.segment<3>(j + 3);
+        Vector3d x_next = x.segment<3>(j + 3);
         Vector3d e_current = x_next - x_current;
 
         potential += 0.5 * _k * (e_current.norm() - _rest_length(i)) * (e_current.norm() - _rest_length(i));

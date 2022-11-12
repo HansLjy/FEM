@@ -61,6 +61,10 @@ double ReducedObject::GetPotential() const {
     return _proxy->GetPotential();
 }
 
+double ReducedObject::GetPotential(const Ref<const Eigen::VectorXd> &x) const {
+    return _proxy->GetPotential(_base * x + _shift);
+}
+
 VectorXd ReducedObject::GetPotentialGradient() const {
     return _base.transpose() * _proxy->GetPotentialGradient();
 }
@@ -73,8 +77,13 @@ void ReducedObject::AddExternalForce(const ExternalForce &force) {
     _proxy->AddExternalForce(force);
 }
 
-double ReducedObject::GetExternalEnergy(const Matrix3d &rotation, const Vector3d &position) const {
+double ReducedObject::GetExternalEnergy(const Eigen::Matrix3d &rotation, const Eigen::Vector3d &position) const {
     return _proxy->GetExternalEnergy(rotation, position);
+}
+
+double ReducedObject::GetExternalEnergy(const Ref<const Eigen::VectorXd> &x, const Eigen::Matrix3d &rotation,
+                                        const Eigen::Vector3d &position) const {
+    return _proxy->GetExternalEnergy(_base * x + _shift, rotation, position);
 }
 
 VectorXd ReducedObject::GetExternalEnergyGradient(const Matrix3d &rotation, const Vector3d &position) const {

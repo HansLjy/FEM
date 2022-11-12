@@ -16,7 +16,7 @@ class Object;
  */
 class ExternalForce {
 public:
-    virtual double Energy(const Object &obj, const Matrix3d &rotation, const Vector3d &position) const = 0;
+    virtual double Energy(const Object &obj, const VectorXd& x, const Matrix3d &rotation, const Vector3d &position) const = 0;
     virtual VectorXd EnergyGradient(const Object &obj, const Matrix3d &rotation, const Vector3d &position) const = 0;
     virtual void
     EnergyHessian(const Object &obj, const Matrix3d &rotation, const Vector3d &position, COO &coo, int x_offset,

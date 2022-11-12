@@ -44,7 +44,7 @@ public:
 
     void GetMass(SparseMatrixXd& mass) const override;
     double GetEnergy() const override;
-
+    double GetEnergy(const VectorXd& x) const override;
     VectorXd GetEnergyGradient() const override;
     void GetEnergyHessian(SparseMatrixXd& hessian) const override;
 
@@ -55,6 +55,7 @@ public:
 
     /** Utility **/
     double GetEnergy(const Matrix3d& rotation, const Vector3d& position) const;
+    double GetEnergy(const VectorXd& x, const Matrix3d& rotation, const Vector3d& position) const;
     VectorXd GetEnergyGradient(const Matrix3d& rotation, const Vector3d& position) const;
     void GetEnergyHessian(const Matrix3d &rotation, const Vector3d &position, SparseMatrixXd &hessian) const;
     Vector3d GetTotalExternalForce(const Matrix3d& rotation, const Vector3d& position) const;

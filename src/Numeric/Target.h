@@ -22,6 +22,7 @@ public:
     virtual void GetMass(SparseMatrixXd& mass) const = 0;
 
     virtual double GetEnergy() const = 0;
+    virtual double GetEnergy(const VectorXd& x) const = 0;
     virtual VectorXd GetEnergyGradient() const = 0;
     virtual void GetEnergyHessian(SparseMatrixXd& hessian) const = 0;
 

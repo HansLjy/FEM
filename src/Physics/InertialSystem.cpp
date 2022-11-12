@@ -126,10 +126,26 @@ double InertialSystem::GetEnergy() const {
     return GetEnergy(Matrix3d::Identity(), Vector3d::Zero());
 }
 
+double InertialSystem::GetEnergy(const Eigen::VectorXd &x) const {
+    return GetEnergy(x, Matrix3d::Identity(), Vector3d::Zero());
+}
+
 double InertialSystem::GetEnergy(const Eigen::Matrix3d &rotation, const Eigen::Vector3d &position) const {
     double energy = 0;
     for (const auto& obj : _objs) {
         energy += obj->GetEnergy(rotation, position);
+    }
+    return energy;
+}
+
+double InertialSystem::GetEnergy(const Eigen::VectorXd &x, const Eigen::Matrix3d &rotation,
+                                 const Eigen::Vector3d &position) const {
+    int cur_offset = 0;
+    int num_objects = _objs.size();
+    double energy = 0;
+    for (int i = 0; i < num_objects; i++) {
+        energy += _objs[i]->GetEnergy(x.segment(cur_offset, _objs[i]->GetDOF()), rotation, position);
+        cur_offset += _objs[i]->GetDOF();
     }
     return energy;
 }

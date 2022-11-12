@@ -34,7 +34,7 @@ public:
     Cloth(double rho, double k_stretch, double k_shear, double k_bend, const VectorXd &x, const VectorXd &uv_corrd,
           const MatrixXi &topo, double stretch_u = 1, double stretch_v = 1);
 
-    double GetPotential() const override;
+    double GetPotential(const Ref<const VectorXd>& x) const override;
     VectorXd GetPotentialGradient() const override;
     void GetPotentialHessian(COO &coo, int x_offset, int y_offset) const override;
 

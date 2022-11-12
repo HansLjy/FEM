@@ -103,13 +103,13 @@ Cloth::Cloth(double rho, double k_stretch, double k_shear, double k_bend, const 
 
 }
 
-double Cloth::GetPotential() const {
+double Cloth::GetPotential(const Ref<const Eigen::VectorXd> &x) const {
     double energy = 0;
     for (int i = 0; i < _num_triangles; i++) {
         RowVector3i index = _topo.row(i);
         Matrix<double, 3, 2> F;
-        F.col(0) = _x.segment<3>(3 * index(1)) - _x.segment<3>(3 * index(0));
-        F.col(1) = _x.segment<3>(3 * index(2)) - _x.segment<3>(3 * index(0));
+        F.col(0) = x.segment<3>(3 * index(1)) - x.segment<3>(3 * index(0));
+        F.col(1) = x.segment<3>(3 * index(2)) - x.segment<3>(3 * index(0));
         F = F * _inv(i);
         Vector3d F1 = F.col(0);
         Vector3d F2 = F.col(1);
@@ -122,10 +122,10 @@ double Cloth::GetPotential() const {
 
     for (int i = 0; i < _num_internal_edges; i++) {
         RowVector4i edge_index = _internal_edge.row(i);
-        Vector3d xi = _x.segment<3>(3 * edge_index(0));
-        Vector3d e0 = _x.segment<3>(3 * edge_index(1)) - xi;
-        Vector3d e1 = _x.segment<3>(3 * edge_index(2)) - xi;
-        Vector3d e2 = _x.segment<3>(3 * edge_index(3)) - xi;
+        Vector3d xi = x.segment<3>(3 * edge_index(0));
+        Vector3d e0 = x.segment<3>(3 * edge_index(1)) - xi;
+        Vector3d e1 = x.segment<3>(3 * edge_index(2)) - xi;
+        Vector3d e2 = x.segment<3>(3 * edge_index(3)) - xi;
 
         const double X = _internal_edge_length(i) * (
                 e0.dot(e2) * e0.dot(e1)

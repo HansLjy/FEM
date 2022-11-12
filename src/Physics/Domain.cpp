@@ -142,6 +142,10 @@ double Domain::GetEnergy() const {
     return _system.GetEnergy(_frame_rotation, _frame_x) - x.dot(_interface_force + _inertial_force);
 }
 
+double Domain::GetEnergy(const Eigen::VectorXd &x) const {
+    return _system.GetEnergy(x, _frame_rotation, _frame_x) - x.dot(_interface_force + _inertial_force);
+}
+
 VectorXd Domain::GetEnergyGradient() const {
     return _system.GetEnergyGradient(_frame_rotation, _frame_x) - _interface_force - _inertial_force;
 }

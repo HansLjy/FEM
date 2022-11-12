@@ -11,16 +11,16 @@ ExtensibleCurve::ExtensibleCurve(const nlohmann::json &config)
     : ExtensibleCurve(config["density"], config["alpha-max"], config["alpha-min"],
                       Json2Vec(config["start"]), Json2Vec(config["end"]), config["segments"]) {}
 
-double ExtensibleCurve::GetPotential() const {
+double ExtensibleCurve::GetPotential(const Ref<const Eigen::VectorXd> &x) const {
     double potential = 0;
-    Vector3d x_current = _x.segment<3>(3);
-    Vector3d e_prev = x_current - _x.segment<3>(0);
+    Vector3d x_current = x.segment<3>(3);
+    Vector3d e_prev = x_current - x.segment<3>(0);
 
     potential += 0.5 * _k * (e_prev.norm() - _rest_length(0)) * (e_prev.norm() - _rest_length(0));
 
     // (i - 1) -- e_prev --> (i, x_current) -- e_current --> (i + 1, x_next)
     for (int i = 1; i < _num_points - 1; i++) {
-        Vector3d x_next = _x.segment<3>(3 * (i + 1));
+        Vector3d x_next = x.segment<3>(3 * (i + 1));
         Vector3d e_current = x_next - x_current;
 
         potential += 0.5 * _k * (e_current.norm() - _rest_length(i)) * (e_current.norm() - _rest_length(i));

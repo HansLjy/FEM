@@ -16,7 +16,7 @@ public:
     ExtensibleCurve(double rho, double alpha_max, double alpha_min, const VectorXd &x)
         : Object(x), Curve(rho, alpha_max, alpha_min, x), _k(100 * alpha_min) {};
 
-    double GetPotential() const override;
+    double GetPotential(const Ref<const Eigen::VectorXd> &x) const override;
     VectorXd GetPotentialGradient() const override;
     void GetPotentialHessian(COO &coo, int x_offset, int y_offset) const override;
 
