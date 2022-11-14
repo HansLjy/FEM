@@ -4,10 +4,6 @@ project(FEM)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-set(BUILD_TEST ON)
-
-# debug settings
-
 set(CMAKE_CXX_FLAGS_DEBUG "-O0 -ggdb -Wall")
 set(CMAKE_LINK_LIBRARY_FLAG_DEBUG "-g")
 

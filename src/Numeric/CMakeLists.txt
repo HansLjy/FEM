@@ -4,7 +4,10 @@ project(NumericMethod)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-file(GLOB_RECURSE NUMERIC_SOURCE *.cpp *.cc)
+file(GLOB_RECURSE NUMERIC_SOURCE
+        Constraint/*.cpp
+        Optimizer/*.cpp
+        Integrator/*.cpp)
 add_library(Numeric ${NUMERIC_SOURCE})
 target_include_directories(Numeric PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(Numeric PRIVATE Physics)
