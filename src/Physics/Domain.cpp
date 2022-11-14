@@ -42,12 +42,19 @@ Domain::~Domain() {
 }
 
 Domain::Domain(const Domain &rhs)
-    : _system(rhs._system), _frame_x(rhs._frame_x), _frame_v(rhs._frame_v), _frame_a(rhs._frame_a),
+    : _system(rhs._system),
+      _subdomain_projections(rhs._subdomain_projections),
+      _subdomain_rest_rotations(rhs._subdomain_rest_rotations),
+      _frame_x(rhs._frame_x), _frame_v(rhs._frame_v), _frame_a(rhs._frame_a),
       _frame_angular_velocity(rhs._frame_angular_velocity),
       _frame_angular_acceleration(rhs._frame_angular_acceleration),
       _frame_rotation(rhs._frame_rotation),
-      _total_mass(rhs._total_mass) {
-    for (const auto& subdomain : _subdomains) {
+      _total_mass(rhs._total_mass),
+      _total_external_force(rhs._total_external_force),
+      _interface_force(rhs._interface_force),
+      _inertial_force(rhs._inertial_force),
+      _lumped_mass(rhs._lumped_mass) {
+    for (const auto& subdomain : rhs._subdomains) {
         _subdomains.push_back(subdomain->Clone());
     }
     _total_mass = rhs._total_mass;
@@ -160,7 +167,9 @@ void Domain::UpdateSettings(const json &config) {
         RecordSubdomain(position);
         _subdomains[i]->UpdateSettings(subdomains_config[i]);
     }
-    CalculateSubdomainFrame(VectorXd(_system._DOF));
+    if (!_subdomains.empty()) {
+        CalculateSubdomainFrame(VectorXd(_system._DOF));
+    }
 }
 
 ObjectIterator *Domain::GetIterator() {

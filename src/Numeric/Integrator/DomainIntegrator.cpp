@@ -15,7 +15,9 @@ void DomainIntegrator::StepNonRoot(Domain &domain, double h) const {
     domain.Preparation();
     VectorXd v = domain.GetVelocity();
     _integrator->Step(domain, h);
-    domain.CalculateSubdomainFrame((domain.GetVelocity() - v) / h);
+    if (!domain._subdomains.empty()) {
+        domain.CalculateSubdomainFrame((domain.GetVelocity() - v) / h);
+    }
     for (auto& subdomain : domain._subdomains) {
         StepNonRoot(*subdomain, h);
     }

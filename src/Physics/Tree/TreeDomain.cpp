@@ -144,9 +144,9 @@ void TreeDomain::CalculateSubdomainFrame(const Eigen::VectorXd &a) {
 SparseMatrixXd TreeDomain::GetSubdomainProjection(const nlohmann::json &position) {
     const auto& tree_trunk = dynamic_cast<const ReducedTreeTrunk*>(GetObject(_tree_trunk_id));
     const double t = position["distance-to-root"];
-    const int num_segments = tree_trunk->_proxy->GetDOF() / 3;
+    const int num_segments = tree_trunk->_proxy->GetDOF() / 3 - 1;
     const double delta_t = 1.0 / num_segments;
-    const int segment_id = int(t / delta_t);
+    const int segment_id = floor(t / delta_t);
     const double coef = (t - delta_t * segment_id) / delta_t;
     const auto& project_prev = tree_trunk->_base.block(3 * segment_id, 0, 3, 9);
     const auto& project_next = tree_trunk->_base.block(3 * (segment_id + 1), 0, 3, 9);

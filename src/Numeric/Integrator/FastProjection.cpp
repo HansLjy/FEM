@@ -11,14 +11,14 @@ FastProjectionIntegrator::FastProjectionIntegrator(double tolerance, int max_ste
 FastProjectionIntegrator::FastProjectionIntegrator(const nlohmann::json &config) : FastProjectionIntegrator(config["tolerance"], config["max_step"]) {}
 
 void FastProjectionIntegrator::Step(Target &target, double h) const {
-    START_TIMING(stepping)
+//    START_TIMING(stepping)
 
     // step without constraint
     SparseMatrixXd mass, hessian;
     target.GetMass(mass);
-    START_TIMING(hessian_calculation)
+//    START_TIMING(hessian_calculation)
     target.GetEnergyHessian(hessian);
-    STOP_TIMING("hessian calculation", hessian_calculation)
+//    STOP_TIMING("hessian calculation", hessian_calculation)
     SparseMatrixXd A = mass + h * h * hessian;
 //    SparseMatrixXd A = mass;
 
@@ -67,9 +67,9 @@ void FastProjectionIntegrator::Step(Target &target, double h) const {
         C = target.GetConstraint(x_next);
     }
     if (step > _max_step) {
-        spdlog::warn("Fast projection fails to converge, error of last step: {}", C.norm() / C.size());
+//        spdlog::warn("Fast projection fails to converge, error of last step: {}", C.norm() / C.size());
     } else {
-        spdlog::info("Fast projection converges in {} steps", step);
+//        spdlog::info("Fast projection converges in {} steps", step);
     }
 
     v_next = (x_next - x) / h;
@@ -77,5 +77,5 @@ void FastProjectionIntegrator::Step(Target &target, double h) const {
 
     target.SetVelocity(v_next);
     target.SetCoordinate(x_next);
-    STOP_TIMING("stepping", stepping)
+//    STOP_TIMING("stepping", stepping)
 }

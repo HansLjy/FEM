@@ -71,6 +71,9 @@ public:
 
     ObjectIterator * GetIterator() override;
 
+    virtual ~InertialSystem();
+    InertialSystem(const InertialSystem& rhs);
+
     friend class Constraint;
     friend class SystemIterator;
     friend class Domain;

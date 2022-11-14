@@ -236,7 +236,7 @@ VectorXd Cloth::GetPotentialGradient() const {
 #include "Timer.h"
 
 void Cloth::GetPotentialHessian(COO &coo, int x_offset, int y_offset) const {
-    START_TIMING(triangle_hessian)
+//    START_TIMING(triangle_hessian)
     for (int i = 0; i < _num_triangles; i++) {
         RowVector3i index = _topo.row(i);
         Vector3d xi = _x.segment<3>(3 * index(0));
@@ -304,9 +304,9 @@ void Cloth::GetPotentialHessian(COO &coo, int x_offset, int y_offset) const {
             }
         }
     }
-    STOP_TIMING("Triangle Hessian", triangle_hessian)
+//    STOP_TIMING("Triangle Hessian", triangle_hessian)
 
-    START_TIMING(edge_hessian)
+//    START_TIMING(edge_hessian)
     for (int i = 0; i < _num_internal_edges; i++) {
         RowVector4i index = _internal_edge.row(i);
         const Vector3d xi = _x.segment<3>(3 * index(0));
@@ -409,7 +409,7 @@ void Cloth::GetPotentialHessian(COO &coo, int x_offset, int y_offset) const {
             }
         }
     }
-    STOP_TIMING("Edge Hessian", edge_hessian)
+//    STOP_TIMING("Edge Hessian", edge_hessian)
 }
 
 VectorXd

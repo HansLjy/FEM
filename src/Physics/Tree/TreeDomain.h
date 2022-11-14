@@ -9,7 +9,7 @@
 
 class TreeDomain : public Domain {
 public:
-    explicit TreeDomain(const json& config) : Domain(config), _tree_trunk_id(_system.GetIndex("trunk")) {}
+    explicit TreeDomain(const json& config) : Domain(config), _tree_trunk_id(_subdomains.empty() ? -1 : _system.GetIndex("trunk")) {}
 
     void CalculateSubdomainFrame(const Eigen::VectorXd &a) override;
     SparseMatrixXd GetSubdomainProjection(const nlohmann::json &position) override;

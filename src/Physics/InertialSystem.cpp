@@ -186,7 +186,6 @@ int InertialSystem::GetIndex(const std::string &name) const {
         spdlog::error("Name {} does not correspond to any objects in the system", name);
         return -1;
     }
-
     return (*result).second;
 }
 
@@ -254,8 +253,25 @@ ObjectIterator *InertialSystem::GetIterator() {
     return new SystemIterator(*this);
 }
 
+InertialSystem::~InertialSystem(){
+    for (const auto& obj : _objs) {
+        delete obj;
+    }
+}
+
+InertialSystem::InertialSystem(const InertialSystem &rhs)
+    : _DOF(rhs._DOF), _constraint_size(rhs._constraint_size),
+      _offset(rhs._offset), _index(rhs._index) {
+    for (const auto& obj : rhs._objs) {
+        _objs.push_back(obj->Clone());
+    }
+    for (const auto& constraint : rhs._constraints) {
+        _constraints.push_back(constraint->Clone());
+    }
+}
+
 SystemIterator::SystemIterator(InertialSystem &system)
-    : ObjectIterator(system._objs.size() == 0), _system(&system), _obj_id(0), _cur_size(system._objs.size()) {}
+        : ObjectIterator(system._objs.size() == 0), _system(&system), _obj_id(0), _cur_size(system._objs.size()) {}
 
 void SystemIterator::Forward() {
     _obj_id++;

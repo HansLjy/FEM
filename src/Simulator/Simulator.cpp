@@ -94,10 +94,6 @@ void Simulator::Processing(Scene &scene) {
         MatrixXi topo;
         obj->GetShape(vertices, topo);
         scene.SelectData(_obj_id2scene_id[id]);
-//        if (id == 1) {
-//            std::cerr << "Rotation " << id << ":\n" << itr->GetRotation() << std::endl;
-//            std::cerr << "Translation " << id << ":\n" << itr->GetTranslation().transpose() << std::endl;
-//        }
         scene.SetMesh(vertices, topo, itr->GetRotation(), itr->GetTranslation());
     }
 }
