@@ -5,6 +5,7 @@
 #include "Constraint.h"
 #include "SampledObject/FixedPointConstraint.h"
 #include "SampledObject/JointConstraint.h"
+#include "SampledObject/FixedAngleConstraint.h"
 #include "JsonUtil.h"
 #include "InertialSystem.h"
 
@@ -41,6 +42,9 @@ ConstraintFactory::GetConstraint(const InertialSystem &system, const nlohmann::j
     }
     if (type == "joint") {
         return new JointConstraint(object_idx[0], config["joint-point-indices"][0], object_idx[1], config["joint-point-indices"][1]);
+    }
+    if (type == "fixed-angle") {
+        return new FixedAngleConstraint(Json2Vec(config["direction"]), object_idx[0], config["point1"], config["point2"]);
     }
     return nullptr;
 }
