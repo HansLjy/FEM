@@ -123,7 +123,7 @@ void Domain::CalculateInertialForce() {
 
 void Domain::AddSubdomain(const Domain &subdomain, const nlohmann::json &position) {
     _subdomains.push_back(subdomain.Clone());
-    _subdomain_rest_rotations.push_back(Json2Matrix3d(position["rest-rotation"]));
+    _subdomain_rest_rotations.push_back(Matrix3d(AngleAxisd(double(position["angle"]) / 180.0 * EIGEN_PI, Json2Vec(position["axis"]))));
 }
 
 void Domain::CalculateLumpedMass() {
