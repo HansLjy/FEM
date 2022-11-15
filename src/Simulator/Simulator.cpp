@@ -26,7 +26,10 @@ void Simulator::LoadScene(const std::string &config) {
     const auto& integrator_config = config_json["integrator"];
     _integrator = IntegratorFactory::GetIntegrator(integrator_config["type"], integrator_config);
 
-    const auto& system_config = config_json["system"];
+    const std::string system_config_file_path = config_json["system-config"];
+    std::ifstream system_config_file(CONFIG_PATH + system_config_file_path);
+    const json system_config = json::parse(system_config_file);
+    system_config_file.close();
     _system = PhysicsSystemFactory::GetPhysicsSystem(system_config["type"], system_config);
     _system->UpdateSettings(system_config);
 

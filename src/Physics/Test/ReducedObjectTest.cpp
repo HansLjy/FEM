@@ -10,7 +10,7 @@ class ReducedBezierSurfaceForTest : public ReducedBezierSurface {
 public:
     ReducedBezierSurfaceForTest(const VectorXd& control_points, double rho, double k_stretch, double k_shear,
                                 double k_bend, int num_u_segments, int num_v_segments, double stretch_u, double stretch_v)
-                                : ReducedBezierSurface(control_points, rho, k_stretch, k_shear, k_bend, num_u_segments, num_v_segments, stretch_u, stretch_v) {}
+                                : ReducedBezierSurface(control_points, rho, k_stretch, k_shear, k_bend, k_bend, Vector3d::Random(), num_u_segments, num_v_segments, stretch_u, stretch_v) {}
 
     FRIEND_TEST(ReducedObjectTest, ReducedBezierSurfaceInitializationTest);
 };

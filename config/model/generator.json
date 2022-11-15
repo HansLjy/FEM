@@ -1,0 +1,13 @@
+{
+  "max-level": 5,
+  "max-fan-out": 3,
+  "density": 0.1,
+  "alpha-max": 100,
+  "alpha-min": 10,
+  "radius-root-max": 0.5,
+  "radius-root-min": 0.1,
+  "k": 1000,
+  "segments": 5,
+  "g": [0, 0, -9.8],
+  "root-length": 10
+}

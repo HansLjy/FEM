@@ -26,3 +26,9 @@ target_link_libraries(fem Geometry)
 target_link_libraries(fem Physics)
 target_link_libraries(fem Renderer)
 target_link_libraries(fem Simulator)
+
+set(BUILD_GENERATOR ON)
+
+if(BUILD_GENERATOR)
+    add_subdirectory(src/Data)
+endif()
