@@ -10,7 +10,14 @@
 
 using nlohmann::json;
 
-Vector3d Json2Vec(const json& vec);
+template<int dim=3>
+Vector<double, dim> Json2Vec(const json& vec) {
+    Vector<double, dim> vector;
+    for (int i = 0; i < dim; i++) {
+        vector(i) = vec[i];
+    }
+    return vector;
+}
 VectorXd Json2VecX(const json& vec);
 Matrix3d Json2Matrix3d(const json& mat);
 

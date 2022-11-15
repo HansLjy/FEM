@@ -7,6 +7,7 @@
 #include <Eigen/Core>
 
 using Eigen::Matrix;
+using Eigen::Vector;
 using Eigen::MatrixXd;
 using Eigen::VectorXd;
 using Eigen::Vector2d;

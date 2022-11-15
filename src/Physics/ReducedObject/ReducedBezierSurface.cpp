@@ -11,19 +11,21 @@ DEFINE_CLONE(Object, ReducedBezierSurface)
 ReducedBezierSurface::ReducedBezierSurface(const json &config)
     : ReducedBezierSurface(
         Json2VecX(config["control-points"]),
-        config["density"], config["k-stretch"], config["k-shear"], config["k-bend"],
+        config["density"], config["k-stretch"], config["k-shear"], config["k-bend-max"], config["k-bend-min"], Json2Vec(config["max-dir"]),
         config["u-segments"], config["v-segments"], config["stretch-u"], config["stretch-v"]
       ) {}
 
-ReducedBezierSurface::ReducedBezierSurface(const VectorXd &control_points, double rho, double k_stretch, double k_shear,
-                                           double k_bend, int num_u_segments, int num_v_segments, double stretch_u, double stretch_v)
+ReducedBezierSurface::ReducedBezierSurface(const Eigen::VectorXd &control_points, double rho, double k_stretch,
+                                           double k_shear, double k_bend_max, double k_bend_min,
+                                           const Eigen::Vector3d &max_dir, int num_u_segments, int num_v_segments,
+                                           double stretch_u, double stretch_v)
     : ReducedObject(control_points,
-                    Cloth(rho, k_stretch, k_shear, k_bend,
+                    Cloth(rho, k_stretch, k_shear, k_bend_max, k_bend_min,
+                          GenerateDir(control_points, max_dir),
                           GenerateX(control_points, num_u_segments, num_v_segments),
                           GenerateUVCoord(control_points, num_u_segments, num_v_segments),
                           GenerateTopo(num_u_segments, num_v_segments),
-                          stretch_u,
-                          stretch_v
+                          stretch_u, stretch_v
                     ),
                     GetBase(num_u_segments, num_v_segments),
                     GetShift(num_u_segments, num_v_segments)) {}
@@ -105,4 +107,12 @@ VectorXd ReducedBezierSurface::GenerateUVCoord(const Eigen::VectorXd &control_po
         uv_coord.segment<2>(i2) << cur_x.dot(u_dir), cur_x.dot(v_dir);
     }
     return uv_coord;
+}
+
+Vector2d ReducedBezierSurface::GenerateDir(const Eigen::VectorXd &control_points, const Eigen::Vector3d &max_dir) {
+    Vector3d lower_left = control_points.segment<3>(0);
+    Vector3d u_dir = (control_points.segment<3>(6) - lower_left).normalized();
+    Vector3d v_dir = (control_points.segment<3>(18) - lower_left).normalized();
+    return (Vector2d() << u_dir.dot(max_dir), v_dir.dot(max_dir)).finished();
+
 }

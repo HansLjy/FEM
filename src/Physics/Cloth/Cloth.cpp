@@ -11,25 +11,27 @@
 DEFINE_CLONE(Object, Cloth)
 
 Cloth::Cloth(const json &config)
-    : Cloth(config["density"], config["k-stretch"], config["k-shear"], config["k-bend"],
-            Json2Vec(config["start"]), Json2Vec(config["u-end"]), Json2Vec(config["v-end"]),
+    : Cloth(config["density"], config["k-stretch"], config["k-shear"], config["k-bend-max"], config["k-bend-min"],
+            Json2Vec<2>(config["max-direction"]), Json2Vec(config["start"]), Json2Vec(config["u-end"]), Json2Vec(config["v-end"]),
             config["u-segments"], config["v-segments"], config["stretch-u"], config["stretch-v"]){}
 
-Cloth::Cloth(double rho, double k_stretch, double k_shear, double k_bend, const Eigen::Vector3d &start,
+Cloth::Cloth(double rho, double k_stretch, double k_shear, double k_bend_max, double k_bend_min,
+             const Eigen::Vector2d &max_bend_dir, const Eigen::Vector3d &start,
              const Eigen::Vector3d &u_end, const Eigen::Vector3d &v_end, int num_u_segments, int num_v_segments,
              double stretch_u, double stretch_v)
-             : Cloth(rho, k_stretch, k_shear, k_bend,
+             : Cloth(rho, k_stretch, k_shear, k_bend_max, k_bend_min, max_bend_dir,
                      GeneratePosition(start, u_end, v_end, num_u_segments, num_v_segments),
                      GenerateUVCoord(start, u_end, v_end, num_u_segments, num_v_segments),
                      GenerateTopo(num_u_segments, num_v_segments),
                      stretch_u, stretch_v) {}
 
-Cloth::Cloth(double rho, double k_stretch, double k_shear, double k_bend, const VectorXd &x, const VectorXd &uv_corrd,
-             const MatrixXi &topo, double stretch_u, double stretch_v)
+Cloth::Cloth(double rho, double k_stretch, double k_shear, double k_bend_max, double k_bend_min,
+             const Eigen::Vector2d &max_bend_dir, const Eigen::VectorXd &x, const Eigen::VectorXd &uv_corrd,
+             const Eigen::MatrixXi &topo, double stretch_u, double stretch_v)
              : Object(x), ShapedObject(ClothShape()), SampledObject(GenerateMass(rho, uv_corrd, topo)),
                _num_points(x.size() / 3),
                _num_triangles(topo.rows()),
-               _k_stretch(k_stretch), _k_shear(k_shear), _k_bend(k_bend),
+               _k_stretch(k_stretch), _k_shear(k_shear),
                _stretch_u(stretch_u), _stretch_v(stretch_v),
                _uv_coord(uv_corrd), _topo(topo)
                {
@@ -86,6 +88,7 @@ Cloth::Cloth(double rho, double k_stretch, double k_shear, double k_bend, const 
     }
     _internal_edge.resize(num_internal_edges, 4);
     _internal_edge_length.resize(num_internal_edges);
+    _internal_edge_k_bend.resize(num_internal_edges);
     _num_internal_edges = 0;
     for (int i = 0; i < num_edges - 1; i++) {
         if (std::get<0>(edges[i]) == std::get<0>(edges[i + 1])
@@ -97,6 +100,13 @@ Cloth::Cloth(double rho, double k_stretch, double k_shear, double k_bend, const 
                     _x.segment<3>(3 * std::get<1>(edges[i])) -
                     _x.segment<3>(3 * std::get<0>(edges[i]))
             ).norm();
+            Vector2d uv_direction = _uv_coord.segment<2>(2 * std::get<1>(edges[i])) - _uv_coord.segment<2>(2 * std::get<0>(edges[i]));
+            const double delta_u = uv_direction.dot(max_bend_dir);
+            const double delta_v = - uv_direction(0) * max_bend_dir(1) + uv_direction(1) * max_bend_dir(0);
+            _internal_edge_k_bend(_num_internal_edges) =
+                    (k_bend_max * delta_u * delta_u + k_bend_min * delta_v * delta_v) /
+                    (delta_u * delta_u + delta_v * delta_v);
+
             _num_internal_edges++;
         }
     }
@@ -135,7 +145,7 @@ double Cloth::GetPotential(const Ref<const Eigen::VectorXd> &x) const {
         const double Y = - e0.cross(e1).dot(e2) * e0.dot(e0);
 
         const double C = atan2(Y, X);
-        energy += 0.5 * _k_bend * C * C;
+        energy += 0.5 * _internal_edge_k_bend(i) * C * C;
     }
     return energy;
 }
@@ -223,7 +233,7 @@ VectorXd Cloth::GetPotentialGradient() const {
         Eigen::Matrix<double, 9, 5> pFpx = CalculatePFPX(e0, e1, e2);
 
         Vector9d pCpX = pFpx * pCpF;
-        Vector9d pEpX = _k_bend * C * pCpX;
+        Vector9d pEpX = _internal_edge_k_bend(i) * C * pCpX;
 
         gradient.segment<3>(3 * index[1]) += pEpX.segment<3>(0);
         gradient.segment<3>(3 * index[2]) += pEpX.segment<3>(3);
@@ -382,7 +392,7 @@ void Cloth::GetPotentialHessian(COO &coo, int x_offset, int y_offset) const {
 
         p2Cpx2 += pFpx * p2CpF2 * pFpx.transpose();
 
-        Matrix9d p2Epx2 = _k_bend * pCpx * pCpx.transpose() + _k_bend * C * p2Cpx2;
+        Matrix9d p2Epx2 = _internal_edge_k_bend(i) * pCpx * pCpx.transpose() + _internal_edge_k_bend(i) * C * p2Cpx2;
 #ifndef BUILD_TEST
         p2Epx2 = PositiveProject(p2Epx2);
 #endif

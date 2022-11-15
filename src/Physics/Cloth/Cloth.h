@@ -27,11 +27,12 @@ public:
      * considered as the u direction, while v_end - start
      * minus its u-direction part is considered as v-dir
      */
-    Cloth(double rho, double k_stretch, double k_shear, double k_bend,
+    Cloth(double rho, double k_stretch, double k_shear, double k_bend_max, double k_bend_min, const Vector2d& max_dir,
           const Vector3d& start, const Vector3d& u_end, const Vector3d& v_end,
           int num_u_segments, int num_v_segments,
-          double stretch_u = 1, double stretch_v = 1);
-    Cloth(double rho, double k_stretch, double k_shear, double k_bend, const VectorXd &x, const VectorXd &uv_corrd,
+          double stretch_u, double stretch_v);
+    Cloth(double rho, double k_stretch, double k_shear, double k_bend_max, double k_bend_min, const Vector2d& max_bend_dir,
+          const VectorXd &x, const VectorXd &uv_corrd,
           const MatrixXi &topo, double stretch_u = 1, double stretch_v = 1);
 
     double GetPotential(const Ref<const VectorXd>& x) const override;
@@ -49,7 +50,6 @@ protected:
     int _num_internal_edges;
     const double _k_stretch;
     const double _k_shear;
-    const double _k_bend;
     const double _stretch_u, _stretch_v;
     VectorXd _uv_coord;
     VectorXd _area;             // area of each triangle
@@ -61,6 +61,7 @@ protected:
     MatrixXi _internal_edge;    // edges that lie inside the cloth
                                 // _internal_edge[i] stores the indices of the two nodes
                                 // of this edge together with their two connecting nodes
+    VectorXd _internal_edge_k_bend;
     VectorXd _internal_edge_length;
 
 protected:
