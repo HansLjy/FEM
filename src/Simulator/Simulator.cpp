@@ -88,7 +88,10 @@ void Simulator::InitializeScene(Scene &scene) {
     }
 }
 
+#include "Timer.h"
+
 void Simulator::Processing(Scene &scene) {
+    auto t = clock();
     _integrator->Step(*_system, _time_step);
     int id = 0;
     for (auto itr = _system->GetIterator(); !itr->IsDone(); itr->Forward(), id++) {
@@ -99,4 +102,6 @@ void Simulator::Processing(Scene &scene) {
         scene.SelectData(_obj_id2scene_id[id]);
         scene.SetMesh(vertices, topo, itr->GetRotation(), itr->GetTranslation());
     }
+    auto delta_t = clock() - t;
+    spdlog::info("fps = {}", (int)(CLOCKS_PER_SEC / delta_t));
 }

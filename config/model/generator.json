@@ -1,13 +1,19 @@
 {
-  "max-level": 5,
-  "max-fan-out": 3,
-  "density": 0.1,
-  "alpha-max": 100,
-  "alpha-min": 10,
+  "max-level": 3,
+  "max-fan-out": 1,
+  "trunk-density": 0.0001,
+  "leaf-density": 0.01,
+  "alpha-max": 10000,
+  "alpha-min": 1000,
   "radius-root-max": 0.5,
   "radius-root-min": 0.1,
   "k": 1000,
-  "segments": 5,
+  "trunk-segments": 5,
+  "leaf-segments": 5,
+  "k-stretch": 1000,
+  "k-shear": 1000,
+  "k-bend-max": 1,
+  "k-bend-min": 1,
   "g": [0, 0, -9.8],
-  "root-length": 10
+  "root-length": 30
 }
