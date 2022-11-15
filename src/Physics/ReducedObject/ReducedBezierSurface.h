@@ -7,6 +7,8 @@
 
 #include "ReducedObject.h"
 
+class ReducedLeaf;
+
 class ReducedBezierSurface : public ReducedObject {
 public:
     explicit ReducedBezierSurface(const json& config);
@@ -19,6 +21,8 @@ public:
                          int num_u_segments, int num_v_segments, double stretch_u = 1, double stretch_v = 1);
 
     DERIVED_DECLARE_CLONE(Object)
+
+    friend class ReducedLeaf;
 
 protected:
     static SparseMatrixXd GetBase(int num_u_segments, int num_v_segments);

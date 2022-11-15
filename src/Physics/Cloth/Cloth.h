@@ -30,7 +30,7 @@ public:
     Cloth(double rho, double k_stretch, double k_shear, double k_bend_max, double k_bend_min, const Vector2d& max_dir,
           const Vector3d& start, const Vector3d& u_end, const Vector3d& v_end,
           int num_u_segments, int num_v_segments,
-          double stretch_u, double stretch_v);
+          double stretch_u = 1, double stretch_v = 1);
     Cloth(double rho, double k_stretch, double k_shear, double k_bend_max, double k_bend_min, const Vector2d& max_bend_dir,
           const VectorXd &x, const VectorXd &uv_corrd,
           const MatrixXi &topo, double stretch_u = 1, double stretch_v = 1);

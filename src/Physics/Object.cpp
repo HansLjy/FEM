@@ -146,6 +146,7 @@ SampledObject::GetInertialForce(const Vector3d &v, const Vector3d &a, const Vect
 #include "Cloth/Cloth.h"
 #include "ReducedObject/ReducedBezierSurface.h"
 #include "Tree/ReducedTreeTrunk.h"
+#include "Tree/ReducedLeaf.h"
 
 BEGIN_DEFINE_XXX_FACTORY(Object)
     ADD_PRODUCT("inextensible-curve", InextensibleCurve)
@@ -154,4 +155,5 @@ BEGIN_DEFINE_XXX_FACTORY(Object)
     ADD_PRODUCT("cloth", Cloth)
     ADD_PRODUCT("reduced-bezier-surface", ReducedBezierSurface)
     ADD_PRODUCT("tree-trunk", ReducedTreeTrunk)
+    ADD_PRODUCT("leaf", ReducedLeaf)
 END_DEFINE_XXX_FACTORY
