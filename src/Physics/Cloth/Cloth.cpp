@@ -245,7 +245,9 @@ VectorXd Cloth::GetPotentialGradient() const {
 #include "Timer.h"
 
 void Cloth::GetPotentialHessian(COO &coo, int x_offset, int y_offset) const {
-//    START_TIMING(triangle_hessian)
+    static double triangle_hessian_t = 0;
+    static int cnt = 0;
+    auto start_t = clock();
     for (int i = 0; i < _num_triangles; i++) {
         RowVector3i index = _topo.row(i);
         Vector3d xi = _x.segment<3>(3 * index(0));
@@ -264,31 +266,36 @@ void Cloth::GetPotentialHessian(COO &coo, int x_offset, int y_offset) const {
         C[1] = area * (F2_norm - _stretch_v);
         C[2] = area * F1.dot(F2);
 
-        Vector6d pCpF[3];
+        Matrix3d F1F1T = F1 * F1.transpose();
+        Matrix3d F1F2T = F1 * F2.transpose();
+        Matrix3d F2F2T = F2 * F2.transpose();
 
-        pCpF[0].segment<3>(0) = area * F1.normalized();
-        pCpF[0].segment<3>(3).setZero();
-        pCpF[1].segment<3>(0).setZero();
-        pCpF[1].segment<3>(3) = area * F2.normalized();
-        pCpF[2].segment<3>(0) = area * F2;
-        pCpF[2].segment<3>(3) = area * F1;
+        const double F1_norm3 = F1_norm * F1_norm * F1_norm;
+        const double F2_norm3 = F2_norm * F2_norm * F2_norm;
 
-        Matrix6d p2CpF2_total1;
+        Matrix6d p2EpX2;
 
-        p2CpF2_total1.block<3, 3>(0, 0) = _k_stretch * C[0] * area * (Matrix3d::Identity() / F1_norm - F1 * F1.transpose() / (F1_norm * F1_norm * F1_norm));
-        p2CpF2_total1.block<3, 3>(3, 3) = _k_stretch * C[1] * area * (Matrix3d::Identity() / F2_norm - F2 * F2.transpose() / (F2_norm * F2_norm * F2_norm));
-        p2CpF2_total1.block<3, 3>(0, 3) = p2CpF2_total1.block<3, 3>(3, 0) = _k_shear * C[2] *  area * Matrix3d::Identity();
-
-        Matrix6d p2CpF2_total =
-                _k_stretch * (pCpF[0] * pCpF[0].transpose() + pCpF[1] * pCpF[1].transpose())
-              + _k_shear * pCpF[2] * pCpF[2].transpose()
-              + p2CpF2_total1;
-
-//        Matrix6d pFpX = _pFpx(i);
-        Matrix6d p2EpX2 = _pFpx(i) * p2CpF2_total * _pFpx(i).transpose();
-#ifndef BUILD_TEST
-        p2EpX2 = PositiveProject(p2EpX2);
+#ifdef BUILD_TEST
+        p2EpX2.block<3, 3>(0, 0) = _k_stretch * area * area * (1 - _stretch_u / F1_norm) * Matrix3d::Identity()
+                                 + _k_shear * area * area * F2F2T
+                                 + _k_stretch * area * area * _stretch_u / F1_norm3 * F1F1T;
+        p2EpX2.block<3, 3>(0, 3) = _k_shear * area * area * F1F2T.transpose() + _k_shear * C[2] * area * Matrix3d::Identity();
+        p2EpX2.block<3, 3>(3, 0) = _k_shear * area * area * F1F2T + _k_shear * C[2] * area * Matrix3d::Identity();
+        p2EpX2.block<3, 3>(3, 3) = _k_stretch * area * area * (1 - _stretch_v / F2_norm) * Matrix3d::Identity()
+                                 + _k_shear * area * area * F1F1T
+                                 + _k_stretch * area * area * _stretch_v / F2_norm3 * F2F2T;
+#else
+        p2EpX2.block<3, 3>(0, 0) = (_k_stretch * area * area * (1 - _stretch_u / F1_norm) + 0.5 * _k_shear * C[2] * area) * Matrix3d::Identity()
+                                   + _k_shear * area * area * F2F2T
+                                   + _k_stretch * area * area * _stretch_u / F1_norm3 * F1F1T;
+        p2EpX2.block<3, 3>(0, 3) = _k_shear * area * area * F1F2T.transpose() + 0.5 * _k_shear * C[2] * area * Matrix3d::Identity();
+        p2EpX2.block<3, 3>(3, 0) = _k_shear * area * area * F1F2T + 0.5 * _k_shear * C[2] * area * Matrix3d::Identity();
+        p2EpX2.block<3, 3>(3, 3) = (_k_stretch * area * area * (1 - _stretch_v / F2_norm) + 0.5 * _k_shear * C[2] * area) * Matrix3d::Identity()
+                                   + _k_shear * area * area * F1F1T
+                                   + _k_stretch * area * area * _stretch_v / F2_norm3 * F2F2T;
 #endif
+        p2EpX2 = _pFpx(i) * p2EpX2 * _pFpx(i).transpose();
+
         Matrix9d p2EpX2_full = Matrix9d::Zero();
         p2EpX2_full.block<6, 6>(3, 3) = p2EpX2;
         p2EpX2_full.block<6, 3>(3, 0) = - p2EpX2.block<6, 3>(0, 0) - p2EpX2.block<6, 3>(0, 3);
@@ -313,6 +320,12 @@ void Cloth::GetPotentialHessian(COO &coo, int x_offset, int y_offset) const {
             }
         }
     }
+    triangle_hessian_t += 1.0 * (clock() - start_t) / CLOCKS_PER_SEC;
+    if (++cnt % 10000 == 0) {
+        spdlog::info("avg time for triangle hessian calculation: {}", triangle_hessian_t / 10000);
+        triangle_hessian_t = 0;
+    }
+
 //    STOP_TIMING("Triangle Hessian", triangle_hessian)
 
 //    START_TIMING(edge_hessian)
@@ -373,6 +386,7 @@ void Cloth::GetPotentialHessian(COO &coo, int x_offset, int y_offset) const {
         p2CpF2 += p2CpFpX * pXpF.transpose() + p2CpFpY * pYpF.transpose();
 
         Matrix9d p2Cpx2 = Matrix9d::Zero();
+
         p2Cpx2.block<3, 3>(0, 3) = -HatMatrix(e2);
         p2Cpx2.block<3, 3>(0, 6) = HatMatrix(e1);
         p2Cpx2.block<3, 3>(3, 0) = HatMatrix(e2);

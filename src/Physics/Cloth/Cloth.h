@@ -6,6 +6,7 @@
 #define FEM_CLOTH_H
 
 #include "Object.h"
+#include "unsupported/Eigen/KroneckerProduct"
 
 class ClothShape;
 class ReducedBezierSurface;

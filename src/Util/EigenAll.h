@@ -53,6 +53,8 @@ Vector3d SkewVector(const Matrix3d& mat);
 Vector3d FindPerpendicular(const Vector3d& vec);
 Matrix<double, 9, 3> GetVecHatMatrix();
 
+#include "iostream"
+
 template<int dim>
 Matrix<double, dim, dim> PositiveProject(const Eigen::Matrix<double, dim, dim>& matrix) {
     typedef Eigen::Matrix<double, dim, dim> MatrixOfSize;
