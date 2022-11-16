@@ -41,24 +41,24 @@ Domain::~Domain() {
     }
 }
 
-Domain::Domain(const Domain &rhs)
-    : _system(rhs._system),
-      _subdomain_projections(rhs._subdomain_projections),
-      _subdomain_rest_rotations(rhs._subdomain_rest_rotations),
-      _frame_x(rhs._frame_x), _frame_v(rhs._frame_v), _frame_a(rhs._frame_a),
-      _frame_angular_velocity(rhs._frame_angular_velocity),
-      _frame_angular_acceleration(rhs._frame_angular_acceleration),
-      _frame_rotation(rhs._frame_rotation),
-      _total_mass(rhs._total_mass),
-      _total_external_force(rhs._total_external_force),
-      _interface_force(rhs._interface_force),
-      _inertial_force(rhs._inertial_force),
-      _lumped_mass(rhs._lumped_mass) {
-    for (const auto& subdomain : rhs._subdomains) {
-        _subdomains.push_back(subdomain->Clone());
-    }
-    _total_mass = rhs._total_mass;
-}
+//Domain::Domain(const Domain &rhs)
+//    : _system(rhs._system),
+//      _subdomain_projections(rhs._subdomain_projections),
+//      _subdomain_rest_rotations(rhs._subdomain_rest_rotations),
+//      _frame_x(rhs._frame_x), _frame_v(rhs._frame_v), _frame_a(rhs._frame_a),
+//      _frame_angular_velocity(rhs._frame_angular_velocity),
+//      _frame_angular_acceleration(rhs._frame_angular_acceleration),
+//      _frame_rotation(rhs._frame_rotation),
+//      _total_mass(rhs._total_mass),
+//      _total_external_force(rhs._total_external_force),
+//      _interface_force(rhs._interface_force),
+//      _inertial_force(rhs._inertial_force),
+//      _lumped_mass(rhs._lumped_mass) {
+//    for (const auto& subdomain : rhs._subdomains) {
+//        _subdomains.push_back(subdomain->Clone());
+//    }
+//    _total_mass = rhs._total_mass;
+//}
 
 
 void Domain::CalculateTotalMass() {
@@ -121,8 +121,8 @@ void Domain::CalculateInertialForce() {
 
 #include "JsonUtil.h"
 
-void Domain::AddSubdomain(const Domain &subdomain, const nlohmann::json &position) {
-    _subdomains.push_back(subdomain.Clone());
+void Domain::AddSubdomain(Domain &subdomain, const nlohmann::json &position) {
+    _subdomains.push_back(&subdomain);
     _subdomain_rest_rotations.push_back(Matrix3d(AngleAxisd(double(position["angle"]) / 180.0 * EIGEN_PI, Json2Vec(position["axis"]))));
 }
 

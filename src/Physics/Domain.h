@@ -86,15 +86,15 @@ public:
 
     virtual SparseMatrixXd GetSubdomainProjection(const json& position) = 0;
     virtual void RecordSubdomain(const json& position) = 0;
-    void AddSubdomain(const Domain& subdomain, const json& position);
+    void AddSubdomain(Domain& subdomain, const json& position);
 
     virtual ~Domain();
-    Domain(const Domain& rhs);
+    Domain(const Domain& rhs) = delete;
 
     friend class DomainIntegrator;
     friend class DomainIterator;
 
-    BASE_DECLARE_CLONE(Domain)
+//    BASE_DECLARE_CLONE(Domain)
 
 protected:
     InertialSystem _system;

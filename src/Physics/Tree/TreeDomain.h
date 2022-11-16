@@ -15,7 +15,7 @@ public:
     SparseMatrixXd GetSubdomainProjection(const nlohmann::json &position) override;
     void RecordSubdomain(const nlohmann::json &position) override;
 
-    DERIVED_DECLARE_CLONE(Domain)
+//    DERIVED_DECLARE_CLONE(Domain)
 protected:
     int _tree_trunk_id;
     std::vector<double> _positions;

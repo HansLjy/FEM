@@ -284,8 +284,8 @@ void Cloth::GetPotentialHessian(COO &coo, int x_offset, int y_offset) const {
               + _k_shear * pCpF[2] * pCpF[2].transpose()
               + p2CpF2_total1;
 
-        Matrix6d pFpX = _pFpx(i);
-        Matrix6d p2EpX2 = pFpX * p2CpF2_total * pFpX.transpose();
+//        Matrix6d pFpX = _pFpx(i);
+        Matrix6d p2EpX2 = _pFpx(i) * p2CpF2_total * _pFpx(i).transpose();
 #ifndef BUILD_TEST
         p2EpX2 = PositiveProject(p2EpX2);
 #endif

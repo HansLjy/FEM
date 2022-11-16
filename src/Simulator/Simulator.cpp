@@ -91,6 +91,8 @@ void Simulator::InitializeScene(Scene &scene) {
 #include "Timer.h"
 
 void Simulator::Processing(Scene &scene) {
+    static int itr = 0;
+    static double total_time = 0;
     auto t = clock();
     _integrator->Step(*_system, _time_step);
     int id = 0;
@@ -103,5 +105,10 @@ void Simulator::Processing(Scene &scene) {
         scene.SetMesh(vertices, topo, itr->GetRotation(), itr->GetTranslation());
     }
     auto delta_t = clock() - t;
-    spdlog::info("fps = {}", (int)(CLOCKS_PER_SEC / delta_t));
+//    spdlog::info("fps = {}", (int)(CLOCKS_PER_SEC / delta_t));
+    total_time += 1.0 * delta_t / CLOCKS_PER_SEC;
+    if (++itr >= 1000) {
+        spdlog::info("Time elapse for {} itrs = {} s", itr, total_time);
+        exit(-1);
+    }
 }

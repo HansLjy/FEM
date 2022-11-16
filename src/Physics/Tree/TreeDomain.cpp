@@ -6,7 +6,7 @@
 #include "ReducedTreeTrunk.h"
 #include "typeinfo"
 
-DEFINE_CLONE(Domain, TreeDomain)
+//DEFINE_CLONE(Domain, TreeDomain)
 
 void TreeDomain::CalculateSubdomainFrame(const Eigen::VectorXd &a) {
     const auto& tree_trunk = dynamic_cast<const ReducedTreeTrunk*>(GetObject(_tree_trunk_id));

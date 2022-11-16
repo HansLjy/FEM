@@ -12,14 +12,13 @@ void ClothRandomize(ClothForTest& cloth);
 
 class ClothForTest : public Cloth {
 public:
-    ClothForTest(double rho, double k_stretch, double k_shear, double k_bend,
+    ClothForTest(double rho, double thickness, double k_stretch, double k_shear, double k_bend,
                  const Vector3d& start, const Vector3d& u_end, const Vector3d& v_end,
                  int num_u_segments, int num_v_segments, double stretch_u, double stretch_v)
                  : Object(Cloth::GeneratePosition(start, u_end, v_end, num_u_segments, num_v_segments)),
-                   Cloth(rho, k_stretch, k_shear, k_bend, k_bend, Vector2d::Random(),
+                   Cloth(rho, thickness, k_stretch, k_shear, k_bend, k_bend, Vector2d::Random(),
                          start, u_end, v_end,
-                         num_u_segments, num_v_segments,
-                         stretch_u, stretch_v) {}
+                         num_u_segments, num_v_segments) {}
 
     FRIEND_TEST(ClothTest, ClothInitializationTest);
     FRIEND_TEST(ClothTest, ClothEnergyTest);
@@ -31,6 +30,7 @@ const double k_stretch = 100;
 const double k_shear = 1;
 const double k_bend = 0.1;
 const double stretch_u = 1, stretch_v = 1;
+const double thickness = 0.1;
 const Vector3d start = (Vector3d() << 0, 0, 0).finished();
 const Vector3d u_end = (Vector3d() << 2, 0, 0).finished();
 const Vector3d v_end = (Vector3d() << 2, 2, 0).finished();
@@ -40,7 +40,7 @@ const Vector3d v_end = (Vector3d() << 2, 2, 0).finished();
 TEST(ClothTest, ClothInitializationTest) {
     const int num_u_segments = 1;
     const int num_v_segments = 1;
-    ClothForTest cloth(rho, k_stretch, k_shear, k_bend, start, u_end, v_end, num_u_segments, num_v_segments, stretch_u, stretch_v);
+    ClothForTest cloth(rho, thickness, k_stretch, k_shear, k_bend, start, u_end, v_end, num_u_segments, num_v_segments, stretch_u, stretch_v);
 
     EXPECT_EQ(cloth._num_points, 4);
     EXPECT_EQ(cloth._num_triangles, 2);
@@ -53,10 +53,10 @@ TEST(ClothTest, ClothInitializationTest) {
     EXPECT_EQ(cloth._stretch_v, stretch_v);
 
     EXPECT_EQ(cloth._mass.size(), 4);
-    EXPECT_DOUBLE_EQ(cloth._mass(0), rho * 2 / 3);
-    EXPECT_DOUBLE_EQ(cloth._mass(3), rho * 2 / 3);
-    EXPECT_DOUBLE_EQ(cloth._mass(1), rho * 4 / 3);
-    EXPECT_DOUBLE_EQ(cloth._mass(2), rho * 4 / 3);
+    EXPECT_DOUBLE_EQ(cloth._mass(0), rho * thickness * 2 / 3);
+    EXPECT_DOUBLE_EQ(cloth._mass(3), rho * thickness * 2 / 3);
+    EXPECT_DOUBLE_EQ(cloth._mass(1), rho * thickness * 4 / 3);
+    EXPECT_DOUBLE_EQ(cloth._mass(2), rho * thickness * 4 / 3);
 
     spdlog::info("UV coordinates:");
     std::cerr << cloth._uv_coord << std::endl;
@@ -105,7 +105,7 @@ TEST(ClothTest, ClothEnergyTest) {
 
     const int num_u_segments = 10;
     const int num_v_segments = 10;
-    ClothForTest cloth(rho, k_stretch, k_shear, k_bend, start, u_end, v_end, num_u_segments, num_v_segments, stretch_u, stretch_v);
+    ClothForTest cloth(rho, thickness, k_stretch, k_shear, k_bend, start, u_end, v_end, num_u_segments, num_v_segments, stretch_u, stretch_v);
 
     Matrix3d R = GetRandomRotationMatrix();
     Vector3d b = Vector3d::Random();
@@ -126,7 +126,7 @@ void ClothRandomize(ClothForTest& cloth) {
 TEST(ClothTest, ClothEnergyDerivativeTest) {
     const int num_u_segments = 1;
     const int num_v_segments = 1;
-    ClothForTest cloth(rho, 1, 1, 1, start, u_end, v_end, num_u_segments, num_v_segments, stretch_u, stretch_v);
+    ClothForTest cloth(rho, thickness, 1, 1, 1, start, u_end, v_end, num_u_segments, num_v_segments, stretch_u, stretch_v);
 
     GenerateDerivativesWithInfo(cloth, Energy, ClothRandomize, 1e-8, 1e-4)
 
