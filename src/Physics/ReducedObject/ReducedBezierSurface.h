@@ -16,7 +16,7 @@ public:
     /**
      * @warning TODO: currently, control points should fall into the same plane
      */
-    ReducedBezierSurface(const VectorXd &control_points, double rho, double k_stretch, double k_shear,
+    ReducedBezierSurface(const VectorXd &control_points, double rho, double thickness, double k_stretch, double k_shear,
                          double k_bend_max, double k_bend_min, const Vector3d& max_dir,
                          int num_u_segments, int num_v_segments, double stretch_u = 1, double stretch_v = 1);
 

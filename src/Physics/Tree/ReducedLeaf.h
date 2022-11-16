@@ -11,7 +11,7 @@
 class ReducedLeaf : public ReducedObject {
 public:
     explicit ReducedLeaf(const json& config);
-    ReducedLeaf(double density, double k_stretch, double k_shear, double k_bend_max, double k_bend_min,
+    ReducedLeaf(double density, double thickness, double k_stretch, double k_shear, double k_bend_max, double k_bend_min,
                 int u_segments, int v_segments, const VectorXd& control_points);
 
     DERIVED_DECLARE_CLONE(Object)

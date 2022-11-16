@@ -32,7 +32,7 @@ protected:
     VectorXd _voronoi_length;   // length under the government of one point
 
 private:
-    static VectorXd GenerateMass(const VectorXd& x, double rho);
+    static VectorXd GenerateMass(const VectorXd& x, double rho, double radius);
 };
 
 #endif //FEM_TREETRUNK_H

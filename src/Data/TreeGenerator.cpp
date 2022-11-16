@@ -44,9 +44,9 @@ struct Trunk {
 };
 
 struct Leaf {
-    Leaf(double density, double k_stretch, double k_shear, double k_bend_max, double k_bend_min,
+    Leaf(double density, double thickness, double k_stretch, double k_shear, double k_bend_max, double k_bend_min,
          int u_segments, int v_segments, double long_axis, double short_axis)
-         : _density(density), _k_stretch(k_stretch), _k_shear(k_shear),
+         : _density(density), _thickness(thickness), _k_stretch(k_stretch), _k_shear(k_shear),
            _k_bend_max(k_bend_max), _k_bend_min(k_bend_min),
            _u_segments(u_segments), _v_segments(v_segments) {
         _control_points = {
@@ -74,10 +74,11 @@ struct Leaf {
         leaf["u-segments"] = _u_segments;
         leaf["v-segments"] = _v_segments;
         leaf["control-points"] = _control_points;
+        leaf["thickness"] = _thickness;
         return leaf;
     }
 
-    double _density;
+    double _density, _thickness;
     double _k_stretch, _k_shear, _k_bend_max, _k_bend_min;
     int _u_segments, _v_segments;
     std::vector<double> _control_points;
@@ -107,6 +108,9 @@ double alpha_max;
 double alpha_min;
 double radius_root_max;
 double radius_root_min;
+double leaf_short_axis;
+double leaf_long_axis;
+double leaf_thickness;
 double k;
 int trunk_segments;
 int leaf_segments;
@@ -115,11 +119,11 @@ Vector3d g;
 
 json DFS(int cur_level, double cur_length, double parent_radius_max, double parent_radius_min) {
     double distance_to_root = (rand() % 30 + 50) / 100.0;
-    double cur_radius_max = (1 - distance_to_root) * parent_radius_max + distance_to_root * parent_radius_min;
+    double cur_radius_max = 0.5 * ((1 - distance_to_root) * parent_radius_max + distance_to_root * parent_radius_min);
     double cur_radius_min = cur_radius_max / parent_radius_max * parent_radius_min;
 
     double angle = rand() % 30 + 45;
-    Vector3d axis = Vector3d::Random().normalized();
+    Vector3d axis = (Vector3d() << Vector2d::Random().normalized(), 0).finished();
 
     json subdomain;
     subdomain["type"] = "tree-domain";
@@ -130,7 +134,7 @@ json DFS(int cur_level, double cur_length, double parent_radius_max, double pare
 
     if (cur_level == max_level) {
         subdomain["system"]["objects"] = {
-                json(Leaf(leaf_density, k_stretch, k_shear, k_bend_max, k_bend_min, leaf_segments, leaf_segments, cur_length * 0.3, cur_length * 0.2))
+                json(Leaf(leaf_density, leaf_thickness, k_stretch, k_shear, k_bend_max, k_bend_min, leaf_segments, leaf_segments, leaf_long_axis, leaf_short_axis))
         };
         subdomain["system"]["external-forces"] = {
                 json(Gravity(g, "leaf"))
@@ -158,10 +162,10 @@ json DFS(int cur_level, double cur_length, double parent_radius_max, double pare
 }
 
 void GenerateTree(const std::string& config, const std::string& output_file) {
-    srand(607);
-
     std::ifstream config_file(config);
     json generator_config = json::parse(config_file);
+
+    srand(generator_config["magic-number"]);
 
     max_level = generator_config["max-level"];
     root_length = generator_config["root-length"];
@@ -181,6 +185,10 @@ void GenerateTree(const std::string& config, const std::string& output_file) {
     k_bend_max = generator_config["k-bend-max"];
     k_bend_min = generator_config["k-bend-min"];
     leaf_segments = generator_config["leaf-segments"];
+
+    leaf_short_axis = generator_config["leaf-short-axis"];
+    leaf_long_axis = generator_config["leaf-long-axis"];
+    leaf_thickness = generator_config["leaf-thickness"];
 
     json system;
     system["type"] = "tree-domain";

@@ -9,7 +9,7 @@ DEFINE_CLONE(Object, TreeTrunk)
 
 TreeTrunk::TreeTrunk(double rho, double alpha_max, double alpha_min, double radius_max, double radius_min,
                      double k, const Eigen::VectorXd &x, const Eigen::Vector3d &root)
-                     : Object(x), SampledObject(GenerateMass(x, rho)),
+                     : Object(x), SampledObject(GenerateMass(x, rho, radius_max)),
                        ShapedObject(TreeTrunkShape(radius_max, radius_min)),
                        _num_points(x.size() / 3), _k(k), _root(root) {
     _alpha.resize(_num_points - 1);
@@ -251,14 +251,15 @@ void TreeTrunk::GetPotentialHessian(COO &coo, int x_offset, int y_offset) const 
     }
 }
 
-VectorXd TreeTrunk::GenerateMass(const VectorXd &x, double rho) {
+VectorXd TreeTrunk::GenerateMass(const VectorXd &x, double rho, double radius) {
+    double line_density = rho * EIGEN_PI * radius * radius;
     int num_points = x.size() / 3;
     VectorXd mass(num_points);
     mass.setZero();
     for (int i = 0, j = 0; i < num_points - 1; i++, j += 3) {
         Vector3d e = x.segment<3>(j + 3) - x.segment<3>(j);
-        mass(i) += e.norm() * rho / 2;
-        mass(i + 1) += e.norm() * rho / 2;
+        mass(i) += e.norm() * line_density / 2;
+        mass(i + 1) += e.norm() * line_density / 2;
     }
     return mass;
 }

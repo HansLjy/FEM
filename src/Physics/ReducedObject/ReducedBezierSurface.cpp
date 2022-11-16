@@ -11,16 +11,16 @@ DEFINE_CLONE(Object, ReducedBezierSurface)
 ReducedBezierSurface::ReducedBezierSurface(const json &config)
     : ReducedBezierSurface(
         Json2VecX(config["control-points"]),
-        config["density"], config["k-stretch"], config["k-shear"], config["k-bend-max"], config["k-bend-min"], Json2Vec(config["max-dir"]),
+        config["density"], config["thickness"], config["k-stretch"], config["k-shear"], config["k-bend-max"], config["k-bend-min"], Json2Vec(config["max-dir"]),
         config["u-segments"], config["v-segments"], config["stretch-u"], config["stretch-v"]
       ) {}
 
-ReducedBezierSurface::ReducedBezierSurface(const Eigen::VectorXd &control_points, double rho, double k_stretch,
+ReducedBezierSurface::ReducedBezierSurface(const Eigen::VectorXd &control_points, double rho, double thickness, double k_stretch,
                                            double k_shear, double k_bend_max, double k_bend_min,
                                            const Eigen::Vector3d &max_dir, int num_u_segments, int num_v_segments,
                                            double stretch_u, double stretch_v)
     : ReducedObject(control_points,
-                    Cloth(rho, k_stretch, k_shear, k_bend_max, k_bend_min,
+                    Cloth(rho, thickness, k_stretch, k_shear, k_bend_max, k_bend_min,
                           GenerateDir(control_points, max_dir),
                           GenerateX(control_points, num_u_segments, num_v_segments),
                           GenerateUVCoord(control_points, num_u_segments, num_v_segments),

@@ -27,11 +27,11 @@ public:
      * considered as the u direction, while v_end - start
      * minus its u-direction part is considered as v-dir
      */
-    Cloth(double rho, double k_stretch, double k_shear, double k_bend_max, double k_bend_min, const Vector2d& max_dir,
+    Cloth(double rho, double thickness, double k_stretch, double k_shear, double k_bend_max, double k_bend_min, const Vector2d& max_dir,
           const Vector3d& start, const Vector3d& u_end, const Vector3d& v_end,
           int num_u_segments, int num_v_segments,
           double stretch_u = 1, double stretch_v = 1);
-    Cloth(double rho, double k_stretch, double k_shear, double k_bend_max, double k_bend_min, const Vector2d& max_bend_dir,
+    Cloth(double rho, double thickness, double k_stretch, double k_shear, double k_bend_max, double k_bend_min, const Vector2d& max_bend_dir,
           const VectorXd &x, const VectorXd &uv_corrd,
           const MatrixXi &topo, double stretch_u = 1, double stretch_v = 1);
 
