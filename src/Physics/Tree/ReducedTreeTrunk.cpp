@@ -11,15 +11,16 @@ DEFINE_CLONE(Object, ReducedTreeTrunk)
 
 ReducedTreeTrunk::ReducedTreeTrunk(const json &config)
     : ReducedTreeTrunk(
-        config["segments"], config["density"], config["alpha-max"], config["alpha-min"],
-        config["radius-max"], config["radius-min"], config["k"],
+        config["segments"], config["density"], config["youngs-module"],
+        config["radius-max"], config["radius-min"],
         Json2Vec(config["root"]), Json2VecX(config["control-points"])
 ) {}
 
-ReducedTreeTrunk::ReducedTreeTrunk(int num_segments, double rho, double alpha_max, double alpha_min, double radius_max,
-                                   double radius_min, double k, const Vector3d &root, const VectorXd &control_points)
+ReducedTreeTrunk::ReducedTreeTrunk(int num_segments, double rho, double youngs_module, double radius_max,
+                                   double radius_min,
+                                   const Vector3d &root, const VectorXd &control_points)
    : ReducedObject(control_points.segment<9>(3),
-                   TreeTrunk(rho, alpha_max, alpha_min, radius_max, radius_min, k,
+                   TreeTrunk(rho, youngs_module, radius_max, radius_min,
                              GenerateX(num_segments, control_points), root),
                    GenerateBase(num_segments),
                    GenerateShift(num_segments, control_points.segment<3>(0))),

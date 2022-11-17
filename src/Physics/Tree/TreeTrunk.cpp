@@ -7,18 +7,21 @@
 
 DEFINE_CLONE(Object, TreeTrunk)
 
-TreeTrunk::TreeTrunk(double rho, double alpha_max, double alpha_min, double radius_max, double radius_min,
-                     double k, const Eigen::VectorXd &x, const Eigen::Vector3d &root)
-                     : Object(x), SampledObject(GenerateMass(x, rho, radius_max)),
+TreeTrunk::TreeTrunk(double rho, double youngs_module, double radius_max, double radius_min,
+                     const VectorXd &x,
+                     const Vector3d &root)
+                     : Object(x), SampledObject(GenerateMass(x, rho, radius_max, radius_min)),
                        ShapedObject(TreeTrunkShape(radius_max, radius_min)),
-                       _num_points(x.size() / 3), _k(k), _root(root) {
+                       _num_points(x.size() / 3), _root(root) {
     _alpha.resize(_num_points - 1);
+    _stiffness.resize(_num_points - 1);
     if (_num_points > 1) {
-        const double delta_alpha = (alpha_min - alpha_max) / (_num_points - 2);
-        double current_alpha = alpha_max;
+        const double delta_radius = (radius_max - radius_min) / (_num_points - 1);
+        double current_radius = radius_max;
         for (int i = 0; i < _num_points - 1; i++) {
-            _alpha(i) = current_alpha;
-            current_alpha += delta_alpha;
+            _alpha(i) = youngs_module * 0.5 * EIGEN_PI * current_radius * current_radius * current_radius * current_radius;
+            _stiffness(i) = youngs_module * EIGEN_PI * current_radius * current_radius / (x.segment<3>(3 * i + 3) - x.segment<3>(3 * i)).norm();
+            current_radius -= delta_radius;
         }
     }
 
@@ -46,7 +49,7 @@ double TreeTrunk::GetPotential(const Ref<const Eigen::VectorXd> &x) const {
         Vector3d x_next = x.segment<3>(j + 3);
         Vector3d e_current = x_next - x_current;
 
-        potential += 0.5 * _k * (e_current.norm() - _rest_length(i)) * (e_current.norm() - _rest_length(i));
+        potential += 0.5 * _stiffness(i) * (e_current.norm() - _rest_length(i)) * (e_current.norm() - _rest_length(i));
 
         Vector3d kB = 2 * e_prev.cross(e_current) / (e_current.norm() * e_prev.norm() + e_prev.dot(e_current));
         potential += kB.dot(kB) / _voronoi_length(i) * _alpha(i);
@@ -97,7 +100,7 @@ VectorXd TreeTrunk::GetPotentialGradient() const {
 
     for (int i = 0, j = 0; i < _num_points - 1; i++, j += 3) {
         Vector3d e = _x.segment<3>(j + 3) - _x.segment<3>(j);
-        Vector3d contribution = _k * (e.norm() - _rest_length(i)) * e.normalized();
+        Vector3d contribution = _stiffness(i) * (e.norm() - _rest_length(i)) * e.normalized();
         gradient.segment<3>(j) -= contribution;
         gradient.segment<3>(j + 3) += contribution;
     }
@@ -232,8 +235,8 @@ void TreeTrunk::GetPotentialHessian(COO &coo, int x_offset, int y_offset) const 
         Matrix6d hessian;
         hessian.setZero();
 
-        Matrix3d sub_hessian = _k * (1 - _rest_length(i) / e.norm()) * I3
-                               + _k * _rest_length(i) / (e_norm * e_norm * e_norm) * e * e.transpose();
+        Matrix3d sub_hessian = _stiffness(i) * (1 - _rest_length(i) / e.norm()) * I3
+                               + _stiffness(i) * _rest_length(i) / (e_norm * e_norm * e_norm) * e * e.transpose();
         hessian.block<3, 3>(0, 0) = hessian.block<3, 3>(3, 3) = sub_hessian;
         hessian.block<3, 3>(0, 3) = hessian.block<3, 3>(3, 0) = - sub_hessian;
 
@@ -251,15 +254,18 @@ void TreeTrunk::GetPotentialHessian(COO &coo, int x_offset, int y_offset) const 
     }
 }
 
-VectorXd TreeTrunk::GenerateMass(const VectorXd &x, double rho, double radius) {
-    double line_density = rho * EIGEN_PI * radius * radius;
+VectorXd TreeTrunk::GenerateMass(const VectorXd &x, double rho, double radius_max, double radius_min) {
     int num_points = x.size() / 3;
     VectorXd mass(num_points);
     mass.setZero();
+    const double delta_radius = (radius_max - radius_min) / (num_points - 1);
+    double current_radius = radius_max;
     for (int i = 0, j = 0; i < num_points - 1; i++, j += 3) {
+        const double line_density = rho * EIGEN_PI * current_radius * current_radius;
         Vector3d e = x.segment<3>(j + 3) - x.segment<3>(j);
         mass(i) += e.norm() * line_density / 2;
         mass(i + 1) += e.norm() * line_density / 2;
+        current_radius -= delta_radius;
     }
     return mass;
 }

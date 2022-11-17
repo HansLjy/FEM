@@ -10,11 +10,11 @@ void TreeTrunkRandomize(TreeTrunkForTest& tree_trunk);
 
 class TreeTrunkForTest : public TreeTrunk {
 public:
-    TreeTrunkForTest(double rho, double alpha, double k, const Vector3d& start, const Vector3d& end, int num_segments, const Vector3d& root)
-        : TreeTrunkForTest(rho, alpha, k, GenerateX(start, end, num_segments), root) {}
+    TreeTrunkForTest(double rho, double alpha, const Vector3d& start, const Vector3d& end, int num_segments, const Vector3d& root)
+        : TreeTrunkForTest(rho, alpha, GenerateX(start, end, num_segments), root) {}
 
-    TreeTrunkForTest(double rho, double alpha,  double k, const VectorXd &x, const Vector3d& root)
-        : Object(x), TreeTrunk(rho, alpha, alpha, 0, 0, k, x, root) {}
+    TreeTrunkForTest(double rho, double youngs_module, const VectorXd &x, const Vector3d& root)
+        : Object(x), TreeTrunk(rho, youngs_module, 0.1, 0.1, x, root) {}
 
     static VectorXd GenerateX(const Vector3d& start, const Vector3d& end, int num_segments) {
         VectorXd x(3 * (num_segments + 1));
@@ -30,8 +30,7 @@ public:
 };
 
 const double rho_global = 1;
-const double alpha_global = 0.1;
-const double k_global = 1;
+const double youngs_module = 1;
 const Vector3d start_global = (Vector3d() << 0, 0, 0).finished();
 const Vector3d end_global = (Vector3d() << 0, 0, 10).finished();
 const int segments_global = 2;
@@ -44,7 +43,7 @@ void TreeTrunkRandomize(TreeTrunkForTest& tree_trunk) {
 }
 
 TEST(TreeTrunkTest, EnergyGradientTest) {
-    TreeTrunkForTest tree_trunk(rho_global, alpha_global, k_global, start_global, end_global, segments_global, root_global);
+    TreeTrunkForTest tree_trunk(rho_global, youngs_module, start_global, end_global, segments_global, root_global);
     GenerateDerivativesWithInfo(tree_trunk, Energy, TreeTrunkRandomize, 1e-8, 1e-4)
 
 //    PrintGradient()
@@ -61,8 +60,8 @@ void ReducedTreeTrunkRandomize(ReducedTreeTrunkForTest& tree_trunk);
 
 class ReducedTreeTrunkForTest : public ReducedTreeTrunk {
 public:
-    ReducedTreeTrunkForTest(int num_segments, double rho, double alpha,  double k, const Vector3d& root, const VectorXd &control_points)
-            : ReducedTreeTrunk(num_segments, rho, alpha, alpha, 0, 0, k, root, control_points) {}
+    ReducedTreeTrunkForTest(int num_segments, double rho, double youngs_module, const Vector3d& root, const VectorXd &control_points)
+            : ReducedTreeTrunk(num_segments, rho, youngs_module, 0.1, 0.1, root, control_points) {}
 
     friend void ReducedTreeTrunkRandomize(ReducedTreeTrunkForTest& tree_trunk);
 };
@@ -81,7 +80,7 @@ const Vector12d control_points_global = (Vector12d() <<
 ).finished();
 
 TEST(TreeTrunkTest, ReducedEnergyTest) {
-    ReducedTreeTrunkForTest reduced_tree_trunk(10, rho_global, alpha_global, k_global, root_global, control_points_global);
+    ReducedTreeTrunkForTest reduced_tree_trunk(10, rho_global, youngs_module, root_global, control_points_global);
 
     ReducedTreeTrunkRandomize(reduced_tree_trunk);
 //    std::cerr << "Energy: " << reduced_tree_trunk.GetEnergy(Matrix3d::Identity(), Vector3d::Zero());

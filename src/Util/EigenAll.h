@@ -61,8 +61,8 @@ Matrix<double, dim, dim> PositiveProject(const Eigen::Matrix<double, dim, dim>& 
     MatrixOfSize eigen_vectors = eigens.eigenvectors();
     VectorOfSize eigen_values = eigens.eigenvalues();
     for (int i = 0; i < dim; i++) {
-        if (eigen_values[i] < 0) {
-            eigen_values[i] = 0;
+        if (eigen_values(i) < 0) {
+            eigen_values(i) = 0;
         }
     }
     return eigen_vectors * eigen_values.asDiagonal() * eigen_vectors.transpose();

@@ -10,9 +10,9 @@
 using nlohmann::json;
 
 struct Trunk {
-    Trunk(int segments, double length, double density, double alpha_max, double alpha_min,
-          double radius_max, double radius_min, double k)
-        : _segments(segments), _density(density), _alpha_max(alpha_max), _alpha_min(alpha_min), _radius_max(radius_max), _radius_min(radius_min), _k(k) {
+    Trunk(int segments, double length, double density, double youngs_module,
+          double radius_max, double radius_min)
+        : _segments(segments), _density(density), _youngs_module(youngs_module), _radius_max(radius_max), _radius_min(radius_min) {
         _control_points = {
                 0, 0, 0,
                 0, 0, length / 3,
@@ -26,11 +26,9 @@ struct Trunk {
         object["type"] = "tree-trunk";
         object["name"] = "trunk";
         object["density"] = _density;
-        object["alpha-max"] = _alpha_max;
-        object["alpha-min"] = _alpha_min;
+        object["youngs-module"] = _youngs_module;
         object["radius-max"] = _radius_max;
         object["radius-min"] = _radius_min;
-        object["k"] = _k;
         object["root"] = {0, 0, -1};
         object["control-points"] = _control_points;
         object["segments"] = _segments;
@@ -39,7 +37,8 @@ struct Trunk {
 
     int _segments;
     double _density;
-    double _alpha_max, _alpha_min, _radius_max, _radius_min, _k;
+    double _youngs_module;
+    double _radius_max, _radius_min;
     std::vector<double> _control_points;
 };
 
@@ -104,14 +103,12 @@ double root_length;
 int max_fan_out;
 double trunk_density;
 double leaf_density;
-double alpha_max;
-double alpha_min;
+double youngs_module;
 double radius_root_max;
 double radius_root_min;
 double leaf_short_axis;
 double leaf_long_axis;
 double leaf_thickness;
-double k;
 int trunk_segments;
 int leaf_segments;
 double k_stretch, k_shear, k_bend_max, k_bend_min;
@@ -142,7 +139,7 @@ json DFS(int cur_level, double cur_length, double parent_radius_max, double pare
         };
     } else {
         subdomain["system"]["objects"] = {
-                json(Trunk(trunk_segments, cur_length, trunk_density, alpha_max, alpha_min, cur_radius_max, cur_radius_min, k))
+                json(Trunk(trunk_segments, cur_length, trunk_density, youngs_module, cur_radius_max, cur_radius_min))
         };
         subdomain["system"]["external-forces"] = {
                 json(Gravity(g, "trunk"))
@@ -175,11 +172,9 @@ void GenerateTree(const std::string& config, const std::string& output_file) {
     max_fan_out = generator_config["max-fan-out"];
     trunk_density = generator_config["trunk-density"];
     leaf_density = generator_config["leaf-density"];
-    alpha_max = generator_config["alpha-max"];
-    alpha_min = generator_config["alpha-min"];
+    youngs_module = generator_config["youngs-module"];
     radius_root_max = generator_config["radius-root-max"];
     radius_root_min = generator_config["radius-root-min"];
-    k = generator_config["k"];
     trunk_segments = generator_config["trunk-segments"];
     g = Json2Vec(generator_config["g"]);
 
@@ -204,7 +199,7 @@ void GenerateTree(const std::string& config, const std::string& output_file) {
     };
 
     system["system"]["objects"] = {
-        json(Trunk(trunk_segments, root_length, trunk_density, alpha_max, alpha_min, radius_root_max, radius_root_min, k))
+        json(Trunk(trunk_segments, root_length, trunk_density, youngs_module, radius_root_max, radius_root_min))
     };
     system["system"]["constraints"] = json::array();
     system["system"]["external-forces"] = {json(Gravity(g))};
