@@ -3,17 +3,13 @@
 //
 
 #include "Simulator.h"
-#include "Curve/InextensibleCurve.h"
 #include "Integrator/Integrator.h"
 #include "Shape.h"
 #include "nlohmann/json.hpp"
+#include "JsonUtil.h"
 #include <fstream>
 
 using nlohmann::json;
-
-glm::vec3 Json2GlmVec3(const json& vec) {
-    return {vec[0], vec[1], vec[2]};
-}
 
 void Simulator::LoadScene(const std::string &config) {
     json config_json;
@@ -50,12 +46,42 @@ void Simulator::LoadScene(const std::string &config) {
 
 }
 
-void Simulator::Simulate() {
+void Simulator::Simulate(const std::string& output_dir) {
     double current_time = 0;
+    int itr_id = 0;
+    int obj_id = 0;
+    for (auto itr = _system->GetIterator(); !itr->IsDone(); itr->Forward(), obj_id++) {
+        const auto& obj = itr->GetObject();
+        MatrixXi topo;
+        MatrixXd vertices;
+        obj->GetShape(vertices, topo);
+        write_binary(output_dir + "/topo" + std::to_string(obj_id), topo);
+    }
+    const int object_number = obj_id;
+
     while(current_time < _duration) {
         _integrator->Step(*_system, _time_step);
+        obj_id = 0;
+        for (auto itr = _system->GetIterator(); !itr->IsDone(); itr->Forward(), obj_id++) {
+            const auto& obj = itr->GetObject();
+            MatrixXi topo;
+            MatrixXd vertices;
+            obj->GetShape(vertices, topo);
+            std::string prefix = output_dir + "/obj" + std::to_string(obj_id) + "itr" + std::to_string(itr_id);
+            write_binary(prefix + "vert", vertices);
+            write_binary(prefix + "rot", itr->GetRotation());
+            write_binary(prefix + "trans", itr->GetTranslation());
+        }
         current_time += _time_step;
+        itr_id++;
+        spdlog::info("Current time: {}", current_time);
     }
+    json config;
+    config["number-of-objects"] = object_number;
+    config["number-of-iterations"] = itr_id;
+    std::ofstream config_file(output_dir + "/" + "config.json");
+    config_file << config.dump();
+    config_file.close();
 }
 
 Simulator::~Simulator() {
@@ -91,8 +117,6 @@ void Simulator::InitializeScene(Scene &scene) {
 #include "Timer.h"
 
 void Simulator::Processing(Scene &scene) {
-    static int itr = 0;
-    static double total_time = 0;
     auto t = clock();
     _integrator->Step(*_system, _time_step);
     int id = 0;
@@ -105,10 +129,5 @@ void Simulator::Processing(Scene &scene) {
         scene.SetMesh(vertices, topo, itr->GetRotation(), itr->GetTranslation());
     }
     auto delta_t = clock() - t;
-//    spdlog::info("fps = {}", (int)(CLOCKS_PER_SEC / delta_t));
-    total_time += 1.0 * delta_t / CLOCKS_PER_SEC;
-    if (++itr >= 1000) {
-        spdlog::info("Time elapse for {} itrs = {} s", itr, total_time);
-        exit(-1);
-    }
+    spdlog::info("fps = {}", (int)(CLOCKS_PER_SEC / delta_t));
 }

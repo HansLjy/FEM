@@ -117,13 +117,14 @@ int leaf_segments;
 double k_stretch, k_shear, k_bend_max, k_bend_min;
 Vector3d g;
 
-json DFS(int cur_level, double cur_length, double parent_radius_max, double parent_radius_min) {
-    double distance_to_root = (rand() % 30 + 50) / 100.0;
+json DFS(int cur_level, double cur_length, double parent_radius_max, double parent_radius_min, double theta) {
+    double distance_to_root = 0.6;
     double cur_radius_max = 0.5 * ((1 - distance_to_root) * parent_radius_max + distance_to_root * parent_radius_min);
     double cur_radius_min = cur_radius_max / parent_radius_max * parent_radius_min;
 
-    double angle = rand() % 30 + 45;
-    Vector3d axis = (Vector3d() << Vector2d::Random().normalized(), 0).finished();
+    double angle = 45;
+//    Vector3d axis = (Vector3d() << Vector2d::Random().normalized(), 0).finished();
+    Vector3d axis = (Vector3d() << cos(theta), sin(theta), 0).finished();
 
     json subdomain;
     subdomain["type"] = "tree-domain";
@@ -152,9 +153,11 @@ json DFS(int cur_level, double cur_length, double parent_radius_max, double pare
     subdomain["subdomains"] = json::array();
     if (cur_level < max_level) {
 //        int num_children = rand() % max_fan_out;
-        for (int i = 0; i < max_fan_out; i++) {
+        double current_angle = 0;
+        double delta_angle = EIGEN_PI * 2 / max_fan_out;
+        for (int i = 0; i < max_fan_out; i++, current_angle += delta_angle) {
             subdomain["subdomains"].push_back(
-                DFS(cur_level + 1, cur_length * 0.5, cur_radius_max, cur_radius_min)
+                DFS(cur_level + 1, cur_length * 0.5, cur_radius_max, cur_radius_min, current_angle)
             );
         }
     }
@@ -206,8 +209,10 @@ void GenerateTree(const std::string& config, const std::string& output_file) {
     system["system"]["constraints"] = json::array();
     system["system"]["external-forces"] = {json(Gravity(g))};
 
-    for (int i = 0; i < max_fan_out; i++) {
-        system["subdomains"].push_back(DFS(1, root_length * 0.5, radius_root_max, radius_root_min));
+    double current_angle = 0;
+    double delta_angle = EIGEN_PI * 2 / max_fan_out;
+    for (int i = 0; i < max_fan_out; i++, current_angle += delta_angle) {
+        system["subdomains"].push_back(DFS(1, root_length * 0.5, radius_root_max, radius_root_min, current_angle));
     }
 
     std::ofstream output(output_file);
@@ -215,5 +220,5 @@ void GenerateTree(const std::string& config, const std::string& output_file) {
 }
 
 int main() {
-    GenerateTree(CONFIG_PATH "/model/generator.json", CONFIG_PATH "/model/tree-model.json");
+    GenerateTree(CONFIG_PATH "/generator.json", CONFIG_PATH "/model/tree-model.json");
 }

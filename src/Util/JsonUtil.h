@@ -7,6 +7,7 @@
 
 #include "EigenAll.h"
 #include "nlohmann/json.hpp"
+#include "glm/glm.hpp"
 
 using nlohmann::json;
 
@@ -20,5 +21,7 @@ Vector<double, dim> Json2Vec(const json& vec) {
 }
 VectorXd Json2VecX(const json& vec);
 Matrix3d Json2Matrix3d(const json& mat);
+
+glm::vec3 Json2GlmVec3(const json& vec);
 
 #endif //FEM_JSONUTIL_H

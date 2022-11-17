@@ -19,3 +19,7 @@ Matrix3d Json2Matrix3d(const json& mat) {
         mat[6], mat[7], mat[8]
     ).finished();
 }
+
+glm::vec3 Json2GlmVec3(const json& vec) {
+    return {vec[0], vec[1], vec[2]};
+}

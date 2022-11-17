@@ -245,9 +245,9 @@ VectorXd Cloth::GetPotentialGradient() const {
 #include "Timer.h"
 
 void Cloth::GetPotentialHessian(COO &coo, int x_offset, int y_offset) const {
-    static double triangle_hessian_t = 0;
-    static int cnt = 0;
-    auto start_t = clock();
+//    static double triangle_hessian_t = 0;
+//    static int cnt = 0;
+//    auto start_t = clock();
     for (int i = 0; i < _num_triangles; i++) {
         RowVector3i index = _topo.row(i);
         Vector3d xi = _x.segment<3>(3 * index(0));
@@ -320,11 +320,11 @@ void Cloth::GetPotentialHessian(COO &coo, int x_offset, int y_offset) const {
             }
         }
     }
-    triangle_hessian_t += 1.0 * (clock() - start_t) / CLOCKS_PER_SEC;
-    if (++cnt % 10000 == 0) {
-        spdlog::info("avg time for triangle hessian calculation: {}", triangle_hessian_t / 10000);
-        triangle_hessian_t = 0;
-    }
+//    triangle_hessian_t += 1.0 * (clock() - start_t) / CLOCKS_PER_SEC;
+//    if (++cnt % 10000 == 0) {
+//        spdlog::info("avg time for triangle hessian calculation: {}", triangle_hessian_t / 10000);
+//        triangle_hessian_t = 0;
+//    }
 
 //    STOP_TIMING("Triangle Hessian", triangle_hessian)
 

@@ -20,12 +20,12 @@ public:
     void InitializeScene(Scene &scene) override;
     void Processing(Scene &scene) override;
 
-    void LoadScene(const std::string& config);
-    void Simulate();
+    virtual void LoadScene(const std::string& config);
+    void Simulate(const std::string& output_dir);
 
     ~Simulator();
 
-private:
+protected:
     double _duration;
     double _time_step;
     PhysicsSystem *_system;

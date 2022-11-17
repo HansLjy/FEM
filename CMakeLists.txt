@@ -9,6 +9,7 @@ set(CMAKE_LINK_LIBRARY_FLAG_DEBUG "-g")
 
 set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 
+add_definitions(-DOUTPUT_PATH="${PROJECT_SOURCE_DIR}/output")
 add_definitions(-DCONFIG_PATH="${PROJECT_SOURCE_DIR}/config")
 message("-- configuration path: ${PROJECT_SOURCE_DIR}/config")
 

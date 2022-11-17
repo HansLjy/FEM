@@ -53,8 +53,6 @@ Vector3d SkewVector(const Matrix3d& mat);
 Vector3d FindPerpendicular(const Vector3d& vec);
 Matrix<double, 9, 3> GetVecHatMatrix();
 
-#include "iostream"
-
 template<int dim>
 Matrix<double, dim, dim> PositiveProject(const Eigen::Matrix<double, dim, dim>& matrix) {
     typedef Eigen::Matrix<double, dim, dim> MatrixOfSize;
@@ -69,4 +67,32 @@ Matrix<double, dim, dim> PositiveProject(const Eigen::Matrix<double, dim, dim>& 
     }
     return eigen_vectors * eigen_values.asDiagonal() * eigen_vectors.transpose();
 }
+
+#include "fstream"
+
+template<class Matrix>
+void write_binary(const std::string &filename, const Matrix &matrix) {
+    std::ofstream out(filename, std::ios::out | std::ios::binary | std::ios::trunc);
+    typename Matrix::Index rows = matrix.rows(), cols = matrix.cols();
+    out.write((char *) (&rows), sizeof(typename Matrix::Index));
+    out.write((char *) (&cols), sizeof(typename Matrix::Index));
+    out.write((char *) matrix.data(), rows * cols * sizeof(typename Matrix::Scalar));
+    out.close();
+}
+
+template<class MatrixType>
+bool read_binary(const std::string &filename, MatrixType &matrix) {
+    std::ifstream in(filename, std::ios::in | std::ios::binary);
+    if (in.fail()) {
+        return false;
+    }
+    typename MatrixType::Index rows = 0, cols = 0;
+    in.read((char *) (&rows), sizeof(typename MatrixType::Index));
+    in.read((char *) (&cols), sizeof(typename MatrixType::Index));
+    matrix.resize(rows, cols);
+    in.read((char *) matrix.data(), rows * cols * sizeof(typename MatrixType::Scalar));
+    in.close();
+    return true;
+}
+
 #endif
