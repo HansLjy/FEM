@@ -5,6 +5,8 @@
 #include "Player.h"
 #include "fstream"
 #include "JsonUtil.h"
+#include <fstream>
+#include <string>
 
 void Player::LoadAnimation(const std::string &config_path) {
     std::ifstream config_file(config_path);
@@ -55,8 +57,9 @@ void Player::InitializeScene(Scene &scene) {
     _end_itr_id = _end_itr_id < 0 ? _num_iterations + _end_itr_id + 1 : _end_itr_id;
 
     MatrixXi topo;
+	std::ifstream topo_file(_input_file_dir + "/topo");
     for (int i = 0; i < _num_objects; i++) {
-        read_binary(_input_file_dir + "/topo" + std::to_string(i), topo);
+        read_binary(topo_file, topo);
         _topos.push_back(topo);
         _obj_id2scene_id.push_back(scene.AddMesh());
     }
@@ -66,16 +69,17 @@ void Player::InitializeScene(Scene &scene) {
 #include "iostream"
 
 void Player::Processing(Scene &scene) {
+	std::ifstream itr_file(_input_file_dir + "/itr" + std::to_string(_cur_itr_id));
     for (int obj_id = 0; obj_id < _num_objects; obj_id++) {
-        std::string prefix = _input_file_dir + "/obj" + std::to_string(obj_id) + "itr" + std::to_string(_cur_itr_id);
         MatrixXd vertices;
         MatrixXd rotation, translation;
-        read_binary(prefix + "vert", vertices);
-        read_binary(prefix + "rot", rotation);
-        read_binary(prefix + "trans", translation);
+        read_binary(itr_file, vertices);
+        read_binary(itr_file, rotation);
+        read_binary(itr_file, translation);
         scene.SelectData(_obj_id2scene_id[obj_id]);
         scene.SetMesh(vertices, _topos[obj_id], rotation, translation);
     }
+	itr_file.close();
 
     spdlog::info("Current iteration: {}", _cur_itr_id);
 

@@ -5,6 +5,7 @@
 #include <Eigen/Sparse>
 #include <Eigen/Geometry>
 #include <Eigen/Core>
+#include <fstream>
 
 using Eigen::Matrix;
 using Eigen::Vector;
@@ -71,28 +72,20 @@ Matrix<double, dim, dim> PositiveProject(const Eigen::Matrix<double, dim, dim>& 
 #include "fstream"
 
 template<class Matrix>
-void write_binary(const std::string &filename, const Matrix &matrix) {
-    std::ofstream out(filename, std::ios::out | std::ios::binary | std::ios::trunc);
+void write_binary(std::ofstream &out, const Matrix &matrix) {
     typename Matrix::Index rows = matrix.rows(), cols = matrix.cols();
     out.write((char *) (&rows), sizeof(typename Matrix::Index));
     out.write((char *) (&cols), sizeof(typename Matrix::Index));
     out.write((char *) matrix.data(), rows * cols * sizeof(typename Matrix::Scalar));
-    out.close();
 }
 
 template<class MatrixType>
-bool read_binary(const std::string &filename, MatrixType &matrix) {
-    std::ifstream in(filename, std::ios::in | std::ios::binary);
-    if (in.fail()) {
-        return false;
-    }
+void read_binary(std::ifstream &in, MatrixType &matrix) {
     typename MatrixType::Index rows = 0, cols = 0;
     in.read((char *) (&rows), sizeof(typename MatrixType::Index));
     in.read((char *) (&cols), sizeof(typename MatrixType::Index));
     matrix.resize(rows, cols);
     in.read((char *) matrix.data(), rows * cols * sizeof(typename MatrixType::Scalar));
-    in.close();
-    return true;
 }
 
 #endif

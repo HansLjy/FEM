@@ -8,6 +8,7 @@
 #include "nlohmann/json.hpp"
 #include "JsonUtil.h"
 #include <fstream>
+#include <string>
 
 using nlohmann::json;
 
@@ -50,28 +51,31 @@ void Simulator::Simulate(const std::string& output_dir) {
     double current_time = 0;
     int itr_id = 0;
     int obj_id = 0;
+	std::ofstream topo_file(output_dir + "/topo");
     for (auto itr = _system->GetIterator(); !itr->IsDone(); itr->Forward(), obj_id++) {
         const auto& obj = itr->GetObject();
         MatrixXi topo;
         MatrixXd vertices;
         obj->GetShape(vertices, topo);
-        write_binary(output_dir + "/topo" + std::to_string(obj_id), topo);
+        write_binary(topo_file, topo);
     }
+	topo_file.close();
     const int object_number = obj_id;
 
     while(current_time < _duration) {
         _integrator->Step(*_system, _time_step);
         obj_id = 0;
+		std::ofstream itr_file(output_dir + "/itr" + std::to_string(itr_id));
         for (auto itr = _system->GetIterator(); !itr->IsDone(); itr->Forward(), obj_id++) {
             const auto& obj = itr->GetObject();
             MatrixXi topo;
             MatrixXd vertices;
             obj->GetShape(vertices, topo);
-            std::string prefix = output_dir + "/obj" + std::to_string(obj_id) + "itr" + std::to_string(itr_id);
-            write_binary(prefix + "vert", vertices);
-            write_binary(prefix + "rot", itr->GetRotation());
-            write_binary(prefix + "trans", itr->GetTranslation());
+            write_binary(itr_file, vertices);
+            write_binary(itr_file, itr->GetRotation());
+            write_binary(itr_file, itr->GetTranslation());
         }
+		itr_file.close();
         current_time += _time_step;
         itr_id++;
         spdlog::info("Current time: {}", current_time);
