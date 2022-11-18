@@ -7,7 +7,6 @@
 
 #include "Curve/ExtensibleCurve.h"
 
-class TreeTrunkGravity;
 class TreeTrunkShape;
 
 class TreeTrunk : public SampledObject, public ShapedObject {
@@ -15,12 +14,11 @@ public:
     TreeTrunk(double rho, double youngs_module, double radius_max, double radius_min, const VectorXd &x,
               const Vector3d &root);
     double GetPotential(const Ref<const VectorXd>& x) const override;
-    VectorXd GetPotentialGradient() const override;
-    void GetPotentialHessian(COO &coo, int x_offset, int y_offset) const override;
+    VectorXd GetPotentialGradient(const Ref<const VectorXd>& x) const override;
+    void GetPotentialHessian(const Ref<const VectorXd>& x, COO& coo, int x_offset, int y_offset) const override;
 
     DERIVED_DECLARE_CLONE(Object)
 
-    friend class TreeTrunkGravity;
     friend class TreeTrunkShape;
 
 protected:

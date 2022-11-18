@@ -32,17 +32,17 @@ double InextensibleCurve::GetPotential(const Ref<const Eigen::VectorXd> &x) cons
     return potential;
 }
 
-VectorXd InextensibleCurve::GetPotentialGradient() const {
+VectorXd InextensibleCurve::GetPotentialGradient(const Ref<const VectorXd>& x) const {
     VectorXd gradient;
-    gradient.resizeLike(_x);
+    gradient.resizeLike(x);
     gradient.setZero();
 
-    Vector3d x_current = _x.block<3, 1>(3, 0);
-    Vector3d e_prev = x_current - _x.block<3, 1>(0, 0);
+    Vector3d x_current = x.block<3, 1>(3, 0);
+    Vector3d e_prev = x_current - x.block<3, 1>(0, 0);
 
     // (i - 1) -- e_prev --> (i, x_current) -- e_current --> (i + 1, x_next)
     for (int i = 1; i < _num_points - 1; i++) {
-        Vector3d x_next = _x.block<3, 1>(3 * (i + 1), 0);
+        Vector3d x_next = x.block<3, 1>(3 * (i + 1), 0);
         Vector3d e_current = x_next - x_current;
 
         const double denominator = _rest_length(i - 1) * _rest_length(i) + e_prev.dot(e_current);
@@ -68,13 +68,13 @@ VectorXd InextensibleCurve::GetPotentialGradient() const {
 
 #include "unsupported/Eigen/KroneckerProduct"
 
-void InextensibleCurve::GetPotentialHessian(COO &coo, int x_offset, int y_offset) const {
-    Vector3d x_current = _x.segment<3>(3);
-    Vector3d e_prev = x_current - _x.segment<3>(0);
+void InextensibleCurve::GetPotentialHessian(const Ref<const VectorXd>& x, COO &coo, int x_offset, int y_offset) const {
+    Vector3d x_current = x.segment<3>(3);
+    Vector3d e_prev = x_current - x.segment<3>(0);
 
     // (i - 1) -- e_prev --> (i, x_current) -- e_current --> (i + 1, x_next)
     for (int i = 1, ii = 0; i < _num_points - 1; i++, ii += 3) {
-        Vector3d x_next = _x.block<3, 1>(3 * (i + 1), 0);
+        Vector3d x_next = x.block<3, 1>(3 * (i + 1), 0);
         Vector3d e_current = x_next - x_current;
 
         const double denominator = _rest_length(i - 1) * _rest_length(i) + e_prev.dot(e_current);

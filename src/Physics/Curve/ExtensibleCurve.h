@@ -17,8 +17,8 @@ public:
         : Object(x), Curve(rho, alpha_max, alpha_min, x), _k(100 * alpha_min) {};
 
     double GetPotential(const Ref<const Eigen::VectorXd> &x) const override;
-    VectorXd GetPotentialGradient() const override;
-    void GetPotentialHessian(COO &coo, int x_offset, int y_offset) const override;
+    VectorXd GetPotentialGradient(const Ref<const Eigen::VectorXd> &x) const override;
+    void GetPotentialHessian(const Ref<const Eigen::VectorXd> &x, COO &coo, int x_offset, int y_offset) const override;
 
     DERIVED_DECLARE_CLONE(Object)
 

@@ -24,17 +24,6 @@ Domain::Domain(const nlohmann::json &config)
     }
 }
 
-void Domain::SetFrame(const Eigen::Vector3d &x, const Eigen::Vector3d &v, const Eigen::Vector3d &a,
-                      const Eigen::Vector3d &angular_velocity, const Eigen::Vector3d &angular_acceleration,
-                      const Eigen::Matrix3d &rotation) {
-    _frame_x = x;
-    _frame_v = v;
-    _frame_a = a;
-    _frame_angular_velocity = angular_velocity;
-    _frame_angular_acceleration = angular_acceleration;
-    _frame_rotation = rotation;
-}
-
 Domain::~Domain() {
     for (const auto& subdomain : _subdomains) {
         delete subdomain;
@@ -142,19 +131,6 @@ void Domain::CalculateLumpedMass() {
 void Domain::GetMass(SparseMatrixXd &mass) const {
     _system.GetMass(mass);
     mass += _lumped_mass;
-}
-
-double Domain::GetEnergy() const {
-    VectorXd x = _system.GetCoordinate();
-    return _system.GetEnergy(_frame_rotation, _frame_x) - x.dot(_interface_force + _inertial_force);
-}
-
-double Domain::GetEnergy(const Eigen::VectorXd &x) const {
-    return _system.GetEnergy(x, _frame_rotation, _frame_x) - x.dot(_interface_force + _inertial_force);
-}
-
-VectorXd Domain::GetEnergyGradient() const {
-    return _system.GetEnergyGradient(_frame_rotation, _frame_x) - _interface_force - _inertial_force;
 }
 
 void Domain::UpdateSettings(const json &config) {

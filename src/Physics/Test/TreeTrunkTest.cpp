@@ -44,7 +44,7 @@ void TreeTrunkRandomize(TreeTrunkForTest& tree_trunk) {
 
 TEST(TreeTrunkTest, EnergyGradientTest) {
     TreeTrunkForTest tree_trunk(rho_global, youngs_module, start_global, end_global, segments_global, root_global);
-    GenerateDerivativesWithInfo(tree_trunk, Energy, TreeTrunkRandomize, 1e-8, 1e-4)
+    GenerateDerivatives(tree_trunk, Potential, TreeTrunkRandomize, 1e-8, 1e-4)
 
 //    PrintGradient()
     EXPECT_NEAR((numeric_gradient - analytic_gradient).norm() / numeric_gradient.size(), 0, 1e-2);
@@ -87,7 +87,7 @@ TEST(TreeTrunkTest, ReducedEnergyTest) {
 //    std::cerr << "Gradient: \n" << reduced_tree_trunk.GetEnergyGradient(Matrix3d::Identity(), Vector3d::Zero()).transpose() << std::endl;
 //    std::cerr << "Hessian: \n" << reduced_tree_trunk.GetEnergyHessian(Matrix3d::Identity(), Vector3d::Zero()) << std::endl;
 
-    GenerateDerivativesWithInfo(reduced_tree_trunk, Energy, ReducedTreeTrunkRandomize, 1e-8, 1e-4)
+    GenerateDerivatives(reduced_tree_trunk, Potential, ReducedTreeTrunkRandomize, 1e-8, 1e-4)
 
 //    PrintGradient()
     EXPECT_NEAR((numeric_gradient - analytic_gradient).norm() / numeric_gradient.size(), 0, 1e-2);

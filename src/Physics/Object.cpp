@@ -5,52 +5,8 @@
 #include "Object.h"
 #include "Shape.h"
 
-double Object::GetEnergy(const Eigen::Matrix3d &rotation, const Eigen::Vector3d &position) const {
-    return GetPotential() + GetExternalEnergy(rotation, position);
-}
-
-double Object::GetEnergy(const Ref<const Eigen::VectorXd>& x, const Eigen::Matrix3d &rotation,
-                         const Eigen::Vector3d &position) const {
-    return GetPotential(x) + GetExternalEnergy(x, rotation, position);
-}
-
-VectorXd Object::GetEnergyGradient(const Matrix3d &rotation, const Vector3d &position) const {
-    return GetPotentialGradient() + GetExternalEnergyGradient(rotation, position);
-}
-
-void
-Object::GetEnergyHessian(const Matrix3d &rotation, const Vector3d &position, COO &coo, int x_offset, int y_offset) const {
-    GetPotentialHessian(coo, x_offset, y_offset);
-    GetExternalEnergyHessian(rotation, position, coo, x_offset, y_offset);
-}
-
 void Object::AddExternalForce(const ExternalForce &force) {
     _external_forces.push_back(force.Clone());
-}
-
-double Object::GetExternalEnergy(const Ref<const Eigen::VectorXd> &x, const Eigen::Matrix3d &rotation,
-                                 const Eigen::Vector3d &position) const {
-    double energy = 0;
-    for (const auto& ext_force : _external_forces) {
-        energy += ext_force->Energy(*this, x, rotation, position);
-    }
-    return energy;
-}
-
-VectorXd Object::GetExternalEnergyGradient(const Matrix3d &rotation, const Vector3d &position) const {
-    VectorXd gradient(this->GetDOF());
-    gradient.setZero();
-    for (const auto& ext_force : _external_forces) {
-        gradient += ext_force->EnergyGradient(*this, rotation, position);
-    }
-    return gradient;
-}
-
-void Object::GetExternalEnergyHessian(const Matrix3d &rotation, const Vector3d &position, COO &coo, int x_offset,
-                                      int y_offset) const {
-    for (const auto& ext_force : _external_forces) {
-        ext_force->EnergyHessian(*this, rotation, position, coo, x_offset, y_offset);
-    }
 }
 
 int Object::GetConstraintSize() const {
@@ -79,14 +35,22 @@ Object::Object(const Object &rhs) {
     }
 }
 
-ShapedObject::ShapedObject(const Shape &shape)
-    : _shape(shape.Clone()) {}
+VectorXd Object::GetExternalForce(const Matrix3d &rotation, const Vector3d &position) const {
+    VectorXd external_force(_x.size());
+    external_force.setZero();
+    for (const auto& ext_force : _external_forces) {
+        external_force -= ext_force->EnergyGradient(*this, rotation, position);
+    }
+    return external_force;
+}
 
-ShapedObject::~ShapedObject() noexcept {
+ShapedObject::~ShapedObject() {
     delete _shape;
 }
 
-ShapedObject::ShapedObject(const ShapedObject &rhs) : _shape(rhs._shape->Clone()){}
+ShapedObject::ShapedObject(const Shape &shape) : _shape(shape.Clone()) {}
+
+ShapedObject::ShapedObject(const ShapedObject &rhs) : _shape(rhs._shape->Clone()) {}
 
 void ShapedObject::GetShape(Eigen::MatrixXd &vertices, Eigen::MatrixXi &topo) const {
     _shape->GetSurface(*this, vertices, topo);
@@ -113,7 +77,7 @@ double SampledObject::GetTotalMass() const {
 }
 
 Vector3d SampledObject::GetTotalExternalForce(const Matrix3d &rotation, const Vector3d &position) const {
-    VectorXd force = -GetExternalEnergyGradient(rotation, position);
+    VectorXd force = GetExternalForce(rotation, position);
     int num_points = force.size() / 3;
     Vector3d total_force = Vector3d::Zero();
     for (int i = 0, j = 0; i < num_points; i++, j += 3) {

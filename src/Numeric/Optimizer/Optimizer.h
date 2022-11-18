@@ -7,6 +7,7 @@
 
 #include <functional>
 #include "EigenAll.h"
+#include "Pattern.h"
 
 typedef std::function<double(const VectorXd&)> ValueFunc;
 typedef std::function<VectorXd(const VectorXd&)> GradiantFunc;
@@ -24,9 +25,13 @@ public:
         throw std::logic_error("Unimplemented method");
     }
 
+    virtual ~Optimizer() = default;
+
 protected:
     const double _tolerance;
     const int _max_iter;
 };
+
+DECLARE_XXX_FACTORY(Optimizer)
 
 #endif //FEM_OPTIMIZER_H

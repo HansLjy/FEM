@@ -49,7 +49,7 @@ int InertialSystem::GetOffset(int idx) const {
     return _offset[idx];
 }
 
-#define Assemble1DWithInfo(Value)                                                       \
+#define Assemble1DWithInfo(Value, rotation, position)                                   \
     VectorXd var(_DOF);                                                                 \
     int current_row = 0;                                                                \
     for (const auto& obj : _objs) {                                                     \
@@ -63,6 +63,16 @@ int InertialSystem::GetOffset(int idx) const {
     int current_row = 0;                                                                \
     for (const auto& obj : _objs) {                                                     \
         var.segment(current_row, obj->GetDOF()) = obj->Get##Value();                    \
+        current_row += obj->GetDOF();                                                   \
+    }                                                                                   \
+    return var;
+
+#define Assemble1DElseWhere(Value)\
+    VectorXd var(_DOF);                                                                 \
+    int current_row = 0;                                                                \
+    for (const auto& obj : _objs) {                                                     \
+        var.segment(current_row, obj->GetDOF())                                         \
+            = obj->Get##Value(x.segment(current_row, obj->GetDOF()));                   \
         current_row += obj->GetDOF();                                                   \
     }                                                                                   \
     return var;
@@ -82,6 +92,16 @@ int InertialSystem::GetOffset(int idx) const {
     COO coo;                                                                        \
     for (const auto& obj : _objs) {                                                 \
         obj->Get##Value(coo, current_row, current_row);                             \
+        current_row += obj->GetDOF();                                               \
+    }                                                                               \
+    var.resize(current_row, current_row);                                           \
+    var.setFromTriplets(coo.begin(), coo.end());
+
+#define Assemble2DElseWhere(var, Value)                                             \
+    int current_row = 0;                                                            \
+    COO coo;                                                                        \
+    for (const auto& obj : _objs) {                                                 \
+        obj->Get##Value(x.segment(current_row, obj->GetDOF()), coo, current_row, current_row);                             \
         current_row += obj->GetDOF();                                               \
     }                                                                               \
     var.resize(current_row, current_row);                                           \
@@ -122,49 +142,46 @@ double InertialSystem::GetTotalMass() const {
     return mass;
 }
 
-double InertialSystem::GetEnergy() const {
-    return GetEnergy(Matrix3d::Identity(), Vector3d::Zero());
-}
-
-double InertialSystem::GetEnergy(const Eigen::VectorXd &x) const {
-    return GetEnergy(x, Matrix3d::Identity(), Vector3d::Zero());
-}
-
-double InertialSystem::GetEnergy(const Eigen::Matrix3d &rotation, const Eigen::Vector3d &position) const {
+double InertialSystem::GetPotentialEnergy() const {
     double energy = 0;
+    for (const auto & obj : _objs) {
+        energy += obj->GetPotential();
+    }
+    return energy;
+}
+
+double InertialSystem::GetPotentialEnergy(const Ref<const Eigen::VectorXd> &x) const {
+    double energy = 0;
+    int current_row = 0;
     for (const auto& obj : _objs) {
-        energy += obj->GetEnergy(rotation, position);
+        energy += obj->GetPotential(x.segment(current_row, obj->GetDOF()));
+        current_row += obj->GetDOF();
     }
     return energy;
 }
 
-double InertialSystem::GetEnergy(const Eigen::VectorXd &x, const Eigen::Matrix3d &rotation,
-                                 const Eigen::Vector3d &position) const {
-    int cur_offset = 0;
-    int num_objects = _objs.size();
-    double energy = 0;
-    for (int i = 0; i < num_objects; i++) {
-        energy += _objs[i]->GetEnergy(x.segment(cur_offset, _objs[i]->GetDOF()), rotation, position);
-        cur_offset += _objs[i]->GetDOF();
-    }
-    return energy;
+VectorXd InertialSystem::GetPotentialEnergyGradient() const {
+    Assemble1D(PotentialGradient)
 }
 
-VectorXd InertialSystem::GetEnergyGradient() const {
-    return GetEnergyGradient(Matrix3d::Identity(), Vector3d::Zero());
+VectorXd InertialSystem::GetPotentialEnergyGradient(const Ref<const Eigen::VectorXd> &x) const {
+    Assemble1DElseWhere(PotentialGradient)
 }
 
-VectorXd InertialSystem::GetEnergyGradient(const Eigen::Matrix3d &rotation, const Eigen::Vector3d &position) const {
-    Assemble1DWithInfo(EnergyGradient)
+void InertialSystem::GetPotentialEnergyHessian(SparseMatrixXd &hessian) const {
+    Assemble2D(hessian, PotentialHessian)
 }
 
-void InertialSystem::GetEnergyHessian(SparseMatrixXd &hessian) const {
-    GetEnergyHessian(Matrix3d::Identity(), Vector3d::Zero(), hessian);
+void InertialSystem::GetPotentialEnergyHessian(const Ref<const Eigen::VectorXd> &x, SparseMatrixXd &hessian) const {
+    Assemble2DElseWhere(hessian, PotentialHessian)
 }
 
-void InertialSystem::GetEnergyHessian(const Eigen::Matrix3d &rotation, const Eigen::Vector3d &position,
-                                      SparseMatrixXd &hessian) const {
-    Assemble2DWithInfo(hessian, EnergyHessian)
+VectorXd InertialSystem::GetExternalForce() const {
+    return GetExternalForce(Matrix3d::Identity(), Vector3d::Zero());
+}
+
+VectorXd InertialSystem::GetExternalForce(const Eigen::Matrix3d &rotation, const Eigen::Vector3d &position) const {
+    Assemble1DWithInfo(ExternalForce, rotation, position)
 }
 
 Vector3d InertialSystem::GetTotalExternalForce() const {

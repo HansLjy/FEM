@@ -18,37 +18,14 @@
     Randomize(obj);                                                                 \
     VectorXd x(obj.GetCoordinate());                                                \
     auto numeric_gradient = FiniteDifferential(func, x, step_gradient);             \
-    obj.SetCoordinate(x);                                                           \
-    auto analytic_gradient = obj.Get##ValueName##Gradient();                        \
+    auto analytic_gradient = obj.Get##ValueName##Gradient(x);                       \
                                                                                     \
     auto numeric_hessian = FiniteDifferential2(func, x, step_hessian);              \
-    obj.SetCoordinate(x);                                                           \
     COO coo;                                                                        \
-    obj.Get##ValueName##Hessian(coo, 0, 0);                                         \
+    obj.Get##ValueName##Hessian(x, coo, 0, 0);                                      \
     SparseMatrixXd analytic_hessian(obj.GetDOF(), obj.GetDOF());                    \
     analytic_hessian.setFromTriplets(coo.begin(), coo.end());
 
-#define GetEnergyFunctionWithInfo(func, ValueName, obj)                             \
-    auto func = [&obj] (const VectorXd& x) {                                        \
-        return obj.Get##ValueName(x, Matrix3d::Identity(), Vector3d::Zero());       \
-    };
-
-
-#define GenerateDerivativesWithInfo(obj, ValueName, Randomize, step_gradient, step_hessian) \
-    GetEnergyFunctionWithInfo(func, ValueName, obj)                                         \
-                                                                                    \
-    Randomize(obj);                                                                 \
-    VectorXd x(obj.GetCoordinate());                                                \
-    auto numeric_gradient = FiniteDifferential(func, x, step_gradient);             \
-    obj.SetCoordinate(x);                                                           \
-    auto analytic_gradient = obj.Get##ValueName##Gradient(Matrix3d::Identity(), Vector3d::Zero());   \
-                                                                                    \
-    auto numeric_hessian = FiniteDifferential2(func, x, step_hessian);              \
-    obj.SetCoordinate(x);                                                           \
-    COO coo;                                                                        \
-    obj.Get##ValueName##Hessian(Matrix3d::Identity(), Vector3d::Zero(), coo, 0, 0); \
-    SparseMatrixXd analytic_hessian(obj.GetDOF(), obj.GetDOF());                    \
-    analytic_hessian.setFromTriplets(coo.begin(), coo.end());
 
 #define PrintGradient() \
     std::cerr << "Numeric Gradient: \n" << numeric_gradient.transpose() << std::endl;               \

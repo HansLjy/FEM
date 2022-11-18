@@ -18,8 +18,8 @@ public:
         : Object(x), Curve(rho, alpha_max, alpha_min, x) {};
 
     double GetPotential(const Ref<const VectorXd>& x) const override;
-    VectorXd GetPotentialGradient() const override;
-    void GetPotentialHessian(COO &coo, int x_offset, int y_offset) const override;
+    VectorXd GetPotentialGradient(const Ref<const VectorXd>& x) const override;
+    void GetPotentialHessian(const Ref<const VectorXd>& x, COO &coo, int x_offset, int y_offset) const override;
 
     int GetConstraintSize() const override;
     VectorXd GetInnerConstraint(const VectorXd &x) const override;

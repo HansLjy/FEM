@@ -37,8 +37,8 @@ public:
           const MatrixXi &topo, double stretch_u = 1, double stretch_v = 1);
 
     double GetPotential(const Ref<const VectorXd>& x) const override;
-    VectorXd GetPotentialGradient() const override;
-    void GetPotentialHessian(COO &coo, int x_offset, int y_offset) const override;
+    VectorXd GetPotentialGradient(const Ref<const VectorXd>& x) const override;
+    void GetPotentialHessian(const Ref<const VectorXd>& x, COO& coo, int x_offset, int y_offset) const override;
 
     DERIVED_DECLARE_CLONE(Object)
 

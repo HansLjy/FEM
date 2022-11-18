@@ -25,16 +25,13 @@ public:
     double GetPotential() const override;
     double GetPotential(const Ref<const Eigen::VectorXd> &x) const override;
     VectorXd GetPotentialGradient() const override;
+    VectorXd GetPotentialGradient(const Ref<const Eigen::VectorXd> &x) const override;
     void GetPotentialHessian(COO &coo, int x_offset, int y_offset) const override;
+    void GetPotentialHessian(const Ref<const Eigen::VectorXd> &x, COO &coo, int x_offset, int y_offset) const override;
 
     void AddExternalForce(const ExternalForce &force) override;
 
-    double GetExternalEnergy(const Eigen::Matrix3d &rotation, const Eigen::Vector3d &position) const override;
-    double GetExternalEnergy(const Ref<const Eigen::VectorXd> &x, const Eigen::Matrix3d &rotation, const Eigen::Vector3d &position) const override;
-    VectorXd GetExternalEnergyGradient(const Matrix3d &rotation, const Vector3d &position) const override;
     Vector3d GetTotalExternalForce(const Matrix3d &rotation, const Vector3d &position) const override;
-    void GetExternalEnergyHessian(const Matrix3d &rotation, const Vector3d &position, COO &coo, int x_offset,
-                                  int y_offset) const override;
 
     VectorXd GetInertialForce(const Eigen::Vector3d &v, const Eigen::Vector3d &a, const Eigen::Vector3d &omega,
                               const Eigen::Vector3d &alpha, const Eigen::Matrix3d &rotation) const override;

@@ -21,10 +21,14 @@ public:
 
     virtual void GetMass(SparseMatrixXd& mass) const = 0;
 
-    virtual double GetEnergy() const = 0;
-    virtual double GetEnergy(const VectorXd& x) const = 0;
-    virtual VectorXd GetEnergyGradient() const = 0;
-    virtual void GetEnergyHessian(SparseMatrixXd& hessian) const = 0;
+    virtual double GetPotentialEnergy() const = 0;
+    virtual double GetPotentialEnergy(const Ref<const VectorXd>& x) const = 0;
+    virtual VectorXd GetPotentialEnergyGradient() const = 0;
+    virtual VectorXd GetPotentialEnergyGradient(const Ref<const VectorXd>& x) const = 0;
+    virtual void GetPotentialEnergyHessian(SparseMatrixXd& hessian) const = 0;
+    virtual void GetPotentialEnergyHessian(const Ref<const VectorXd>& x, SparseMatrixXd& hessian) const = 0;
+
+    virtual VectorXd GetExternalForce() const = 0;
 
     virtual VectorXd GetConstraint(const VectorXd &x) const = 0;
     virtual void GetConstraintGradient(SparseMatrixXd &gradient, const VectorXd &x) const = 0;

@@ -29,10 +29,16 @@ public:
 
     void GetMass(SparseMatrixXd& mass) const override;
 
-    double GetEnergy() const override;
-    double GetEnergy(const VectorXd& x) const;
-    VectorXd GetEnergyGradient() const override;
-    void GetEnergyHessian(SparseMatrixXd& hessian) const override {_system.GetEnergyHessian(_frame_rotation, _frame_x, hessian);}
+    double GetPotentialEnergy() const override { return _system.GetPotentialEnergy(); }
+    double GetPotentialEnergy(const Ref<const VectorXd>& x) const override {return _system.GetPotentialEnergy(x); }
+    VectorXd GetPotentialEnergyGradient() const override {return _system.GetPotentialEnergyGradient(); }
+    VectorXd GetPotentialEnergyGradient(const Ref<const VectorXd>& x) const override {return _system.GetPotentialEnergyGradient(x); }
+    void GetPotentialEnergyHessian(SparseMatrixXd& hessian) const override { _system.GetPotentialEnergyHessian(hessian); }
+    void GetPotentialEnergyHessian(const Ref<const VectorXd>& x, SparseMatrixXd& hessian) const override { _system.GetPotentialEnergyHessian(x, hessian); }
+
+    virtual VectorXd GetExternalForce() const override {
+        return _system.GetExternalForce(_frame_rotation, _frame_x) + _inertial_force + _interface_force;
+    }
 
     VectorXd GetConstraint(const VectorXd &x) const override {return _system.GetConstraint(x);}
     void GetConstraintGradient(SparseMatrixXd &gradient, const VectorXd &x) const override {_system.GetConstraintGradient(gradient, x);}
@@ -49,12 +55,6 @@ public:
     int GetOffset(int idx) const override {return _system.GetOffset(idx);};
 
     ObjectIterator* GetIterator() override;
-
-    /* domain */
-
-    void SetFrame(const Vector3d& x, const Vector3d& v, const Vector3d& a,
-                  const Vector3d& angular_velocity, const Vector3d& angular_acceleration,
-                  const Matrix3d& rotation);
 
     /**
      * Calculate x, v, a, omega, alpha, R of subdomain

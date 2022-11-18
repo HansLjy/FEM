@@ -165,15 +165,15 @@ Cloth::CalculatePFPX(const Eigen::Vector3d &e0, const Eigen::Vector3d &e1, const
     return pFpX;
 }
 
-VectorXd Cloth::GetPotentialGradient() const {
-    VectorXd gradient(_x.size());
+VectorXd Cloth::GetPotentialGradient(const Ref<const VectorXd>& x) const {
+    VectorXd gradient(x.size());
     gradient.setZero();
     for (int i = 0; i < _num_triangles; i++) {
         RowVector3i index = _topo.row(i);
-        Vector3d xi = _x.segment<3>(3 * index(0));
+        Vector3d xi = x.segment<3>(3 * index(0));
         Matrix<double, 3, 2> F;
-        F.col(0) = _x.segment<3>(3 * index(1)) - xi;
-        F.col(1) = _x.segment<3>(3 * index(2)) - xi;
+        F.col(0) = x.segment<3>(3 * index(1)) - xi;
+        F.col(1) = x.segment<3>(3 * index(2)) - xi;
         F *= _inv(i);
         Vector3d F1 = F.col(0);
         Vector3d F2 = F.col(1);
@@ -204,10 +204,10 @@ VectorXd Cloth::GetPotentialGradient() const {
 
     for (int i = 0; i < _num_internal_edges; i++) {
         RowVector4i index = _internal_edge.row(i);
-        Vector3d xi = _x.segment<3>(3 * index(0));
-        Vector3d e0 = _x.segment<3>(3 * index(1)) - xi;
-        Vector3d e1 = _x.segment<3>(3 * index(2)) - xi;
-        Vector3d e2 = _x.segment<3>(3 * index(3)) - xi;
+        Vector3d xi = x.segment<3>(3 * index(0));
+        Vector3d e0 = x.segment<3>(3 * index(1)) - xi;
+        Vector3d e1 = x.segment<3>(3 * index(2)) - xi;
+        Vector3d e2 = x.segment<3>(3 * index(3)) - xi;
 
         const double a = e0.cross(e1).dot(e2);
         const double b = e0.dot(e0);
@@ -244,16 +244,16 @@ VectorXd Cloth::GetPotentialGradient() const {
 
 #include "Timer.h"
 
-void Cloth::GetPotentialHessian(COO &coo, int x_offset, int y_offset) const {
+void Cloth::GetPotentialHessian(const Ref<const VectorXd>& x, COO &coo, int x_offset, int y_offset) const {
 //    static double triangle_hessian_t = 0;
 //    static int cnt = 0;
 //    auto start_t = clock();
     for (int i = 0; i < _num_triangles; i++) {
         RowVector3i index = _topo.row(i);
-        Vector3d xi = _x.segment<3>(3 * index(0));
+        Vector3d xi = x.segment<3>(3 * index(0));
         Matrix<double, 3, 2> F;
-        F.col(0) = _x.segment<3>(3 * index(1)) - xi;
-        F.col(1) = _x.segment<3>(3 * index(2)) - xi;
+        F.col(0) = x.segment<3>(3 * index(1)) - xi;
+        F.col(1) = x.segment<3>(3 * index(2)) - xi;
         F *= _inv(i);
         const Vector3d F1 = F.col(0);
         const Vector3d F2 = F.col(1);
@@ -331,10 +331,10 @@ void Cloth::GetPotentialHessian(COO &coo, int x_offset, int y_offset) const {
 //    START_TIMING(edge_hessian)
     for (int i = 0; i < _num_internal_edges; i++) {
         RowVector4i index = _internal_edge.row(i);
-        const Vector3d xi = _x.segment<3>(3 * index(0));
-        const Vector3d e0 = _x.segment<3>(3 * index(1)) - xi;
-        const Vector3d e1 = _x.segment<3>(3 * index(2)) - xi;
-        const Vector3d e2 = _x.segment<3>(3 * index(3)) - xi;
+        const Vector3d xi = x.segment<3>(3 * index(0));
+        const Vector3d e0 = x.segment<3>(3 * index(1)) - xi;
+        const Vector3d e1 = x.segment<3>(3 * index(2)) - xi;
+        const Vector3d e2 = x.segment<3>(3 * index(3)) - xi;
 
         const double a = e0.cross(e1).dot(e2);
         const double b = e0.dot(e0);
