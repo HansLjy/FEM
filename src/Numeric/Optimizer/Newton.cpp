@@ -3,15 +3,18 @@
 //
 
 #include "Newton.h"
+#include "spdlog/spdlog.h"
 
 void Newton::Optimize(const ValueFunc &f, const GradiantFunc &g, const HessianFunc &h, VectorXd &x) {
-    int step = 0;
     VectorXd gradient = g(x);
     SparseMatrixXd hessian;
     h(x, hessian);
-    Eigen::SimplicialLDLT<SparseMatrixXd> LDLT(hessian);
-    while (step < _max_iter && gradient.norm() > _tolerance) {
-        VectorXd p = LDLT.solve(-gradient);
+    Eigen::SimplicialLDLT<SparseMatrixXd> solver;
+
+    int step = 0;
+    while (step++ < _max_iter && gradient.norm() > _tolerance) {
+        solver.compute(hessian);
+        VectorXd p = solver.solve(-gradient);
         double alpha = 1;
         const double derivative = _c1 * gradient.dot(p);
         const double fk = f(x);
@@ -19,5 +22,9 @@ void Newton::Optimize(const ValueFunc &f, const GradiantFunc &g, const HessianFu
             alpha /= 2;
         }
         x = x + alpha * p;
+        gradient = g(x);
+        hessian.resize(0, 0);   // clear hessian
+        h(x, hessian);
     }
+//    spdlog::info("Finished optimization in {} steps", step);
 }

@@ -9,6 +9,7 @@
 #include "Optimizer/Optimizer.h"
 
 class IPIntegrator : public Integrator {
+public:
     explicit IPIntegrator(const json& config);
     void Step(Target &target, double h) const override;
 

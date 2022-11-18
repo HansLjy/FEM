@@ -39,7 +39,7 @@ void IPIntegrator::Step(Target &target, double h) const {
         hessian = h * h * hessian + mass;
     };
 
-    VectorXd x_next;
+    VectorXd x_next = x;
     _optimizer->Optimize(func, grad, hes, x_next);
 
     VectorXd v_next = (x_next - x) / h;
