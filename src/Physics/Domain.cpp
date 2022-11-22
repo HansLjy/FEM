@@ -7,7 +7,7 @@
 #include "JsonUtil.h"
 
 Domain::Domain(const nlohmann::json &config)
-    : _system(config["system"]) {
+    : InertialSystem(config["system"]) {
 
     if (config["is-root"]) {
         _frame_x = Json2Vec(config["x"]);
@@ -30,37 +30,42 @@ Domain::~Domain() {
     }
 }
 
-//Domain::Domain(const Domain &rhs)
-//    : _system(rhs._system),
-//      _subdomain_projections(rhs._subdomain_projections),
-//      _subdomain_rest_rotations(rhs._subdomain_rest_rotations),
-//      _frame_x(rhs._frame_x), _frame_v(rhs._frame_v), _frame_a(rhs._frame_a),
-//      _frame_angular_velocity(rhs._frame_angular_velocity),
-//      _frame_angular_acceleration(rhs._frame_angular_acceleration),
-//      _frame_rotation(rhs._frame_rotation),
-//      _total_mass(rhs._total_mass),
-//      _total_external_force(rhs._total_external_force),
-//      _interface_force(rhs._interface_force),
-//      _inertial_force(rhs._inertial_force),
-//      _lumped_mass(rhs._lumped_mass) {
-//    for (const auto& subdomain : rhs._subdomains) {
-//        _subdomains.push_back(subdomain->Clone());
-//    }
-//    _total_mass = rhs._total_mass;
-//}
+VectorXd Domain::GetExternalForce() const {
+    VectorXd external_force(_DOF);
+    int current_row = 0;
+    for (const auto& obj : _objs) {
+        external_force.segment(current_row, obj->GetDOF()) = obj->GetExternalForce(_frame_rotation, _frame_x);
+        current_row += obj->GetDOF();
+    }
+    return external_force + _interface_force + _inertial_force;
+}
 
+double Domain::GetTotalMass() const {
+    double mass = 0;
+    for (const auto& obj : _objs) {
+        mass += obj->GetTotalMass();
+    }
+    return mass;
+}
+
+Vector3d Domain::GetTotalExternalForce() const {
+    Vector3d total_external_force = Vector3d::Zero();
+    for (const auto& obj : _objs) {
+        total_external_force += obj->GetTotalExternalForce(_frame_rotation, _frame_x);
+    }
+    return total_external_force;
+}
 
 void Domain::CalculateTotalMass() {
-    _total_mass = 0;
+    _total_mass = GetTotalMass();
     for (const auto& subdomain : _subdomains) {
         subdomain->CalculateTotalMass();
         _total_mass += subdomain->_total_mass;
     }
-    _total_mass += _system.GetTotalMass();
 }
 
 void Domain::CalculateTotalExternalForce() {
-    _total_external_force = _system.GetTotalExternalForce(_frame_rotation, _frame_x);
+    _total_external_force = GetTotalExternalForce();
     for (const auto& subdomain : _subdomains) {
         subdomain->CalculateTotalExternalForce();
         _total_external_force += _frame_rotation.transpose() * subdomain->_frame_rotation * subdomain->_total_external_force;
@@ -74,8 +79,8 @@ void Domain::Preparation() {
 }
 
 void Domain::CalculateInterfaceForce() {
-    if(_interface_force.size() != _system._DOF) {
-        _interface_force.resize(_system._DOF);
+    if(_interface_force.size() != _DOF) {
+        _interface_force.resize(_DOF);
     }
     _interface_force.setZero();
     const int num_subdomains = _subdomains.size();
@@ -95,11 +100,11 @@ void Domain::CalculateInterfaceForce() {
 }
 
 void Domain::CalculateInertialForce() {
-    if(_inertial_force.size() != _system._DOF) {
-        _inertial_force.resize(_system._DOF);
+    if(_inertial_force.size() != _DOF) {
+        _inertial_force.resize(_DOF);
     }
     int current_row = 0;
-    for (const auto& obj : _system._objs) {
+    for (const auto& obj : _objs) {
         _inertial_force.segment(current_row, obj->GetDOF()) = obj->GetInertialForce(
             _frame_v, _frame_a, _frame_angular_velocity,
             _frame_angular_acceleration, _frame_rotation
@@ -116,9 +121,8 @@ void Domain::AddSubdomain(Domain &subdomain, const nlohmann::json &position) {
 }
 
 void Domain::CalculateLumpedMass() {
-    const int dof = _system._DOF;
-    if (_lumped_mass.rows() != dof || _lumped_mass.cols() != dof) {
-        _lumped_mass.resize(dof, dof);
+    if (_lumped_mass.rows() != _DOF || _lumped_mass.cols() != _DOF) {
+        _lumped_mass.resize(_DOF, _DOF);
         // TODO update settings to avoid this.
     }
     int num_subdomains = _subdomains.size();
@@ -129,12 +133,12 @@ void Domain::CalculateLumpedMass() {
 }
 
 void Domain::GetMass(SparseMatrixXd &mass) const {
-    _system.GetMass(mass);
+    InertialSystem::GetMass(mass);
     mass += _lumped_mass;
 }
 
 void Domain::UpdateSettings(const json &config) {
-    _system.UpdateSettings(config);
+    InertialSystem::UpdateSettings(config);
     const int num_subdomains = _subdomains.size();
     const auto& subdomains_config = config["subdomains"];
     for (int i = 0; i < num_subdomains; i++) {
@@ -144,7 +148,7 @@ void Domain::UpdateSettings(const json &config) {
         _subdomains[i]->UpdateSettings(subdomains_config[i]);
     }
     if (!_subdomains.empty()) {
-        CalculateSubdomainFrame(VectorXd(_system._DOF));
+        CalculateSubdomainFrame(VectorXd(_DOF));
     }
 }
 
@@ -153,10 +157,10 @@ ObjectIterator *Domain::GetIterator() {
 }
 
 DomainIterator::DomainIterator(Domain& domain)
-    : ObjectIterator(domain._subdomains.empty() && domain._system._objs.empty()) {
+    : ObjectIterator(domain._subdomains.empty() && domain._objs.empty()) {
     _current = &domain;
     _cur_obj_id = 0;
-    _cur_size = _current->_system._objs.size();
+    _cur_size = _current->_objs.size();
 }
 
 void DomainIterator::Forward() {
@@ -168,7 +172,7 @@ void DomainIterator::Forward() {
             _subdomain_ids.push(0);
             _current = _current->_subdomains[0];
             _cur_obj_id = 0;
-            _cur_size = _current->_system._objs.size();
+            _cur_size = _current->_objs.size();
         } else {
             // go back
             if (_ancestors.empty()) {
@@ -192,13 +196,13 @@ void DomainIterator::Forward() {
             _subdomain_ids.top() = domain_id;
             _current = parent->_subdomains[domain_id];
             _cur_obj_id = 0;
-            _cur_size = _current->_system._objs.size();
+            _cur_size = _current->_objs.size();
         }
     }
 }
 
 Object *DomainIterator::GetObject() {
-    return _current->_system._objs[_cur_obj_id];
+    return _current->_objs[_cur_obj_id];
 }
 
 Matrix3d DomainIterator::GetRotation() {

@@ -134,14 +134,6 @@ void InertialSystem::GetMass(SparseMatrixXd &mass) const {
     Assemble2D(mass, Mass)
 }
 
-double InertialSystem::GetTotalMass() const {
-    double mass = 0;
-    for (const auto& obj : _objs) {
-        mass += obj->GetTotalMass();
-    }
-    return mass;
-}
-
 double InertialSystem::GetPotentialEnergy() const {
     double energy = 0;
     for (const auto & obj : _objs) {
@@ -177,25 +169,8 @@ void InertialSystem::GetPotentialEnergyHessian(const Ref<const Eigen::VectorXd> 
 }
 
 VectorXd InertialSystem::GetExternalForce() const {
-    return GetExternalForce(Matrix3d::Identity(), Vector3d::Zero());
+    Assemble1DWithInfo(ExternalForce, Matrix3d::Identity(), Vector3d::Zero())
 }
-
-VectorXd InertialSystem::GetExternalForce(const Eigen::Matrix3d &rotation, const Eigen::Vector3d &position) const {
-    Assemble1DWithInfo(ExternalForce, rotation, position)
-}
-
-Vector3d InertialSystem::GetTotalExternalForce() const {
-    return GetTotalExternalForce(Matrix3d::Identity(), Vector3d::Zero());
-}
-
-Vector3d InertialSystem::GetTotalExternalForce(const Eigen::Matrix3d &rotation, const Eigen::Vector3d &position) const {
-    Vector3d total_external_force = Vector3d::Zero();
-    for (const auto& obj : _objs) {
-        total_external_force += obj->GetTotalExternalForce(rotation, position);
-    }
-    return total_external_force;
-}
-
 
 int InertialSystem::GetIndex(const std::string &name) const {
     const auto& result = _index.find(name);

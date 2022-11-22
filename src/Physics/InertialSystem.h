@@ -16,7 +16,7 @@ class SystemIterator;
 class Domain;
 class DomainIterator;
 
-class InertialSystem final : public PhysicsSystem {
+class InertialSystem : public PhysicsSystem {
 public:
     explicit InertialSystem(const json& config);
 
@@ -55,12 +55,7 @@ public:
 
     int GetOffset(int idx) const override;
 
-    double GetTotalMass() const;
-    Vector3d GetTotalExternalForce() const;
-
     /** Utility **/
-    VectorXd GetExternalForce(const Matrix3d& rotation, const Vector3d& position) const;
-    Vector3d GetTotalExternalForce(const Matrix3d& rotation, const Vector3d& position) const;
     int AddConstraint(const Constraint& constraint) override;
 
     VectorXd GetConstraint(const VectorXd &x) const override;

@@ -16,45 +16,20 @@ using nlohmann::json;
 class DomainIntegrator;
 class DomainIterator;
 
-class Domain : public PhysicsSystem {
+class Domain : public InertialSystem {
 public:
     Domain(const json& config);
 
     /* Target Part */
-    VectorXd GetCoordinate() const override {return _system.GetCoordinate();}
-    VectorXd GetVelocity() const override {return _system.GetVelocity();}
-
-    void SetCoordinate(const VectorXd& x) override {_system.SetCoordinate(x);}
-    void SetVelocity(const VectorXd& v) override {_system.SetVelocity(v);}
-
     void GetMass(SparseMatrixXd& mass) const override;
-
-    double GetPotentialEnergy() const override { return _system.GetPotentialEnergy(); }
-    double GetPotentialEnergy(const Ref<const VectorXd>& x) const override {return _system.GetPotentialEnergy(x); }
-    VectorXd GetPotentialEnergyGradient() const override {return _system.GetPotentialEnergyGradient(); }
-    VectorXd GetPotentialEnergyGradient(const Ref<const VectorXd>& x) const override {return _system.GetPotentialEnergyGradient(x); }
-    void GetPotentialEnergyHessian(SparseMatrixXd& hessian) const override { _system.GetPotentialEnergyHessian(hessian); }
-    void GetPotentialEnergyHessian(const Ref<const VectorXd>& x, SparseMatrixXd& hessian) const override { _system.GetPotentialEnergyHessian(x, hessian); }
-
-    virtual VectorXd GetExternalForce() const override {
-        return _system.GetExternalForce(_frame_rotation, _frame_x) + _inertial_force + _interface_force;
-    }
-
-    VectorXd GetConstraint(const VectorXd &x) const override {return _system.GetConstraint(x);}
-    void GetConstraintGradient(SparseMatrixXd &gradient, const VectorXd &x) const override {_system.GetConstraintGradient(gradient, x);}
+    virtual VectorXd GetExternalForce() const override;
 
     /* Object Collection Part */
-    int AddObject(const Object& obj, const std::string& name) override {return _system.AddObject(obj, name);}
-    const Object* GetObject(int idx) const override {return _system.GetObject(idx);}
-    Object * GetObject(int idx) override {return _system.GetObject(idx);}
     void UpdateSettings(const json &config) override;
-
-    int AddConstraint(const Constraint& constraint) override {return _system.AddConstraint(constraint);}
-    int GetIndex(const std::string& name) const override {return _system.GetIndex(name);}
-
-    int GetOffset(int idx) const override {return _system.GetOffset(idx);};
-
     ObjectIterator* GetIterator() override;
+
+    double GetTotalMass() const;
+    Vector3d GetTotalExternalForce() const;
 
     /**
      * Calculate x, v, a, omega, alpha, R of subdomain
@@ -97,8 +72,6 @@ public:
 //    BASE_DECLARE_CLONE(Domain)
 
 protected:
-    InertialSystem _system;
-
     std::vector<Domain*> _subdomains;
     std::vector<SparseMatrixXd> _subdomain_projections;
     std::vector<Matrix3d> _subdomain_rest_rotations;

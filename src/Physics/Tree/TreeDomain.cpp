@@ -12,7 +12,7 @@ void TreeDomain::CalculateSubdomainFrame(const Eigen::VectorXd &a) {
     const auto& tree_trunk = dynamic_cast<const ReducedTreeTrunk*>(GetObject(_tree_trunk_id));
     const auto& points = tree_trunk->_proxy->GetCoordinate();
     const auto& velocity = tree_trunk->_proxy->GetVelocity();
-    const VectorXd acceleration = tree_trunk->_base * a.segment(_system.GetOffset(_tree_trunk_id), tree_trunk->GetDOF());
+    const VectorXd acceleration = tree_trunk->_base * a.segment(GetOffset(_tree_trunk_id), tree_trunk->GetDOF());
     const int num_points = points.size() / 3;
     const int num_segments = num_points - 1;
     const double delta_t = 1.0 / num_segments;
