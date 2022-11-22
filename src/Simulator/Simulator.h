@@ -23,7 +23,7 @@ public:
     virtual void LoadScene(const std::string& config);
     void Simulate(const std::string& output_dir);
 
-    ~Simulator();
+    ~Simulator() override;
 
 protected:
     double _duration;

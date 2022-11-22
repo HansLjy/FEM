@@ -18,6 +18,7 @@ int main(const int argc, const char* argv[]) {
                 Simulator simulator("FEM simulator");
                 simulator.LoadScene(CONFIG_PATH "/simulator.json");
                 simulator.Simulate(std::string(OUTPUT_PATH) + "/" + argv[2]);
+//                simulator.Simulate(std::string(OUTPUT_PATH) + "/test");
             }
         } else if (std::string(argv[1]) == "play") {
             Player player;

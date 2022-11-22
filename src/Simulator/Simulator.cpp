@@ -90,6 +90,7 @@ void Simulator::Simulate(const std::string& output_dir) {
 
 Simulator::~Simulator() {
     delete _integrator;
+    delete _system;
 }
 
 void Simulator::InitializeScene(Scene &scene) {

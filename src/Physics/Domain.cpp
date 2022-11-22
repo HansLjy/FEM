@@ -70,6 +70,7 @@ void Domain::CalculateTotalExternalForce() {
         subdomain->CalculateTotalExternalForce();
         _total_external_force += _frame_rotation.transpose() * subdomain->_frame_rotation * subdomain->_total_external_force;
     }
+
 }
 
 void Domain::Preparation() {
@@ -145,15 +146,19 @@ void Domain::UpdateSettings(const json &config) {
         const auto& position = subdomains_config[i]["position"];
         _subdomain_projections.push_back(GetSubdomainProjection(position));
         RecordSubdomain(position);
-        _subdomains[i]->UpdateSettings(subdomains_config[i]);
     }
-    if (!_subdomains.empty()) {
-        CalculateSubdomainFrame(VectorXd(_DOF));
+    if (num_subdomains) {
+        VectorXd a(_DOF);
+        a.setZero();
+        CalculateSubdomainFrame(a);
+    }
+    for (int i = 0; i < num_subdomains; i++) {
+        _subdomains[i]->UpdateSettings(subdomains_config[i]);
     }
 }
 
-ObjectIterator *Domain::GetIterator() {
-    return new DomainIterator(*this);
+std::unique_ptr<ObjectIterator> Domain::GetIterator() {
+    return std::unique_ptr<ObjectIterator>(new DomainIterator(*this));
 }
 
 DomainIterator::DomainIterator(Domain& domain)

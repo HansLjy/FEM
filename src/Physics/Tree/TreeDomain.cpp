@@ -122,6 +122,10 @@ void TreeDomain::CalculateSubdomainFrame(const Eigen::VectorXd &a) {
                                   + 2 * _frame_angular_velocity.cross(R * v_rel) + R * a_rel;
 //            subdomain->_frame_rotation = R * rotation_rel;
             subdomain->_frame_rotation = R * rotation_rel * _subdomain_rest_rotations[num_subdomain_processed];
+            if ((subdomain->_frame_rotation * subdomain->_frame_rotation.transpose() - Matrix3d::Identity()).norm() > 10) {
+                std::cerr << (subdomain->_frame_rotation * subdomain->_frame_rotation.transpose() - Matrix3d::Identity()).norm();
+                exit(-1);
+            }
             subdomain->_frame_angular_velocity = _frame_angular_velocity + SkewVector(R * HatMatrix(omega_rel) * R.transpose());
             subdomain->_frame_angular_acceleration = _frame_angular_acceleration + SkewVector(
                 R * HatMatrix(alpha_rel) * R.transpose()

@@ -8,6 +8,7 @@
 
 #include "Object.h"
 #include "Constraint/Constraint.h"
+#include <memory>
 #include <string>
 
 class ObjectIterator;
@@ -24,7 +25,7 @@ public:
 
     virtual int GetOffset(int idx) const = 0;
 
-    virtual ObjectIterator* GetIterator() = 0;
+    virtual std::unique_ptr<ObjectIterator> GetIterator() = 0;
 };
 
 class ObjectIterator {
@@ -35,6 +36,8 @@ public:
     virtual Object* GetObject() = 0;
     virtual Matrix3d GetRotation() = 0;
     virtual Vector3d GetTranslation() = 0;
+
+    virtual ~ObjectIterator() = default;
 
 protected:
     bool _is_done;

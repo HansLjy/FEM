@@ -8,7 +8,10 @@
 #include "Target.h"
 #include "ObjectCollection.h"
 
-class PhysicsSystem : public Target, public ObjectCollection {};
+class PhysicsSystem : public Target, public ObjectCollection {
+public:
+    ~PhysicsSystem() override = default;
+};
 
 DECLARE_XXX_FACTORY(PhysicsSystem)
 

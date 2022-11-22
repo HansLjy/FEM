@@ -55,20 +55,16 @@ public:
 
     int GetOffset(int idx) const override;
 
-    /** Utility **/
     int AddConstraint(const Constraint& constraint) override;
-
     VectorXd GetConstraint(const VectorXd &x) const override;
-
-    // C(x + \Delta x) = C(X) + \nabla C(x) * \Delta x
     void GetConstraintGradient(SparseMatrixXd &gradient, const VectorXd &x) const override;
 
     int GetIndex(const std::string& name) const override;
 
-    ObjectIterator * GetIterator() override;
+    std::unique_ptr<ObjectIterator> GetIterator() override;
 
     ~InertialSystem() override;
-    InertialSystem(const InertialSystem& rhs);
+    InertialSystem(const InertialSystem& rhs) = delete;
 
     friend class Constraint;
     friend class SystemIterator;
@@ -90,7 +86,7 @@ protected:
  */
 class SystemIterator : public ObjectIterator {
 public:
-    SystemIterator(InertialSystem& system);
+    explicit SystemIterator(InertialSystem& system);
 
     void Forward() override;
     Object * GetObject() override;

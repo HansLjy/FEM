@@ -15,7 +15,7 @@ public:
     void Step(Target &target, double h) const override;
     void StepNonRoot(Domain& domain, double h) const;
 
-
+    ~DomainIntegrator() override;
 protected:
     Integrator* _integrator;
 };

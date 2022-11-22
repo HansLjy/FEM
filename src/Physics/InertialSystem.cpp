@@ -9,11 +9,15 @@
 InertialSystem::InertialSystem(const nlohmann::json &config) : _DOF(0), _constraint_size(0) {
     const auto& objects_config = config["objects"];
     for (const auto& object_config : objects_config) {
-        AddObject(*ObjectFactory::GetObject(object_config["type"], object_config), object_config["name"]);
+        const auto& object = ObjectFactory::GetObject(object_config["type"], object_config);
+        AddObject(*object, object_config["name"]);
+        delete object;
     }
     const auto& constraints_config = config["constraints"];
     for (const auto& constraint_config : constraints_config) {
-        AddConstraint(*ConstraintFactory::GetConstraint(*this, constraint_config));
+        const auto& constraint = ConstraintFactory::GetConstraint(*this, constraint_config);
+        AddConstraint(*constraint);
+        delete constraint;
     }
 
     const auto& external_forces_config = config["external-forces"];
@@ -21,6 +25,7 @@ InertialSystem::InertialSystem(const nlohmann::json &config) : _DOF(0), _constra
         int idx = GetIndex(external_force_config["object-name"]);
         const auto& external_force = ExternalForceFactory::GetExternalForce(external_force_config["type"], external_force_config);
         GetObject(idx)->AddExternalForce(*external_force);
+        delete external_force;
     }
 }
 
@@ -241,24 +246,13 @@ void InertialSystem::UpdateSettings(const json &config) {
     }
 }
 
-ObjectIterator *InertialSystem::GetIterator() {
-    return new SystemIterator(*this);
+std::unique_ptr<ObjectIterator> InertialSystem::GetIterator() {
+    return std::unique_ptr<ObjectIterator>(new SystemIterator(*this));
 }
 
 InertialSystem::~InertialSystem(){
     for (const auto& obj : _objs) {
         delete obj;
-    }
-}
-
-InertialSystem::InertialSystem(const InertialSystem &rhs)
-    : _DOF(rhs._DOF), _constraint_size(rhs._constraint_size),
-      _offset(rhs._offset), _index(rhs._index) {
-    for (const auto& obj : rhs._objs) {
-        _objs.push_back(obj->Clone());
-    }
-    for (const auto& constraint : rhs._constraints) {
-        _constraints.push_back(constraint->Clone());
     }
 }
 

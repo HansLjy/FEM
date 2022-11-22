@@ -27,3 +27,7 @@ DomainIntegrator::DomainIntegrator(const json &config) {
     const auto& internal_integrator_config = config["internal-integrator"];
     _integrator = IntegratorFactory::GetIntegrator(internal_integrator_config["type"], internal_integrator_config);
 }
+
+DomainIntegrator::~DomainIntegrator() noexcept {
+    delete _integrator;
+}

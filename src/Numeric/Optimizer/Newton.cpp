@@ -12,7 +12,7 @@ void Newton::Optimize(const ValueFunc &f, const GradiantFunc &g, const HessianFu
     Eigen::SimplicialLDLT<SparseMatrixXd> solver;
 
     int step = 0;
-    while (step++ < _max_iter && gradient.norm() > _tolerance) {
+    while (step++ < _max_iter) {
         solver.compute(hessian);
         VectorXd p = solver.solve(-gradient);
         double alpha = 1;
@@ -23,6 +23,9 @@ void Newton::Optimize(const ValueFunc &f, const GradiantFunc &g, const HessianFu
         }
         x = x + alpha * p;
         gradient = g(x);
+        if (gradient.norm() < _tolerance) {
+            break;
+        }
         hessian.resize(0, 0);   // clear hessian
         h(x, hessian);
     }

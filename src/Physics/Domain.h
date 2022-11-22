@@ -22,11 +22,11 @@ public:
 
     /* Target Part */
     void GetMass(SparseMatrixXd& mass) const override;
-    virtual VectorXd GetExternalForce() const override;
+    VectorXd GetExternalForce() const override;
 
     /* Object Collection Part */
     void UpdateSettings(const json &config) override;
-    ObjectIterator* GetIterator() override;
+    std::unique_ptr<ObjectIterator> GetIterator() override;
 
     double GetTotalMass() const;
     Vector3d GetTotalExternalForce() const;
