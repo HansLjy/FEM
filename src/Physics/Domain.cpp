@@ -7,7 +7,7 @@
 #include "JsonUtil.h"
 
 Domain::Domain(const nlohmann::json &config)
-    : InertialSystem(config["system"]) {
+    : System(config["system"]) {
 
     if (config["is-root"]) {
         _frame_x = Json2Vec(config["x"]);
@@ -22,6 +22,8 @@ Domain::Domain(const nlohmann::json &config)
         Domain* subdomain = DomainFactory::GetDomain(subdomain_config["type"], subdomain_config);
         AddSubdomain(*subdomain, subdomain_config["position"]);
     }
+    delete _target;
+    _target = new DomainTarget(*this);
 }
 
 Domain::~Domain() {
@@ -30,14 +32,14 @@ Domain::~Domain() {
     }
 }
 
-VectorXd Domain::GetExternalForce() const {
-    VectorXd external_force(_DOF);
+VectorXd DomainTarget::GetExternalForce() const {
+    VectorXd external_force(_domain->_DOF);
     int current_row = 0;
-    for (const auto& obj : _objs) {
-        external_force.segment(current_row, obj->GetDOF()) = obj->GetExternalForce(_frame_rotation, _frame_x);
+    for (const auto& obj : _domain->_objs) {
+        external_force.segment(current_row, obj->GetDOF()) = obj->GetExternalForce(_domain->_frame_rotation, _domain->_frame_x);
         current_row += obj->GetDOF();
     }
-    return external_force + _interface_force + _inertial_force;
+    return external_force + _domain->_interface_force + _domain->_inertial_force;
 }
 
 double Domain::GetTotalMass() const {
@@ -71,12 +73,6 @@ void Domain::CalculateTotalExternalForce() {
         _total_external_force += _frame_rotation.transpose() * subdomain->_frame_rotation * subdomain->_total_external_force;
     }
 
-}
-
-void Domain::Preparation() {
-    CalculateInterfaceForce();
-    CalculateInertialForce();
-    CalculateLumpedMass();
 }
 
 void Domain::CalculateInterfaceForce() {
@@ -133,13 +129,14 @@ void Domain::CalculateLumpedMass() {
     }
 }
 
-void Domain::GetMass(SparseMatrixXd &mass) const {
-    InertialSystem::GetMass(mass);
-    mass += _lumped_mass;
+void DomainTarget::GetMass(SparseMatrixXd &mass) const {
+    const auto& domain = dynamic_cast<const Domain*>(_system);
+    SystemTarget::GetMass(mass);
+    mass += domain->_lumped_mass;
 }
 
 void Domain::UpdateSettings(const json &config) {
-    InertialSystem::UpdateSettings(config);
+    System::UpdateSettings(config);
     const int num_subdomains = _subdomains.size();
     const auto& subdomains_config = config["subdomains"];
     for (int i = 0; i < num_subdomains; i++) {
@@ -159,6 +156,27 @@ void Domain::UpdateSettings(const json &config) {
 
 std::unique_ptr<ObjectIterator> Domain::GetIterator() {
     return std::unique_ptr<ObjectIterator>(new DomainIterator(*this));
+}
+
+void DomainTarget::BottomUpCalculation() const {
+    _domain->CalculateTotalMass();
+    _domain->CalculateTotalExternalForce();
+}
+
+void DomainTarget::TopDownCalculationPrev() const {
+    _domain->CalculateInterfaceForce();
+    _domain->CalculateInertialForce();
+    _domain->CalculateLumpedMass();
+}
+
+void DomainTarget::TopDownCalculationAfter(const VectorXd &a) const {
+    if (!_domain->_subdomains.empty()) {
+        _domain->CalculateSubdomainFrame(a);
+    }
+}
+
+std::vector<Domain *> &DomainTarget::GetSubdomains() const {
+    return _domain->_subdomains;
 }
 
 DomainIterator::DomainIterator(Domain& domain)

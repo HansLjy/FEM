@@ -13,10 +13,10 @@ public:
     explicit DomainIntegrator(const json& config);
 
     void Step(Target &target, double h) const override;
-    void StepNonRoot(Domain& domain, double h) const;
-
     ~DomainIntegrator() override;
+
 protected:
+    void StepNonRoot(DomainTarget &domain_target, double h) const;
     Integrator* _integrator;
 };
 

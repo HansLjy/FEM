@@ -6,7 +6,7 @@
 #define FEM_SIMULATOR_H
 
 #include "GUI/GUI.hpp"
-#include "InertialSystem.h"
+#include "System.h"
 #include "Integrator/FastProjection.h"
 
 #include <string>
@@ -28,7 +28,7 @@ public:
 protected:
     double _duration;
     double _time_step;
-    PhysicsSystem *_system;
+    System *_system;
     const Integrator* _integrator;
 
     std::vector<int> _obj_id2scene_id; // from id in system to id in scene

@@ -5,21 +5,18 @@
 #include "DomainIntegrator.h"
 
 void DomainIntegrator::Step(Target &target, double h) const {
-    auto& root_domain = dynamic_cast<Domain&>(target);
-    root_domain.CalculateTotalMass();
-    root_domain.CalculateTotalExternalForce();
-    StepNonRoot(root_domain, h);
+    auto& root_domain_target = dynamic_cast<DomainTarget&>(target);
+    root_domain_target.BottomUpCalculation();
+    StepNonRoot(root_domain_target, h);
 }
 
-void DomainIntegrator::StepNonRoot(Domain &domain, double h) const {
-    domain.Preparation();
-    VectorXd v = domain.GetVelocity();
-    _integrator->Step(domain, h);
-    if (!domain._subdomains.empty()) {
-        domain.CalculateSubdomainFrame((domain.GetVelocity() - v) / h);
-    }
-    for (auto& subdomain : domain._subdomains) {
-        StepNonRoot(*subdomain, h);
+void DomainIntegrator::StepNonRoot(DomainTarget &domain_target, double h) const {
+    domain_target.TopDownCalculationPrev();
+    VectorXd v = domain_target.GetVelocity();
+    _integrator->Step(domain_target, h);
+    domain_target.TopDownCalculationAfter((domain_target.GetVelocity() - v) / h);
+    for (auto& subdomain : domain_target.GetSubdomains()) {
+        StepNonRoot(*dynamic_cast<DomainTarget*>(subdomain->GetTarget()), h);
     }
 }
 

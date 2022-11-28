@@ -27,7 +27,7 @@ void Simulator::LoadScene(const std::string &config) {
     std::ifstream system_config_file(CONFIG_PATH + system_config_file_path);
     const json system_config = json::parse(system_config_file);
     system_config_file.close();
-    _system = PhysicsSystemFactory::GetPhysicsSystem(system_config["type"], system_config);
+    _system = SystemFactory::GetSystem(system_config["type"], system_config);
     _system->UpdateSettings(system_config);
 
     const auto& renderer_config_json = config_json["renderer"];
@@ -63,7 +63,7 @@ void Simulator::Simulate(const std::string& output_dir) {
     const int object_number = obj_id;
 
     while(current_time < _duration) {
-        _integrator->Step(*_system, _time_step);
+        _integrator->Step(*_system->GetTarget(), _time_step);
         obj_id = 0;
 		std::ofstream itr_file(output_dir + "/itr" + std::to_string(itr_id));
         for (auto itr = _system->GetIterator(); !itr->IsDone(); itr->Forward(), obj_id++) {
@@ -123,7 +123,7 @@ void Simulator::InitializeScene(Scene &scene) {
 
 void Simulator::Processing(Scene &scene) {
     auto t = clock();
-    _integrator->Step(*_system, _time_step);
+    _integrator->Step(*_system->GetTarget(), _time_step);
     int id = 0;
     for (auto itr = _system->GetIterator(); !itr->IsDone(); itr->Forward(), id++) {
         const auto obj = itr->GetObject();
