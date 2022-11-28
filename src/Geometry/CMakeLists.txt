@@ -6,6 +6,7 @@ file(GLOB_RECURSE GEOMETRY_SOURCE_FILE
         Mesh/*.cpp
         Rigid/*.cpp
         TreeShape/*.cpp
+        Collision/*.cpp
     )
 
 if(BUILD_TEST)
