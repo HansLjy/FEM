@@ -99,7 +99,7 @@ class DomainTarget : public SystemTarget {
 public:
     explicit DomainTarget(Domain& domain) : SystemTarget(domain), _domain(&domain) {}
     void GetMass(SparseMatrixXd &mass) const override;
-    VectorXd GetExternalForce() const override;
+    void GetExternalForce(Ref<VectorXd> force) const override;
 
     friend class DomainIntegrator;
 

@@ -13,22 +13,24 @@
  */
 class Target {
 public:
-    virtual VectorXd GetCoordinate() const = 0;
-    virtual VectorXd GetVelocity() const = 0;
+    virtual int GetDOF() const = 0;
 
-    virtual void SetCoordinate(const VectorXd& x) = 0;
-    virtual void SetVelocity(const VectorXd& v) = 0;
+    virtual void GetCoordinate(Ref<VectorXd> x) const = 0;
+    virtual void GetVelocity(Ref<VectorXd> v) const = 0;
+
+    virtual void SetCoordinate(const Ref<const VectorXd> &x) = 0;
+    virtual void SetVelocity(const Ref<const VectorXd> &v) = 0;
 
     virtual void GetMass(SparseMatrixXd& mass) const = 0;
 
     virtual double GetPotentialEnergy() const = 0;
     virtual double GetPotentialEnergy(const Ref<const VectorXd>& x) const = 0;
-    virtual VectorXd GetPotentialEnergyGradient() const = 0;
-    virtual VectorXd GetPotentialEnergyGradient(const Ref<const VectorXd>& x) const = 0;
+    virtual void GetPotentialEnergyGradient(Ref<VectorXd> gradient) const = 0;
+    virtual void GetPotentialEnergyGradient(const Ref<const VectorXd> &x, Ref<VectorXd> gradient) const = 0;
     virtual void GetPotentialEnergyHessian(SparseMatrixXd& hessian) const = 0;
     virtual void GetPotentialEnergyHessian(const Ref<const VectorXd>& x, SparseMatrixXd& hessian) const = 0;
 
-    virtual VectorXd GetExternalForce() const = 0;
+    virtual void GetExternalForce(Ref<VectorXd> force) const = 0;
 
     virtual VectorXd GetConstraint(const VectorXd &x) const = 0;
     virtual void GetConstraintGradient(SparseMatrixXd &gradient, const VectorXd &x) const = 0;

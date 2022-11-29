@@ -32,14 +32,13 @@ Domain::~Domain() {
     }
 }
 
-VectorXd DomainTarget::GetExternalForce() const {
-    VectorXd external_force(_domain->_dof);
+void DomainTarget::GetExternalForce(Ref<VectorXd> force) const {
     int current_row = 0;
     for (const auto& obj : _domain->_objs) {
-        external_force.segment(current_row, obj->GetDOF()) = obj->GetExternalForce(_domain->_frame_rotation, _domain->_frame_x);
+        force.segment(current_row, obj->GetDOF()) = obj->GetExternalForce(_domain->_frame_rotation, _domain->_frame_x);
         current_row += obj->GetDOF();
     }
-    return external_force + _domain->_interface_force + _domain->_inertial_force;
+    force += _domain->_interface_force + _domain->_inertial_force;
 }
 
 double Domain::GetTotalMass() const {

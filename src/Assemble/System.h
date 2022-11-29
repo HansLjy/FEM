@@ -63,20 +63,21 @@ protected:
 
 class SystemTarget : public Target {
 public:
-    SystemTarget(System& system) : _system(&system) {}
+    explicit SystemTarget(System& system) : _system(&system) {}
 
-    VectorXd GetCoordinate() const override;
-    VectorXd GetVelocity() const override;
-    void SetCoordinate(const Eigen::VectorXd &x) override;
-    void SetVelocity(const Eigen::VectorXd &v) override;
+    int GetDOF() const override;
+    void GetCoordinate(Ref<VectorXd> x) const override;
+    void GetVelocity(Ref<VectorXd> v) const override;
+    void SetCoordinate(const Ref<const VectorXd> &x) override;
+    void SetVelocity(const Ref<const VectorXd> &v) override;
     void GetMass(SparseMatrixXd &mass) const override;
     double GetPotentialEnergy() const override;
     double GetPotentialEnergy(const Ref<const Eigen::VectorXd> &x) const override;
-    VectorXd GetPotentialEnergyGradient() const override;
-    VectorXd GetPotentialEnergyGradient(const Ref<const Eigen::VectorXd> &x) const override;
+    void GetPotentialEnergyGradient(Ref<VectorXd> gradient) const override;
+    void GetPotentialEnergyGradient(const Ref<const VectorXd> &x, Ref<VectorXd> gradient) const override;
     void GetPotentialEnergyHessian(SparseMatrixXd &hessian) const override;
     void GetPotentialEnergyHessian(const Ref<const Eigen::VectorXd> &x, SparseMatrixXd &hessian) const override;
-    VectorXd GetExternalForce() const override;
+    void GetExternalForce(Ref<VectorXd> force) const override;
     VectorXd GetConstraint(const Eigen::VectorXd &x) const override;
     void GetConstraintGradient(SparseMatrixXd &gradient, const Eigen::VectorXd &x) const override;
     ~SystemTarget() override = default;

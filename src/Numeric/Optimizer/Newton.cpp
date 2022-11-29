@@ -6,8 +6,9 @@
 #include "spdlog/spdlog.h"
 
 void Newton::Optimize(const ValueFunc &f, const GradiantFunc &g, const HessianFunc &h, VectorXd &x) {
-    VectorXd gradient = g(x);
+    VectorXd gradient;
     SparseMatrixXd hessian;
+    g(x, gradient);
     h(x, hessian);
     Eigen::SimplicialLDLT<SparseMatrixXd> solver;
 
@@ -22,12 +23,14 @@ void Newton::Optimize(const ValueFunc &f, const GradiantFunc &g, const HessianFu
             alpha /= 2;
         }
         x = x + alpha * p;
-        gradient = g(x);
-        if (gradient.norm() < _tolerance) {
+        g(x, gradient);
+        if (gradient.norm() / gradient.size() < _tolerance) {
             break;
         }
         hessian.resize(0, 0);   // clear hessian
         h(x, hessian);
     }
-//    spdlog::info("Finished optimization in {} steps", step);
+    if (step > 10) {
+        spdlog::warn("Newton optimization not converge! Residue: {}", gradient.norm() / gradient.size());
+    }
 }

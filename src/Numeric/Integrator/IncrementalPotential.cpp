@@ -15,9 +15,11 @@ IPIntegrator::~IPIntegrator() {
 }
 
 void IPIntegrator::Step(Target &target, double h) const {
-    VectorXd x = target.GetCoordinate();
-    VectorXd v = target.GetVelocity();
-    VectorXd force = target.GetExternalForce();
+    const int dof = target.GetDOF();
+    VectorXd x(dof), v(dof), force(dof);
+    target.GetCoordinate(x);
+    target.GetVelocity(v);
+    target.GetExternalForce(force);
     SparseMatrixXd mass;
     target.GetMass(mass);
 
@@ -30,8 +32,12 @@ void IPIntegrator::Step(Target &target, double h) const {
         return 0.5 * (x - x_hat).transpose() * mass * (x - x_hat) + h * h * target.GetPotentialEnergy(x);
     };
 
-    auto grad = [&x_hat, &mass, &h, &target] (const VectorXd& x) -> VectorXd {
-        return mass * (x - x_hat) + h * h * target.GetPotentialEnergyGradient(x);
+    auto grad = [&x_hat, &mass, &h, &target, &dof] (const VectorXd& x, VectorXd& gradient) -> void {
+        if (gradient.size() != dof) {
+            gradient.resize(dof);
+        }
+        target.GetPotentialEnergyGradient(x, gradient);
+        gradient = h * h * gradient + mass * (x - x_hat);
     };
 
     auto hes = [&mass, &h, &target] (const VectorXd& x, SparseMatrixXd& hessian) -> void {
@@ -43,6 +49,9 @@ void IPIntegrator::Step(Target &target, double h) const {
     _optimizer->Optimize(func, grad, hes, x_next);
 
     VectorXd v_next = (x_next - x) / h;
+
+//    std::cerr << "x: " << x_next.transpose() << std::endl;
+//    std::cerr << "v: " << v_next.transpose() << std::endl;
 
     target.SetCoordinate(x_next);
     target.SetVelocity(v_next);

@@ -71,6 +71,9 @@ int System::GetIndex(const std::string &name) const {
     return (*result).second;
 }
 
+int SystemTarget::GetDOF() const {
+    return _system->_dof;
+}
 
 void SystemTarget::GetConstraintGradient(SparseMatrixXd &gradient, const Eigen::VectorXd &x) const {
     COO coo;
@@ -122,33 +125,27 @@ System::~System(){
     delete _target;
 }
 
-#define Assemble1D(Value)                                                               \
-    VectorXd var(_system->_dof);                                                        \
+#define Assemble1D(Value, var)                                                          \
     int current_row = 0;                                                                \
     for (const auto& obj : _system->_objs) {                                            \
         var.segment(current_row, obj->GetDOF()) = obj->Get##Value();                    \
         current_row += obj->GetDOF();                                                   \
-    }                                                                                   \
-    return var;
+    }
 
-#define Assemble1DWithInfo(Value, rotation, position)                                   \
-    VectorXd var(_system->_dof);                                                        \
+#define Assemble1DWithInfo(Value, rotation, position, var)                              \
     int current_row = 0;                                                                \
     for (const auto& obj : _system->_objs) {                                            \
         var.segment(current_row, obj->GetDOF()) = obj->Get##Value(rotation, position);  \
         current_row += obj->GetDOF();                                                   \
-    }                                                                                   \
-    return var;
+    }
 
-#define Assemble1DElseWhere(Value)\
-    VectorXd var(_system->_dof);                                                        \
+#define Assemble1DElseWhere(Value, var)                                                 \
     int current_row = 0;                                                                \
     for (const auto& obj : _system->_objs) {                                            \
         var.segment(current_row, obj->GetDOF())                                         \
             = obj->Get##Value(x.segment(current_row, obj->GetDOF()));                   \
         current_row += obj->GetDOF();                                                   \
-    }                                                                                   \
-    return var;
+    }
 
 #define Assemble2D(var, Value)                                                      \
     int current_row = 0;                                                            \
@@ -170,12 +167,12 @@ System::~System(){
     var.resize(current_row, current_row);                                           \
     var.setFromTriplets(coo.begin(), coo.end());
 
-VectorXd SystemTarget::GetCoordinate() const {
-    Assemble1D(Coordinate)
+void SystemTarget::GetCoordinate(Ref<VectorXd> x) const {
+    Assemble1D(Coordinate, x)
 }
 
-VectorXd SystemTarget::GetVelocity() const {
-    Assemble1D(Velocity)
+void SystemTarget::GetVelocity(Ref<VectorXd> v) const {
+    Assemble1D(Velocity, v)
 }
 
 #define Dessemble1D(Funcname, var)                                              \
@@ -185,11 +182,11 @@ VectorXd SystemTarget::GetVelocity() const {
         current_row += obj->GetDOF();                                           \
     }
 
-void SystemTarget::SetCoordinate(const Eigen::VectorXd &x) {
+void SystemTarget::SetCoordinate(const Ref<const VectorXd> &x) {
     Dessemble1D(Coordinate, x)
 }
 
-void SystemTarget::SetVelocity(const Eigen::VectorXd &v) {
+void SystemTarget::SetVelocity(const Ref<const VectorXd> &v) {
     Dessemble1D(Velocity, v)
 }
 
@@ -215,12 +212,12 @@ double SystemTarget::GetPotentialEnergy(const Ref<const Eigen::VectorXd> &x) con
     return energy;
 }
 
-VectorXd SystemTarget::GetPotentialEnergyGradient() const {
-    Assemble1D(PotentialGradient)
+void SystemTarget::GetPotentialEnergyGradient(Ref<VectorXd> gradient) const {
+    Assemble1D(PotentialGradient, gradient)
 }
 
-VectorXd SystemTarget::GetPotentialEnergyGradient(const Ref<const Eigen::VectorXd> &x) const {
-    Assemble1DElseWhere(PotentialGradient)
+void SystemTarget::GetPotentialEnergyGradient(const Ref<const VectorXd> &x, Ref<VectorXd> gradient) const {
+    Assemble1DElseWhere(PotentialGradient, gradient)
 }
 
 void SystemTarget::GetPotentialEnergyHessian(SparseMatrixXd &hessian) const {
@@ -231,8 +228,8 @@ void SystemTarget::GetPotentialEnergyHessian(const Ref<const Eigen::VectorXd> &x
     Assemble2DElseWhere(hessian, PotentialHessian)
 }
 
-VectorXd SystemTarget::GetExternalForce() const {
-    Assemble1DWithInfo(ExternalForce, Matrix3d::Identity(), Vector3d::Zero())
+void SystemTarget::GetExternalForce(Ref<VectorXd> force) const {
+    Assemble1DWithInfo(ExternalForce, Matrix3d::Identity(), Vector3d::Zero(), force)
 }
 
 
