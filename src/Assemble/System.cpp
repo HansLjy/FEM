@@ -6,7 +6,7 @@
 #include "Constraint/Constraint.h"
 #include "spdlog/spdlog.h"
 
-System::System(const nlohmann::json &config) : _DOF(0), _constraint_size(0) {
+System::System(const nlohmann::json &config) : _dof(0), _constraint_size(0) {
     const auto& objects_config = config["objects"];
     for (const auto& object_config : objects_config) {
         const auto& object = ObjectFactory::GetObject(object_config["type"], object_config);
@@ -39,7 +39,7 @@ int System::AddObject(const Object &obj, const std::string &name) {
         return -1;
     }
     _objs.push_back(obj.Clone());
-    _DOF += obj.GetDOF();
+    _dof += obj.GetDOF();
     _constraint_size += obj.GetConstraintSize();
     return new_idx;
 }
@@ -123,7 +123,7 @@ System::~System(){
 }
 
 #define Assemble1D(Value)                                                               \
-    VectorXd var(_system->_DOF);                                                        \
+    VectorXd var(_system->_dof);                                                        \
     int current_row = 0;                                                                \
     for (const auto& obj : _system->_objs) {                                            \
         var.segment(current_row, obj->GetDOF()) = obj->Get##Value();                    \
@@ -132,7 +132,7 @@ System::~System(){
     return var;
 
 #define Assemble1DWithInfo(Value, rotation, position)                                   \
-    VectorXd var(_system->_DOF);                                                        \
+    VectorXd var(_system->_dof);                                                        \
     int current_row = 0;                                                                \
     for (const auto& obj : _system->_objs) {                                            \
         var.segment(current_row, obj->GetDOF()) = obj->Get##Value(rotation, position);  \
@@ -141,7 +141,7 @@ System::~System(){
     return var;
 
 #define Assemble1DElseWhere(Value)\
-    VectorXd var(_system->_DOF);                                                        \
+    VectorXd var(_system->_dof);                                                        \
     int current_row = 0;                                                                \
     for (const auto& obj : _system->_objs) {                                            \
         var.segment(current_row, obj->GetDOF())                                         \

@@ -15,6 +15,7 @@ using nlohmann::json;
 class DomainTarget;
 class DomainIterator;
 class DomainDFSStepper;
+class DomainBFSStepper;
 
 class Domain : public System {
 public:
@@ -49,6 +50,7 @@ public:
     friend class DomainTarget;
     friend class DomainIterator;
     friend class DomainDFSStepper;
+    friend class DomainBFSStepper;
 
 protected:
     /* top down calculation */

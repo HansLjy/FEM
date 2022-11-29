@@ -50,7 +50,7 @@ public:
     friend class DomainTarget;
 
 protected:
-    int _DOF;
+    int _dof;
     int _constraint_size;
     std::vector<Object*> _objs;
     std::vector<int> _offset;

@@ -33,7 +33,7 @@ Domain::~Domain() {
 }
 
 VectorXd DomainTarget::GetExternalForce() const {
-    VectorXd external_force(_domain->_DOF);
+    VectorXd external_force(_domain->_dof);
     int current_row = 0;
     for (const auto& obj : _domain->_objs) {
         external_force.segment(current_row, obj->GetDOF()) = obj->GetExternalForce(_domain->_frame_rotation, _domain->_frame_x);
@@ -76,8 +76,8 @@ void Domain::CalculateTotalExternalForce() {
 }
 
 void Domain::CalculateInterfaceForce() {
-    if(_interface_force.size() != _DOF) {
-        _interface_force.resize(_DOF);
+    if(_interface_force.size() != _dof) {
+        _interface_force.resize(_dof);
     }
     _interface_force.setZero();
     const int num_subdomains = _subdomains.size();
@@ -97,8 +97,8 @@ void Domain::CalculateInterfaceForce() {
 }
 
 void Domain::CalculateInertialForce() {
-    if(_inertial_force.size() != _DOF) {
-        _inertial_force.resize(_DOF);
+    if(_inertial_force.size() != _dof) {
+        _inertial_force.resize(_dof);
     }
     int current_row = 0;
     for (const auto& obj : _objs) {
@@ -118,8 +118,8 @@ void Domain::AddSubdomain(Domain &subdomain, const nlohmann::json &position) {
 }
 
 void Domain::CalculateLumpedMass() {
-    if (_lumped_mass.rows() != _DOF || _lumped_mass.cols() != _DOF) {
-        _lumped_mass.resize(_DOF, _DOF);
+    if (_lumped_mass.rows() != _dof || _lumped_mass.cols() != _dof) {
+        _lumped_mass.resize(_dof, _dof);
         // TODO update settings to avoid this.
     }
     int num_subdomains = _subdomains.size();
@@ -145,7 +145,7 @@ void Domain::UpdateSettings(const json &config) {
         RecordSubdomain(position);
     }
     if (num_subdomains) {
-        VectorXd a(_DOF);
+        VectorXd a(_dof);
         a.setZero();
         CalculateSubdomainFrame(a);
     }
