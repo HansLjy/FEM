@@ -277,7 +277,7 @@ Vector3d SystemIterator::GetTranslation() {
     return Vector3d::Zero();
 }
 
-#include "Tree/TreeDomain.h"
+#include "Domain/TreeDomain.h"
 
 BEGIN_DEFINE_XXX_FACTORY(System)
     ADD_PRODUCT("system", System)

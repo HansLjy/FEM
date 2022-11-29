@@ -13,8 +13,8 @@
 using nlohmann::json;
 
 class DomainTarget;
-class DomainIntegrator;
 class DomainIterator;
+class DomainDFSStepper;
 
 class Domain : public System {
 public:
@@ -36,17 +36,19 @@ public:
      */
     virtual void CalculateSubdomainFrame(const VectorXd& a) = 0;
 
+    void BottomUpCalculation();
+    void TopDownCalculationPrev();
 
     virtual SparseMatrixXd GetSubdomainProjection(const json& position) = 0;
     virtual void RecordSubdomain(const json& position) = 0;
     void AddSubdomain(Domain& subdomain, const json& position);
 
-    virtual ~Domain();
+    ~Domain() override;
     Domain(const Domain& rhs) = delete;
 
     friend class DomainTarget;
-    friend class DomainIntegrator;
     friend class DomainIterator;
+    friend class DomainDFSStepper;
 
 protected:
     /* top down calculation */
@@ -96,12 +98,6 @@ public:
     explicit DomainTarget(Domain& domain) : SystemTarget(domain), _domain(&domain) {}
     void GetMass(SparseMatrixXd &mass) const override;
     VectorXd GetExternalForce() const override;
-
-    void BottomUpCalculation() const;
-    void TopDownCalculationPrev() const;
-    void TopDownCalculationAfter(const VectorXd &a) const;
-
-    std::vector<Domain*>& GetSubdomains() const;
 
     friend class DomainIntegrator;
 

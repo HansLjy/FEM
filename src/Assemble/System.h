@@ -41,7 +41,7 @@ public:
     virtual std::unique_ptr<ObjectIterator> GetIterator();
     virtual Target* GetTarget();
 
-    ~System();
+    virtual ~System();
     System(const System& rhs) = delete;
 
     friend class Constraint;

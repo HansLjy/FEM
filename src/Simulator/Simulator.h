@@ -7,7 +7,7 @@
 
 #include "GUI/GUI.hpp"
 #include "System.h"
-#include "Integrator/FastProjection.h"
+#include "TimeStepper.h"
 
 #include <string>
 
@@ -29,7 +29,7 @@ protected:
     double _duration;
     double _time_step;
     System *_system;
-    const Integrator* _integrator;
+    TimeStepper* _time_stepper;
 
     std::vector<int> _obj_id2scene_id; // from id in system to id in scene
 

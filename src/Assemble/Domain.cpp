@@ -158,25 +158,15 @@ std::unique_ptr<ObjectIterator> Domain::GetIterator() {
     return std::unique_ptr<ObjectIterator>(new DomainIterator(*this));
 }
 
-void DomainTarget::BottomUpCalculation() const {
-    _domain->CalculateTotalMass();
-    _domain->CalculateTotalExternalForce();
+void Domain::BottomUpCalculation() {
+    CalculateTotalMass();
+    CalculateTotalExternalForce();
 }
 
-void DomainTarget::TopDownCalculationPrev() const {
-    _domain->CalculateInterfaceForce();
-    _domain->CalculateInertialForce();
-    _domain->CalculateLumpedMass();
-}
-
-void DomainTarget::TopDownCalculationAfter(const VectorXd &a) const {
-    if (!_domain->_subdomains.empty()) {
-        _domain->CalculateSubdomainFrame(a);
-    }
-}
-
-std::vector<Domain *> &DomainTarget::GetSubdomains() const {
-    return _domain->_subdomains;
+void Domain::TopDownCalculationPrev() {
+    CalculateInterfaceForce();
+    CalculateInertialForce();
+    CalculateLumpedMass();
 }
 
 DomainIterator::DomainIterator(Domain& domain)
@@ -236,7 +226,7 @@ Vector3d DomainIterator::GetTranslation() {
     return _current->_frame_x;
 }
 
-#include "Tree/TreeDomain.h"
+#include "Domain/TreeDomain.h"
 
 BEGIN_DEFINE_XXX_FACTORY(Domain)
     ADD_PRODUCT("tree-domain", TreeDomain)
