@@ -19,6 +19,7 @@ add_subdirectory(src/Geometry)
 add_subdirectory(src/Physics)
 add_subdirectory(src/Render)
 add_subdirectory(src/Simulator)
+add_subdirectory(src/Assemble)
 
 add_executable(fem src/main.cpp)
 target_link_libraries(fem FEMUtility)
@@ -27,6 +28,7 @@ target_link_libraries(fem Geometry)
 target_link_libraries(fem Physics)
 target_link_libraries(fem Renderer)
 target_link_libraries(fem Simulator)
+target_link_libraries(fem Assemble)
 
 set(BUILD_GENERATOR ON)
 

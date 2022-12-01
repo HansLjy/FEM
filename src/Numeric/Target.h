@@ -13,22 +13,41 @@
  */
 class Target {
 public:
-    virtual VectorXd GetCoordinate() const = 0;
-    virtual VectorXd GetVelocity() const = 0;
+    virtual int GetDOF() const = 0;
 
-    virtual void SetCoordinate(const VectorXd& x) = 0;
-    virtual void SetVelocity(const VectorXd& v) = 0;
+    virtual void GetCoordinate(Ref<VectorXd> x) const = 0;
+    virtual void GetVelocity(Ref<VectorXd> v) const = 0;
 
-    virtual void GetMass(SparseMatrixXd& mass) const = 0;
+    virtual void SetCoordinate(const Ref<const VectorXd> &x) = 0;
+    virtual void SetVelocity(const Ref<const VectorXd> &v) = 0;
+
+    void GetMass(SparseMatrixXd& mass) const {
+        COO coo;
+        GetMass(coo, 0, 0);
+        mass.resize(GetDOF(), GetDOF());
+        mass.setFromTriplets(coo.begin(), coo.end());
+    }
+    virtual void GetMass(COO& coo, int offset_x, int offset_y) const = 0;
 
     virtual double GetPotentialEnergy() const = 0;
     virtual double GetPotentialEnergy(const Ref<const VectorXd>& x) const = 0;
-    virtual VectorXd GetPotentialEnergyGradient() const = 0;
-    virtual VectorXd GetPotentialEnergyGradient(const Ref<const VectorXd>& x) const = 0;
-    virtual void GetPotentialEnergyHessian(SparseMatrixXd& hessian) const = 0;
-    virtual void GetPotentialEnergyHessian(const Ref<const VectorXd>& x, SparseMatrixXd& hessian) const = 0;
-
-    virtual VectorXd GetExternalForce() const = 0;
+    virtual void GetPotentialEnergyGradient(Ref<VectorXd> gradient) const = 0;
+    virtual void GetPotentialEnergyGradient(const Ref<const VectorXd> &x, Ref<VectorXd> gradient) const = 0;
+    void GetPotentialEnergyHessian(SparseMatrixXd& hessian) const {
+        COO coo;
+        GetPotentialEnergyHessian(coo, 0, 0);
+        hessian.resize(GetDOF(), GetDOF());
+        hessian.setFromTriplets(coo.begin(), coo.end());
+    }
+    virtual void GetPotentialEnergyHessian(COO& coo, int offset_x, int offset_y) const = 0;
+    void GetPotentialEnergyHessian(const Ref<const VectorXd>& x, SparseMatrixXd& hessian) const {
+        COO coo;
+        GetPotentialEnergyHessian(x, coo, 0, 0);
+        hessian.resize(GetDOF(), GetDOF());
+        hessian.setFromTriplets(coo.begin(), coo.end());
+    }
+    virtual void GetPotentialEnergyHessian(const Ref<const Eigen::VectorXd> &x, COO &coo, int offset_x, int offset_y) const = 0;
+    virtual void GetExternalForce(Ref<VectorXd> force) const = 0;
 
     virtual VectorXd GetConstraint(const VectorXd &x) const = 0;
     virtual void GetConstraintGradient(SparseMatrixXd &gradient, const VectorXd &x) const = 0;

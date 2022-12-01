@@ -10,7 +10,7 @@
 #include "Pattern.h"
 
 typedef std::function<double(const VectorXd&)> ValueFunc;
-typedef std::function<VectorXd(const VectorXd&)> GradiantFunc;
+typedef std::function<void(const VectorXd&, VectorXd&)> GradiantFunc;
 typedef std::function<void(const VectorXd&, SparseMatrixXd&)> HessianFunc;
 
 class Optimizer {

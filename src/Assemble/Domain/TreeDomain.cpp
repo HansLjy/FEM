@@ -3,7 +3,7 @@
 //
 
 #include "TreeDomain.h"
-#include "ReducedTreeTrunk.h"
+#include "Tree/ReducedTreeTrunk.h"
 #include "typeinfo"
 
 //DEFINE_CLONE(Domain, TreeDomain)
