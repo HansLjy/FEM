@@ -114,10 +114,6 @@ std::unique_ptr<ObjectIterator> System::GetIterator() {
     return std::unique_ptr<ObjectIterator>(new SystemIterator(*this));
 }
 
-Target *System::GetTarget() {
-    return _target;
-}
-
 System::~System(){
     for (const auto& obj : _objs) {
         delete obj;
@@ -147,25 +143,20 @@ System::~System(){
         current_row += obj->GetDOF();                                                   \
     }
 
-#define Assemble2D(var, Value)                                                      \
+#define Assemble2D(Value) \
     int current_row = 0;                                                            \
-    COO coo;                                                                        \
     for (const auto& obj : _system->_objs) {                                        \
-        obj->Get##Value(coo, current_row, current_row);                             \
+        obj->Get##Value(coo, current_row + offset_x, current_row + offset_y);       \
         current_row += obj->GetDOF();                                               \
     }                                                                               \
-    var.resize(current_row, current_row);                                           \
-    var.setFromTriplets(coo.begin(), coo.end());
 
-#define Assemble2DElseWhere(var, Value)                                             \
+
+#define Assemble2DElseWhere(Value)                                                  \
     int current_row = 0;                                                            \
-    COO coo;                                                                        \
     for (const auto& obj : _system->_objs) {                                        \
-        obj->Get##Value(x.segment(current_row, obj->GetDOF()), coo, current_row, current_row);                             \
+        obj->Get##Value(x.segment(current_row, obj->GetDOF()), coo, current_row + offset_x, current_row + offset_x); \
         current_row += obj->GetDOF();                                               \
     }                                                                               \
-    var.resize(current_row, current_row);                                           \
-    var.setFromTriplets(coo.begin(), coo.end());
 
 void SystemTarget::GetCoordinate(Ref<VectorXd> x) const {
     Assemble1D(Coordinate, x)
@@ -190,8 +181,8 @@ void SystemTarget::SetVelocity(const Ref<const VectorXd> &v) {
     Dessemble1D(Velocity, v)
 }
 
-void SystemTarget::GetMass(SparseMatrixXd &mass) const {
-    Assemble2D(mass, Mass)
+void SystemTarget::GetMass(COO &coo, int offset_x, int offset_y) const {
+    Assemble2D(Mass)
 }
 
 double SystemTarget::GetPotentialEnergy() const {
@@ -220,12 +211,14 @@ void SystemTarget::GetPotentialEnergyGradient(const Ref<const VectorXd> &x, Ref<
     Assemble1DElseWhere(PotentialGradient, gradient)
 }
 
-void SystemTarget::GetPotentialEnergyHessian(SparseMatrixXd &hessian) const {
-    Assemble2D(hessian, PotentialHessian)
+
+void SystemTarget::GetPotentialEnergyHessian(COO &coo, int offset_x, int offset_y) const {
+    Assemble2D(PotentialHessian)
 }
 
-void SystemTarget::GetPotentialEnergyHessian(const Ref<const Eigen::VectorXd> &x, SparseMatrixXd &hessian) const {
-    Assemble2DElseWhere(hessian, PotentialHessian)
+void SystemTarget::GetPotentialEnergyHessian(const Ref<const Eigen::VectorXd> &x, COO &coo, int offset_x,
+                                             int offset_y) const {
+    Assemble2DElseWhere(PotentialHessian)
 }
 
 void SystemTarget::GetExternalForce(Ref<VectorXd> force) const {

@@ -128,10 +128,14 @@ void Domain::CalculateLumpedMass() {
     }
 }
 
-void DomainTarget::GetMass(SparseMatrixXd &mass) const {
+void DomainTarget::GetMass(COO &coo, int offset_x, int offset_y) const {
     const auto& domain = dynamic_cast<const Domain*>(_system);
-    SystemTarget::GetMass(mass);
-    mass += domain->_lumped_mass;
+    SystemTarget::GetMass(coo, offset_x, offset_y);
+    for (int i = 0; i < domain->_lumped_mass.outerSize(); i++) {
+        for (SparseMatrixXd::InnerIterator it(domain->_lumped_mass, i); it; ++it) {
+            coo.push_back(Tripletd(it.row() + offset_x, it.row() + offset_y, it.value()));
+        }
+    }
 }
 
 void Domain::UpdateSettings(const json &config) {

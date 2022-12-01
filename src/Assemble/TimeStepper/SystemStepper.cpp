@@ -10,7 +10,8 @@ SystemStepper::SystemStepper(const json &config) {
 }
 
 void SystemStepper::Step(double h) const {
-    _integrator->Step(*_system->GetTarget(), h);
+    SystemTarget target(*_system);
+    _integrator->Step(target, h);
 }
 
 SystemStepper::~SystemStepper() {

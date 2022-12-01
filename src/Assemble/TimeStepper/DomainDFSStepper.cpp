@@ -17,12 +17,12 @@ void DomainDFSStepper::Step(double h) const {
 
 void DomainDFSStepper::StepNonRoot(Domain &domain, double h) const {
     domain.TopDownCalculationPrev();
-    const auto& domain_target = domain.GetTarget();
-    VectorXd v(domain_target->GetDOF()), v_new(domain_target->GetDOF());
-    domain_target->GetVelocity(v);
-    _integrator->Step(*domain_target, h);
+    DomainTarget domain_target(domain);
+    VectorXd v(domain_target.GetDOF()), v_new(domain_target.GetDOF());
+    domain_target.GetVelocity(v);
+    _integrator->Step(domain_target, h);
     if (!domain._subdomains.empty()) {
-        domain_target->GetVelocity(v_new);
+        domain_target.GetVelocity(v_new);
         domain.CalculateSubdomainFrame((v_new - v) / h);
     }
     for (auto& subdomain : domain._subdomains) {

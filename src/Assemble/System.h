@@ -21,6 +21,8 @@ class System {
 public:
     explicit System(const json& config);
 
+    int GetDOF() {return _dof;}
+
     /**
      * Add object into the system
      * @param obj object to be added
@@ -39,7 +41,6 @@ public:
     int GetIndex(const std::string& name) const;
 
     virtual std::unique_ptr<ObjectIterator> GetIterator();
-    virtual Target* GetTarget();
 
     virtual ~System();
     System(const System& rhs) = delete;
@@ -70,13 +71,13 @@ public:
     void GetVelocity(Ref<VectorXd> v) const override;
     void SetCoordinate(const Ref<const VectorXd> &x) override;
     void SetVelocity(const Ref<const VectorXd> &v) override;
-    void GetMass(SparseMatrixXd &mass) const override;
+    void GetMass(COO &coo, int offset_x, int offset_y) const override;
     double GetPotentialEnergy() const override;
     double GetPotentialEnergy(const Ref<const Eigen::VectorXd> &x) const override;
     void GetPotentialEnergyGradient(Ref<VectorXd> gradient) const override;
     void GetPotentialEnergyGradient(const Ref<const VectorXd> &x, Ref<VectorXd> gradient) const override;
-    void GetPotentialEnergyHessian(SparseMatrixXd &hessian) const override;
-    void GetPotentialEnergyHessian(const Ref<const Eigen::VectorXd> &x, SparseMatrixXd &hessian) const override;
+    void GetPotentialEnergyHessian(COO &coo, int offset_x, int offset_y) const override;
+    void GetPotentialEnergyHessian(const Ref<const Eigen::VectorXd> &x, COO &coo, int offset_x, int offset_y) const override;
     void GetExternalForce(Ref<VectorXd> force) const override;
     VectorXd GetConstraint(const Eigen::VectorXd &x) const override;
     void GetConstraintGradient(SparseMatrixXd &gradient, const Eigen::VectorXd &x) const override;
