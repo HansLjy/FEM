@@ -6,6 +6,8 @@
 #include "Constraint/Constraint.h"
 #include "spdlog/spdlog.h"
 
+DEFINE_CLONE(Target, SystemTarget)
+
 System::System(const nlohmann::json &config) : _dof(0), _constraint_size(0) {
     const auto& objects_config = config["objects"];
     for (const auto& object_config : objects_config) {

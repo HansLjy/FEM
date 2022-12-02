@@ -6,6 +6,8 @@
 
 #include "JsonUtil.h"
 
+DEFINE_CLONE(Target, DomainTarget)
+
 Domain::Domain(const nlohmann::json &config)
     : System(config["system"]) {
 

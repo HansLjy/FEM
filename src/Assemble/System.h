@@ -83,6 +83,8 @@ public:
     void GetConstraintGradient(SparseMatrixXd &gradient, const Eigen::VectorXd &x) const override;
     ~SystemTarget() override = default;
 
+    DERIVED_DECLARE_CLONE(Target)
+
 protected:
     System* _system;
 };
@@ -97,6 +99,10 @@ public:
     Object * GetObject() override;
     Matrix3d GetRotation() override;
     Vector3d GetTranslation() override;
+
+    std::shared_ptr<ObjectIterator> Clone() const override {
+        return std::shared_ptr<ObjectIterator> (new SystemIterator(*this));
+    }
 
 private:
     System* _system;

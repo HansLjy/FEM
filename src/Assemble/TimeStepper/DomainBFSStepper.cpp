@@ -5,10 +5,15 @@
 #include "DomainBFSStepper.h"
 #include "Domain.h"
 
+DEFINE_CLONE(Target, GroupDomainTarget)
+
 DomainBFSStepper::DomainBFSStepper(const nlohmann::json &config) {
     const auto& integrator_config = config["integrator"];
     _integrator = IntegratorFactory::GetIntegrator(integrator_config["type"], integrator_config);
 }
+
+#include "Target/IPCBarrierTarget.h"
+#include "Collision/Culling/HashCulling.h"
 
 void DomainBFSStepper::Bind(System &system) {
     TimeStepper::Bind(system);
@@ -33,7 +38,18 @@ void DomainBFSStepper::Bind(System &system) {
             _level++;
         }
     }
+
+    _level_targets.clear();
+    for (int i = 0; i < _level; i++) {
+        _level_targets.push_back(new IPCBarrierTarget(
+            GroupDomainTarget(_domains, _level_bar[i], _level_bar[i + 1]),
+            HashCulling(0.1, 1024),
+            GroupDomainIterator(_domains, _level_bar[i], _level_bar[i + 1]),
+            0.1
+        ));
+    }
 }
+
 
 void DomainBFSStepper::Step(double h) const {
     _domains[0]->BottomUpCalculation();
@@ -42,11 +58,11 @@ void DomainBFSStepper::Step(double h) const {
         for (int j = _level_bar[i]; j < _level_bar[i + 1]; j++) {
             _domains[j]->TopDownCalculationPrev();
         }
-        GroupDomainTarget target(_domains, _level_bar[i], _level_bar[i + 1]);
-        VectorXd v(target.GetDOF()), v_new(target.GetDOF());
-        target.GetVelocity(v);
-        _integrator->Step(target, h);
-        target.GetVelocity(v_new);
+        const auto& target = _level_targets[i];
+        VectorXd v(target->GetDOF()), v_new(target->GetDOF());
+        target->GetVelocity(v);
+        _integrator->Step(*target, h);
+        target->GetVelocity(v_new);
         VectorXd a = (v_new - v) / h;
 
         int cur_row = 0;
@@ -61,6 +77,9 @@ void DomainBFSStepper::Step(double h) const {
 
 DomainBFSStepper::~DomainBFSStepper() noexcept {
     delete _integrator;
+    for (const auto& target : _level_targets) {
+        delete target;
+    }
 }
 
 GroupDomainTarget::GroupDomainTarget(const std::vector<Domain *> &domains, int begin, int end)
@@ -68,6 +87,7 @@ GroupDomainTarget::GroupDomainTarget(const std::vector<Domain *> &domains, int b
     _dof = 0;
     for (int i = _begin; i < _end; i++) {
         _dof += _domains[i]->GetDOF();
+        _targets.push_back(new DomainTarget(*_domains[i]));
     }
 }
 
@@ -75,12 +95,11 @@ int GroupDomainTarget::GetDOF() const {
     return _dof;
 }
 
-#define ASSEMBLE_1D(FuncName, var)                                  \
-    int cur_row = 0;                                                \
-    for (int i = _begin; i < _end; i++) {                           \
-        DomainTarget target(*_domains[i]);                          \
-        target.Get##FuncName(var.segment(cur_row, target.GetDOF()));\
-        cur_row += _domains[i]->GetDOF();                           \
+#define ASSEMBLE_1D(FuncName, var)                                              \
+    int cur_row = 0;                                                            \
+    for (int i = _begin, j = 0; i < _end; i++, j++) {                           \
+        _targets[j]->Get##FuncName(var.segment(cur_row, _targets[j]->GetDOF()));\
+        cur_row += _domains[i]->GetDOF();                                       \
     }
 
 
@@ -92,12 +111,11 @@ void GroupDomainTarget::GetVelocity(Ref<Eigen::VectorXd> v) const {
     ASSEMBLE_1D(Velocity, v)
 }
 
-#define DISPERSE_1D(FuncName, var)                                  \
-    int cur_row = 0;                                                \
-    for (int i = _begin; i < _end; i++) {                           \
-        DomainTarget target(*_domains[i]);                          \
-        target.Set##FuncName(var.segment(cur_row, target.GetDOF()));\
-        cur_row += _domains[i]->GetDOF();                           \
+#define DISPERSE_1D(FuncName, var)                                                  \
+    int cur_row = 0;                                                                \
+    for (int i = _begin, j = 0; i < _end; i++, j++) {                               \
+        _targets[j]->Set##FuncName(var.segment(cur_row, _targets[j]->GetDOF()));    \
+        cur_row += _domains[i]->GetDOF();                                           \
     }
 
 void GroupDomainTarget::SetCoordinate(const Ref<const Eigen::VectorXd> &x) {
@@ -108,20 +126,21 @@ void GroupDomainTarget::SetVelocity(const Ref<const Eigen::VectorXd> &v) {
     DISPERSE_1D(Velocity, v)
 }
 
-void GroupDomainTarget::GetMass(COO &coo, int offset_x, int offset_y) const {
-    int current_row = 0;
-    for (int i = _begin; i < _end; i++) {
-        DomainTarget target(*_domains[i]);
-        target.GetMass(coo, offset_x + current_row, offset_y + current_row);
-        current_row += target.GetDOF();
+#define ASSEMBLE_2D(FuncName)                                                           \
+    int current_row = 0;                                                                \
+    for (int i = _begin, j = 0; i < _end; i++, j++) {                                   \
+        _targets[j]->Get##FuncName(coo, offset_x + current_row, offset_y + current_row);\
+        current_row += _targets[j]->GetDOF();                                           \
     }
+
+void GroupDomainTarget::GetMass(COO &coo, int offset_x, int offset_y) const {
+    ASSEMBLE_2D(Mass)
 }
 
 double GroupDomainTarget::GetPotentialEnergy() const {
     double energy = 0;
-    for (int i = _begin; i < _end; i++) {
-        DomainTarget target(*_domains[i]);
-        energy += target.GetPotentialEnergy();
+    for (int i = _begin, j = 0; i < _end; i++, j++) {
+        energy += _targets[j]->GetPotentialEnergy();
     }
     return energy;
 }
@@ -129,58 +148,52 @@ double GroupDomainTarget::GetPotentialEnergy() const {
 double GroupDomainTarget::GetPotentialEnergy(const Ref<const Eigen::VectorXd> &x) const {
     double energy = 0;
     int current_row = 0;
-    for (int i = _begin; i < _end; i++) {
-        DomainTarget target(*_domains[i]);
-        energy += target.GetPotentialEnergy(x.segment(current_row, target.GetDOF()));
-        current_row += target.GetDOF();
+    for (int i = _begin, j = 0; i < _end; i++, j++) {
+        energy += _targets[j]->GetPotentialEnergy(x.segment(current_row, _targets[j]->GetDOF()));
+        current_row += _targets[j]->GetDOF();
     }
     return energy;
 }
 
 void GroupDomainTarget::GetPotentialEnergyGradient(Ref<Eigen::VectorXd> gradient) const {
     int current_row = 0;
-    for (int i = _begin; i < _end; i++) {
-        DomainTarget target(*_domains[i]);
-        target.GetPotentialEnergyGradient(gradient.segment(current_row, target.GetDOF()));
-        current_row += target.GetDOF();
+    for (int i = _begin, j = 0; i < _end; i++, j++) {
+        _targets[j]->GetPotentialEnergyGradient(gradient.segment(current_row, _targets[j]->GetDOF()));
+        current_row += _targets[j]->GetDOF();
     }
 }
 
 void GroupDomainTarget::GetPotentialEnergyGradient(const Ref<const Eigen::VectorXd> &x,
                                                    Ref<Eigen::VectorXd> gradient) const {
     int current_row = 0;
-    for (int i = _begin; i < _end; i++) {
-        DomainTarget target(*_domains[i]);
-        target.GetPotentialEnergyGradient(x.segment(current_row, target.GetDOF()), gradient.segment(current_row, target.GetDOF()));
-        current_row += target.GetDOF();
+    for (int i = _begin, j = 0; i < _end; i++, j++) {
+        _targets[j]->GetPotentialEnergyGradient(x.segment(current_row, _targets[j]->GetDOF()), gradient.segment(current_row, _targets[j]->GetDOF()));
+        current_row += _targets[j]->GetDOF();
     }
 }
 
 void GroupDomainTarget::GetPotentialEnergyHessian(COO &coo, int offset_x, int offset_y) const {
     int current_row = 0;
-    for (int i = _begin; i < _end; i++) {
-        DomainTarget target(*_domains[i]);
-        target.GetPotentialEnergyHessian(coo, offset_x + current_row, offset_y + current_row);
-        current_row += target.GetDOF();
+    for (int i = _begin, j = 0; i < _end; i++, j++) {
+        _targets[j]->GetPotentialEnergyHessian(coo, offset_x + current_row, offset_y + current_row);
+        current_row += _targets[j]->GetDOF();
     }
 }
 
 void GroupDomainTarget::GetPotentialEnergyHessian(const Ref<const Eigen::VectorXd> &x, COO &coo, int offset_x,
                                                   int offset_y) const {
     int current_row = 0;
-    for (int i = _begin; i < _end; i++) {
-        DomainTarget target(*_domains[i]);
-        target.GetPotentialEnergyHessian(x.segment(current_row, target.GetDOF()), coo, offset_x + current_row, offset_y + current_row);
-        current_row += target.GetDOF();
+    for (int i = _begin, j = 0; i < _end; i++, j++) {
+        _targets[j]->GetPotentialEnergyHessian(x.segment(current_row, _targets[j]->GetDOF()), coo, offset_x + current_row, offset_y + current_row);
+        current_row += _targets[j]->GetDOF();
     }
 }
 
 void GroupDomainTarget::GetExternalForce(Ref<Eigen::VectorXd> force) const {
     int current_row = 0;
-    for (int i = _begin; i < _end; i++) {
-        DomainTarget target(*_domains[i]);
-        target.GetExternalForce(force.segment(current_row, target.GetDOF()));
-        current_row += target.GetDOF();
+    for (int i = _begin, j = 0; i < _end; i++, j++) {
+        _targets[j]->GetExternalForce(force.segment(current_row, _targets[j]->GetDOF()));
+        current_row += _targets[j]->GetDOF();
     }
 }
 
@@ -190,4 +203,41 @@ VectorXd GroupDomainTarget::GetConstraint(const Eigen::VectorXd &x) const {
 
 void GroupDomainTarget::GetConstraintGradient(SparseMatrixXd &gradient, const Eigen::VectorXd &x) const {
     // TODO
+}
+
+GroupDomainTarget::~GroupDomainTarget() {
+    for (auto& target : _targets) {
+        delete target;
+    }
+}
+
+GroupDomainTarget::GroupDomainTarget(const GroupDomainTarget &rhs)
+    : _domains(rhs._domains), _begin(rhs._begin), _end(rhs._end), _dof(rhs._dof) {
+    for (auto& target : rhs._targets) {
+        _targets.push_back(target->Clone());
+    }
+}
+
+void GroupDomainIterator::Forward() {
+    if (_cur_itr->IsDone()) {
+        if (++_cur_domain == _end) {
+            _is_done = true;
+            return;
+        }
+        _cur_itr = _domains[_cur_domain]->GetIterator();
+    } else {
+        _cur_itr->Forward();
+    }
+}
+
+Object *GroupDomainIterator::GetObject() {
+    return _cur_itr->GetObject();
+}
+
+Matrix3d GroupDomainIterator::GetRotation() {
+    return _domains[_cur_domain]->_frame_rotation;
+}
+
+Vector3d GroupDomainIterator::GetTranslation() {
+    return _domains[_cur_domain]->_frame_x;
 }

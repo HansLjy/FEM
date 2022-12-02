@@ -56,7 +56,7 @@ void Simulator::Simulate(const std::string& output_dir) {
         const auto& obj = itr->GetObject();
         MatrixXi topo;
         MatrixXd vertices;
-        obj->GetShape(vertices, topo);
+        obj->GetRenderShape(vertices, topo);
         write_binary(topo_file, topo);
     }
 	topo_file.close();
@@ -70,7 +70,7 @@ void Simulator::Simulate(const std::string& output_dir) {
             const auto& obj = itr->GetObject();
             MatrixXi topo;
             MatrixXd vertices;
-            obj->GetShape(vertices, topo);
+            obj->GetRenderShape(vertices, topo);
             write_binary(itr_file, vertices);
             write_binary(itr_file, itr->GetRotation());
             write_binary(itr_file, itr->GetTranslation());
@@ -112,7 +112,7 @@ void Simulator::InitializeScene(Scene &scene) {
         const auto obj = itr->GetObject();
         MatrixXd vertices;
         MatrixXi topo;
-        obj->GetShape(vertices, topo);
+        obj->GetRenderShape(vertices, topo);
 //        std::cerr << "Rotation " << id << ":\n" << itr->GetRotation() << std::endl;
 //        std::cerr << "Translation " << id << ":\n" << itr->GetTranslation().transpose() << std::endl;
         _obj_id2scene_id.push_back(scene.AddMesh(vertices, topo, itr->GetRotation(), itr->GetTranslation()));
@@ -129,7 +129,7 @@ void Simulator::Processing(Scene &scene) {
         const auto obj = itr->GetObject();
         MatrixXd vertices;
         MatrixXi topo;
-        obj->GetShape(vertices, topo);
+        obj->GetRenderShape(vertices, topo);
         scene.SelectData(_obj_id2scene_id[id]);
         scene.SetMesh(vertices, topo, itr->GetRotation(), itr->GetTranslation());
     }

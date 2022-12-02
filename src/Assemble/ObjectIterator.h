@@ -17,6 +17,8 @@ public:
     virtual Matrix3d GetRotation() = 0;
     virtual Vector3d GetTranslation() = 0;
 
+    virtual std::shared_ptr<ObjectIterator> Clone() const = 0;
+
     virtual ~ObjectIterator() = default;
 
 protected:

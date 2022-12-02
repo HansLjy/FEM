@@ -40,7 +40,7 @@ public:
     VectorXd GetInnerConstraint(const VectorXd &x) const override;
     void GetInnerConstraintGradient(const VectorXd &x, COO &coo, int x_offset, int y_offset) const override;
 
-    void GetShape(Eigen::MatrixXd &vertices, Eigen::MatrixXi &topo) const override;
+    void GetRenderShape(Eigen::MatrixXd &vertices, Eigen::MatrixXi &topo) const override;
 
     MIDDLE_DECLARE_CLONE(Object)
 

@@ -4,6 +4,6 @@
 
 #include "BisectionCubicSolver.h"
 
-double BisectionCubicSolver::Solve(double a, double b, double c, double d, double e, double l, double r) {
-
+double BisectionCubicSolver::Solve(double A, double B, double C, double D, double l, double r) {
+    // TODO
 }

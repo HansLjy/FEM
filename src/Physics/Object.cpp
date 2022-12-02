@@ -52,7 +52,7 @@ ShapedObject::ShapedObject(const Shape &shape) : _shape(shape.Clone()) {}
 
 ShapedObject::ShapedObject(const ShapedObject &rhs) : _shape(rhs._shape->Clone()) {}
 
-void ShapedObject::GetShape(Eigen::MatrixXd &vertices, Eigen::MatrixXi &topo) const {
+void ShapedObject::GetRenderShape(Eigen::MatrixXd &vertices, Eigen::MatrixXi &topo) const {
     _shape->GetSurface(*this, vertices, topo);
 }
 

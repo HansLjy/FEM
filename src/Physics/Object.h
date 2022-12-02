@@ -62,7 +62,8 @@ public:
     VectorXd GetExternalForce(const Matrix3d& rotation, const Vector3d& position) const;
     virtual Vector3d GetTotalExternalForce(const Matrix3d &rotation, const Vector3d &position) const = 0;
 
-    virtual void GetShape(MatrixXd& vertices, MatrixXi& topo) const = 0;
+    virtual void GetRenderShape(MatrixXd& vertices, MatrixXi& topo) const = 0;
+    virtual void GetCollisionShape(const Ref<const VectorXd> &x, MatrixXd &vertices, MatrixXi &face_topo, MatrixXi &edge_topo) const {}
 
     virtual int GetConstraintSize() const;
     virtual VectorXd GetInnerConstraint(const VectorXd &x) const;
@@ -86,7 +87,7 @@ class Shape;
 class ShapedObject : virtual public Object {
 public:
     explicit ShapedObject(const Shape &shape);
-    void GetShape(Eigen::MatrixXd &vertices, Eigen::MatrixXi &topo) const override;
+    void GetRenderShape(Eigen::MatrixXd &vertices, Eigen::MatrixXi &topo) const override;
 
     ~ShapedObject() override;
     ShapedObject(const ShapedObject& rhs);

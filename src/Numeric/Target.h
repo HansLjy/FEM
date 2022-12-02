@@ -6,6 +6,7 @@
 #define FEM_TARGET_H
 
 #include "EigenAll.h"
+#include "Pattern.h"
 
 /**
  * Target is the general target problem encountered
@@ -52,7 +53,11 @@ public:
     virtual VectorXd GetConstraint(const VectorXd &x) const = 0;
     virtual void GetConstraintGradient(SparseMatrixXd &gradient, const VectorXd &x) const = 0;
 
+    virtual void UpdateInfo(const VectorXd& x, int time_stamp) {}
+
     virtual ~Target() = default;
+
+    BASE_DECLARE_CLONE(Target)
 };
 
 #endif //FEM_TARGET_H

@@ -9,7 +9,7 @@
 
 class BisectionCubicSolver : public CubicSolver {
 public:
-    double Solve(double a, double b, double c, double d, double e, double l, double r) override;
+    double Solve(double A, double B, double C, double D, double l, double r) override;
 };
 
 #endif //FEM_BISECTIONCUBICSOLVER_H

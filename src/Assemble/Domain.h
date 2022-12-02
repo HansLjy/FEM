@@ -14,6 +14,7 @@ using nlohmann::json;
 
 class DomainTarget;
 class DomainIterator;
+class GroupDomainIterator;
 class DomainDFSStepper;
 class DomainBFSStepper;
 
@@ -49,6 +50,7 @@ public:
 
     friend class DomainTarget;
     friend class DomainIterator;
+    friend class GroupDomainIterator;
     friend class DomainDFSStepper;
     friend class DomainBFSStepper;
 
@@ -93,15 +95,13 @@ protected:
 
 #include <stack>
 
-class DomainIntegrator;
-
 class DomainTarget : public SystemTarget {
 public:
     explicit DomainTarget(Domain& domain) : SystemTarget(domain), _domain(&domain) {}
     void GetMass(COO &coo, int offset_x, int offset_y) const override;
     void GetExternalForce(Ref<VectorXd> force) const override;
 
-    friend class DomainIntegrator;
+    DERIVED_DECLARE_CLONE(Target)
 
 protected:
     Domain* _domain;
@@ -114,6 +114,10 @@ public:
     Object * GetObject() override;
     Matrix3d GetRotation() override;
     Vector3d GetTranslation() override;
+
+    std::shared_ptr<ObjectIterator> Clone() const override {
+        return std::shared_ptr<DomainIterator>(new DomainIterator(*this));
+    }
 
 private:
     std::stack<Domain*> _ancestors; // the pass from root domain to current domain
