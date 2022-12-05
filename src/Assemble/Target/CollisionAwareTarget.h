@@ -57,6 +57,9 @@ public:
     void GetConstraintGradient(SparseMatrixXd &gradient, const Eigen::VectorXd &x) const override { _target->GetConstraintGradient(gradient, x); }
 
     void UpdateInfo(const Eigen::VectorXd &x, int time_stamp) override;
+    virtual double GetMaxTimeStep(const Eigen::VectorXd& p) {
+        return 1;
+    }
 
     ~CollisionAwareTarget() override {
         delete _target;

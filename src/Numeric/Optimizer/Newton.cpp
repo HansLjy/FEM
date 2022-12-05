@@ -27,7 +27,7 @@ void Newton::Optimize(const ValueFunc &f, const GradiantFunc &g, const HessianFu
         if (gradient.norm() / gradient.size() < _tolerance) {
             break;
         }
-        hessian.resize(0, 0);   // clear hessian
+        hessian.setZero();
         h(x, hessian);
     }
     if (step > 10) {
