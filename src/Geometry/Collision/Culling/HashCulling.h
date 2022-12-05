@@ -23,6 +23,8 @@ struct VertexPrimitiveInfo {
 
 class HashCulling : public CollisionCulling {
 public:
+    HashCulling(const json& config) : HashCulling(config["grid-size"], config["hash-table-size"]) {}
+
     HashCulling(double grid_size, unsigned int hash_table_size) : _edge_hash_table(grid_size, hash_table_size),
                                                                   _vertice_hash_table(grid_size, hash_table_size) {}
     void ComputeConstraintSet(const Ref<const Eigen::VectorXd> &x, const std::shared_ptr<const ObjectIterator> &begin, int time_stamp, double d, std::vector<CollisionInfo> &info) override;

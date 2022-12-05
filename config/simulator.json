@@ -5,6 +5,16 @@
   },
   "time-stepper": {
     "type": "domain-bfs-stepper",
+    "collision-aware": true,
+    "collision": {
+      "type": "ipc-barrier",
+      "culling": {
+        "type": "hash-culling",
+        "grid-size": 1e-3,
+        "hash-table-size": 4096
+      },
+      "d": 1e-5
+    },
     "integrator": {
       "type": "incremental-potential",
       "optimizer": {

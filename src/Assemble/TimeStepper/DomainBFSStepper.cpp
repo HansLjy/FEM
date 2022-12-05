@@ -7,7 +7,7 @@
 
 DEFINE_CLONE(Target, GroupDomainTarget)
 
-DomainBFSStepper::DomainBFSStepper(const nlohmann::json &config) {
+DomainBFSStepper::DomainBFSStepper(const nlohmann::json &config) : TimeStepper(config) {
     const auto& integrator_config = config["integrator"];
     _integrator = IntegratorFactory::GetIntegrator(integrator_config["type"], integrator_config);
 }
@@ -41,12 +41,17 @@ void DomainBFSStepper::Bind(System &system) {
 
     _level_targets.clear();
     for (int i = 0; i < _level; i++) {
-        _level_targets.push_back(new IPCBarrierTarget(
-            GroupDomainTarget(_domains, _level_bar[i], _level_bar[i + 1]),
-            HashCulling(0.1, 1024),
-            GroupDomainIterator(_domains, _level_bar[i], _level_bar[i + 1]),
-            0.1
-        ));
+        if (_collision_aware) {
+            _level_targets.push_back(
+                CollisionAwareTargetFactory::GetCollisionAwareTarget(
+                    GroupDomainTarget(_domains, _level_bar[i], _level_bar[i + 1]),
+                    GroupDomainIterator(_domains, _level_bar[i], _level_bar[i + 1]),
+                    _collision_config
+               )
+            );
+        } else {
+            _level_targets.push_back(new GroupDomainTarget(_domains, _level_bar[i], _level_bar[i + 1]));
+        }
     }
 }
 
