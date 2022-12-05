@@ -9,8 +9,8 @@
 
 class IPCBarrierTarget : public CollisionAwareTarget {
 public:
-    IPCBarrierTarget(const Target& target, const CollisionCulling& culling, const ObjectIterator& itr, double d)
-        : CollisionAwareTarget(target, culling, itr, d) {}
+    IPCBarrierTarget(const Target& target, const ObjectIterator& itr, const json& config)
+        : CollisionAwareTarget(target, itr, config) {}
 
     double GetBarrierEnergy() const override;
     double GetBarrierEnergy(const Ref<const Eigen::VectorXd> &x) const override;

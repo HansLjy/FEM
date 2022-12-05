@@ -25,4 +25,6 @@ public:
     virtual ~CollisionCulling() = default;
 };
 
+DECLARE_XXX_FACTORY(CollisionCulling)
+
 #endif //FEM_COLLISIONCULLING_H

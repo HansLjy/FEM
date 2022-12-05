@@ -4,7 +4,7 @@
 
 #include "DomainDFSStepper.h"
 
-DomainDFSStepper::DomainDFSStepper(const nlohmann::json &config) {
+DomainDFSStepper::DomainDFSStepper(const nlohmann::json &config) : TimeStepper(config) {
     const auto& integrator_config = config["integrator"];
     _integrator = IntegratorFactory::GetIntegrator(integrator_config["type"], integrator_config);
 }

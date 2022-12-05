@@ -12,8 +12,7 @@
 
 class CollisionAwareTarget : public Target {
 public:
-    CollisionAwareTarget(const Target& target, const CollisionCulling& culling, const ObjectIterator& itr, double d)
-        : _target(target.Clone()), _culling(culling.Clone()), _itr(itr.Clone()), _d(d) {}
+    CollisionAwareTarget(const Target& target, const ObjectIterator& itr, const json& config);
 
     int GetDOF() const override {return _target->GetDOF();}
     void GetCoordinate(Ref<Eigen::VectorXd> x) const override { _target->GetCoordinate(x); }
@@ -83,6 +82,11 @@ protected:
     std::shared_ptr<const ObjectIterator> _itr;
     std::vector<CollisionInfo> _collision_info;
     double _d;
+};
+
+class CollisionAwareTargetFactory {
+public:
+    static CollisionAwareTarget* GetCollisionAwareTarget(const Target& target, const ObjectIterator& itr, const json& config);
 };
 
 #endif //FEM_COLLISIONAWARETARGET_H
