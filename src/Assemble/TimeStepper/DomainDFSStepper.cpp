@@ -17,6 +17,7 @@ void DomainDFSStepper::Step(double h) const {
 
 void DomainDFSStepper::StepNonRoot(Domain &domain, double h) const {
     domain.TopDownCalculationPrev();
+    domain.SetObjectFrame();
     DomainTarget domain_target(domain);
     VectorXd v(domain_target.GetDOF()), v_new(domain_target.GetDOF());
     domain_target.GetVelocity(v);

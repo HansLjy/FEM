@@ -25,8 +25,6 @@ public:
     void UpdateSettings(const json &config) override;
     std::unique_ptr<ObjectIterator> GetIterator() override;
 
-    double GetTotalMass() const;
-    Vector3d GetTotalExternalForce() const;
 
     /**
      * Calculate x, v, a, omega, alpha, R of subdomain
@@ -37,6 +35,7 @@ public:
      *          acceleration of single objects.
      */
     virtual void CalculateSubdomainFrame(const VectorXd& a) = 0;
+    void SetObjectFrame();
 
     void BottomUpCalculation();
     void TopDownCalculationPrev();
@@ -55,6 +54,9 @@ public:
     friend class DomainBFSStepper;
 
 protected:
+    double GetTotalMass() const;
+    Vector3d GetTotalExternalForce() const;
+
     /* top down calculation */
     void CalculateInterfaceForce();
     void CalculateInertialForce();
@@ -112,8 +114,6 @@ public:
     DomainIterator(Domain& domain);
     void Forward() override;
     Object * GetObject() override;
-    Matrix3d GetRotation() override;
-    Vector3d GetTranslation() override;
 
     std::shared_ptr<ObjectIterator> Clone() const override {
         return std::shared_ptr<DomainIterator>(new DomainIterator(*this));

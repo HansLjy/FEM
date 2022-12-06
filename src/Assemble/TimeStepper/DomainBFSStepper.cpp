@@ -62,6 +62,7 @@ void DomainBFSStepper::Step(double h) const {
         // [_level_bar[i], _level_bar[i + 1])
         for (int j = _level_bar[i]; j < _level_bar[i + 1]; j++) {
             _domains[j]->TopDownCalculationPrev();
+            _domains[j]->SetObjectFrame();
         }
         const auto& target = _level_targets[i];
         VectorXd v(target->GetDOF()), v_new(target->GetDOF());
@@ -239,10 +240,3 @@ Object *GroupDomainIterator::GetObject() {
     return _cur_itr->GetObject();
 }
 
-Matrix3d GroupDomainIterator::GetRotation() {
-    return _domains[_cur_domain]->_frame_rotation;
-}
-
-Vector3d GroupDomainIterator::GetTranslation() {
-    return _domains[_cur_domain]->_frame_x;
-}

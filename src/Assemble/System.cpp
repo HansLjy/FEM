@@ -261,14 +261,6 @@ Object *SystemIterator::GetObject() {
     return _system->_objs[_obj_id];
 }
 
-Matrix3d SystemIterator::GetRotation() {
-    return Matrix3d::Identity();
-}
-
-Vector3d SystemIterator::GetTranslation() {
-    return Vector3d::Zero();
-}
-
 #include "Domain/TreeDomain.h"
 
 BEGIN_DEFINE_XXX_FACTORY(System)

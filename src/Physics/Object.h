@@ -75,6 +75,10 @@ public:
 
     BASE_DECLARE_CLONE(Object)
 
+public:
+    Vector3d _frame_x;
+    Matrix3d _frame_rotation;
+
 protected:
     VectorXd _x;
     VectorXd _v;

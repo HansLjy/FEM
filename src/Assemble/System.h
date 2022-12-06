@@ -97,8 +97,6 @@ public:
 
     void Forward() override;
     Object * GetObject() override;
-    Matrix3d GetRotation() override;
-    Vector3d GetTranslation() override;
 
     std::shared_ptr<ObjectIterator> Clone() const override {
         return std::shared_ptr<ObjectIterator> (new SystemIterator(*this));

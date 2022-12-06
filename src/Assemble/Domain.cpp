@@ -111,6 +111,13 @@ void Domain::CalculateInertialForce() {
     }
 }
 
+void Domain::SetObjectFrame() {
+    for (auto& object : _objs) {
+        object->_frame_x = _frame_x;
+        object->_frame_rotation = _frame_rotation;
+    }
+}
+
 #include "JsonUtil.h"
 
 void Domain::AddSubdomain(Domain &subdomain, const nlohmann::json &position) {
@@ -221,14 +228,6 @@ void DomainIterator::Forward() {
 
 Object *DomainIterator::GetObject() {
     return _current->_objs[_cur_obj_id];
-}
-
-Matrix3d DomainIterator::GetRotation() {
-    return _current->_frame_rotation;
-}
-
-Vector3d DomainIterator::GetTranslation() {
-    return _current->_frame_x;
 }
 
 #include "Domain/TreeDomain.h"

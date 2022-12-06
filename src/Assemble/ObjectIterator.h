@@ -14,8 +14,6 @@ public:
     virtual void Forward() = 0;
     bool IsDone() const {return _is_done;};
     virtual Object* GetObject() = 0;
-    virtual Matrix3d GetRotation() = 0;
-    virtual Vector3d GetTranslation() = 0;
 
     virtual std::shared_ptr<ObjectIterator> Clone() const = 0;
 
