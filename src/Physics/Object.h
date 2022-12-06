@@ -11,10 +11,13 @@
 
 class Object {
 public:
-    Object(const VectorXd& x) : _x(x), _v(x.size()) {
-        _v.setConstant(0);
+    Object(const VectorXd& x) : _extra_force(x.size()), _x(x), _v(x.size()) {
+        _v.setZero();
+        _extra_force.setZero();
     }
-    Object(const VectorXd& x, const VectorXd& v) : _x(x), _v(v) {}
+    Object(const VectorXd& x, const VectorXd& v) : _extra_force(x.size()), _x(x), _v(v) {
+        _extra_force.setZero();
+    }
 
     int GetDOF() const {
         return _x.size();
@@ -76,8 +79,9 @@ public:
     BASE_DECLARE_CLONE(Object)
 
 public:
-    Vector3d _frame_x;
-    Matrix3d _frame_rotation;
+    Vector3d _frame_x = Vector3d::Zero();
+    Matrix3d _frame_rotation = Matrix3d::Identity();
+    VectorXd _extra_force;
 
 protected:
     VectorXd _x;

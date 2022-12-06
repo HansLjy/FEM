@@ -7,17 +7,23 @@
 
 #include "Domain.h"
 
+class ReducedTreeTrunk;
+
 class TreeDomain : public Domain {
 public:
-    explicit TreeDomain(const json& config) : Domain(config), _tree_trunk_id(_subdomains.empty() ? -1 : GetIndex("trunk")) {}
+    explicit TreeDomain(const json& config);
 
+    void UpdateSettings(const nlohmann::json &config) override;
     void CalculateSubdomainFrame(const Eigen::VectorXd &a) override;
+    void SetObjectExtraForce() override;
+
     SparseMatrixXd GetSubdomainProjection(const nlohmann::json &position) override;
     void RecordSubdomain(const nlohmann::json &position) override;
 
 //    DERIVED_DECLARE_CLONE(Domain)
 protected:
-    int _tree_trunk_id;
+    ReducedTreeTrunk* _tree_trunk;
+    int _tree_trunk_offset;
     std::vector<double> _positions;
 };
 

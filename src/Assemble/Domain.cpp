@@ -9,7 +9,7 @@
 DEFINE_CLONE(Target, DomainTarget)
 
 Domain::Domain(const nlohmann::json &config)
-    : System(config["system"]) {
+    : System(config["system"]){
 
     if (config["is-root"]) {
         _frame_x = Json2Vec(config["x"]);
@@ -116,6 +116,10 @@ void Domain::SetObjectFrame() {
         object->_frame_x = _frame_x;
         object->_frame_rotation = _frame_rotation;
     }
+}
+
+void Domain::SetObjectExtraForce() {
+
 }
 
 #include "JsonUtil.h"

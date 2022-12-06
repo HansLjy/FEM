@@ -27,9 +27,8 @@ Object::~Object() {
     }
 }
 
-Object::Object(const Object &rhs) {
-    _x = rhs._x;
-    _v = rhs._v;
+Object::Object(const Object &rhs)
+    : _frame_x(rhs._frame_x), _frame_rotation(rhs._frame_rotation), _extra_force(rhs._extra_force), _x(rhs._x), _v(rhs._v){
     for (const auto& ext_force : rhs._external_forces) {
         _external_forces.push_back(ext_force->Clone());
     }
@@ -41,7 +40,7 @@ VectorXd Object::GetExternalForce(const Matrix3d &rotation, const Vector3d &posi
     for (const auto& ext_force : _external_forces) {
         external_force -= ext_force->EnergyGradient(*this, rotation, position);
     }
-    return external_force;
+    return external_force + _extra_force;
 }
 
 ShapedObject::~ShapedObject() {

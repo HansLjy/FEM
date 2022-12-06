@@ -36,6 +36,7 @@ public:
      */
     virtual void CalculateSubdomainFrame(const VectorXd& a) = 0;
     void SetObjectFrame();
+    virtual void SetObjectExtraForce() = 0;
 
     void BottomUpCalculation();
     void TopDownCalculationPrev();
