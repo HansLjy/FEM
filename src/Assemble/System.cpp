@@ -6,8 +6,6 @@
 #include "Constraint/Constraint.h"
 #include "spdlog/spdlog.h"
 
-DEFINE_CLONE(Target, SystemTarget)
-
 System::System(const nlohmann::json &config) : _dof(0), _constraint_size(0) {
     const auto& objects_config = config["objects"];
     for (const auto& object_config : objects_config) {
@@ -29,8 +27,6 @@ System::System(const nlohmann::json &config) : _dof(0), _constraint_size(0) {
         GetObject(idx)->AddExternalForce(*external_force);
         delete external_force;
     }
-
-    _target = new SystemTarget(*this);
 }
 
 int System::AddObject(const Object &obj, const std::string &name) {
@@ -73,28 +69,6 @@ int System::GetIndex(const std::string &name) const {
     return (*result).second;
 }
 
-int SystemTarget::GetDOF() const {
-    return _system->_dof;
-}
-
-void SystemTarget::GetConstraintGradient(SparseMatrixXd &gradient, const Eigen::VectorXd &x) const {
-    COO coo;
-    int num_constraint = _system->_constraints.size();
-    int current_constraint_offset = 0;
-    for (int i = 0; i < num_constraint; i++) {
-        _system->_constraints[i]->GetGradient(x, coo, current_constraint_offset);
-        current_constraint_offset += _system->_constraints[i]->GetSize();
-    }
-    int current_object_offset = 0;
-    for (const auto& obj : _system->_objs) {
-        obj->GetInnerConstraintGradient(x.segment(current_object_offset, obj->GetDOF()), coo, current_constraint_offset, current_object_offset);
-        current_constraint_offset += obj->GetConstraintSize();
-        current_object_offset += obj->GetDOF();
-    }
-    gradient.resize(current_constraint_offset, x.size());
-    gradient.setFromTriplets(coo.begin(), coo.end());
-}
-
 void System::UpdateSettings(const json &config) {
     int cur_offset = 0;
     const int size = _objs.size();
@@ -120,131 +94,6 @@ System::~System(){
     for (const auto& obj : _objs) {
         delete obj;
     }
-    delete _target;
-}
-
-#define Assemble1D(Value, var)                                                          \
-    int current_row = 0;                                                                \
-    for (const auto& obj : _system->_objs) {                                            \
-        var.segment(current_row, obj->GetDOF()) = obj->Get##Value();                    \
-        current_row += obj->GetDOF();                                                   \
-    }
-
-#define Assemble1DWithInfo(Value, rotation, position, var)                              \
-    int current_row = 0;                                                                \
-    for (const auto& obj : _system->_objs) {                                            \
-        var.segment(current_row, obj->GetDOF()) = obj->Get##Value(rotation, position);  \
-        current_row += obj->GetDOF();                                                   \
-    }
-
-#define Assemble1DElseWhere(Value, var)                                                 \
-    int current_row = 0;                                                                \
-    for (const auto& obj : _system->_objs) {                                            \
-        var.segment(current_row, obj->GetDOF())                                         \
-            = obj->Get##Value(x.segment(current_row, obj->GetDOF()));                   \
-        current_row += obj->GetDOF();                                                   \
-    }
-
-#define Assemble2D(Value) \
-    int current_row = 0;                                                            \
-    for (const auto& obj : _system->_objs) {                                        \
-        obj->Get##Value(coo, current_row + offset_x, current_row + offset_y);       \
-        current_row += obj->GetDOF();                                               \
-    }                                                                               \
-
-
-#define Assemble2DElseWhere(Value)                                                  \
-    int current_row = 0;                                                            \
-    for (const auto& obj : _system->_objs) {                                        \
-        obj->Get##Value(x.segment(current_row, obj->GetDOF()), coo, current_row + offset_x, current_row + offset_x); \
-        current_row += obj->GetDOF();                                               \
-    }                                                                               \
-
-void SystemTarget::GetCoordinate(Ref<VectorXd> x) const {
-    Assemble1D(Coordinate, x)
-}
-
-void SystemTarget::GetVelocity(Ref<VectorXd> v) const {
-    Assemble1D(Velocity, v)
-}
-
-#define Dessemble1D(Funcname, var)                                              \
-    int current_row = 0;                                                        \
-    for (const auto& obj : _system->_objs) {                                    \
-        obj->Set##Funcname(var.segment(current_row, obj->GetDOF()));            \
-        current_row += obj->GetDOF();                                           \
-    }
-
-void SystemTarget::SetCoordinate(const Ref<const VectorXd> &x) {
-    Dessemble1D(Coordinate, x)
-}
-
-void SystemTarget::SetVelocity(const Ref<const VectorXd> &v) {
-    Dessemble1D(Velocity, v)
-}
-
-void SystemTarget::GetMass(COO &coo, int offset_x, int offset_y) const {
-    Assemble2D(Mass)
-}
-
-double SystemTarget::GetPotentialEnergy() const {
-    double energy = 0;
-    for (const auto & obj : _system->_objs) {
-        energy += obj->GetPotential();
-    }
-    return energy;
-}
-
-double SystemTarget::GetPotentialEnergy(const Ref<const Eigen::VectorXd> &x) const {
-    double energy = 0;
-    int current_row = 0;
-    for (const auto& obj : _system->_objs) {
-        energy += obj->GetPotential(x.segment(current_row, obj->GetDOF()));
-        current_row += obj->GetDOF();
-    }
-    return energy;
-}
-
-void SystemTarget::GetPotentialEnergyGradient(Ref<VectorXd> gradient) const {
-    Assemble1D(PotentialGradient, gradient)
-}
-
-void SystemTarget::GetPotentialEnergyGradient(const Ref<const VectorXd> &x, Ref<VectorXd> gradient) const {
-    Assemble1DElseWhere(PotentialGradient, gradient)
-}
-
-
-void SystemTarget::GetPotentialEnergyHessian(COO &coo, int offset_x, int offset_y) const {
-    Assemble2D(PotentialHessian)
-}
-
-void SystemTarget::GetPotentialEnergyHessian(const Ref<const Eigen::VectorXd> &x, COO &coo, int offset_x,
-                                             int offset_y) const {
-    Assemble2DElseWhere(PotentialHessian)
-}
-
-void SystemTarget::GetExternalForce(Ref<VectorXd> force) const {
-    Assemble1DWithInfo(ExternalForce, Matrix3d::Identity(), Vector3d::Zero(), force)
-}
-
-
-VectorXd SystemTarget::GetConstraint(const VectorXd &x) const {
-    VectorXd constraint(_system->_constraint_size);
-    const int num_constraint = _system->_constraints.size();
-    int current_constraint_offset = 0;
-    for (int i = 0; i < num_constraint; i++) {
-        constraint.block(current_constraint_offset, 0, _system->_constraints[i]->GetSize(), 1)
-            = _system->_constraints[i]->GetValue(x);
-        current_constraint_offset += _system->_constraints[i]->GetSize();
-    }
-    int current_object_offset = 0;
-    for (const auto& obj : _system->_objs) {
-        constraint.block(current_constraint_offset, 0, obj->GetConstraintSize(), 1)
-            = obj->GetInnerConstraint(x.segment(current_object_offset, obj->GetDOF()));
-        current_constraint_offset += obj->GetConstraintSize();
-        current_object_offset += obj->GetDOF();
-    }
-    return constraint;
 }
 
 SystemIterator::SystemIterator(System &system)

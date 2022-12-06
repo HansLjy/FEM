@@ -50,9 +50,6 @@ void IPIntegrator::Step(Target &target, double h) const {
 
     VectorXd v_next = (x_next - x) / h;
 
-//    std::cerr << "x: " << x_next.transpose() << std::endl;
-//    std::cerr << "v: " << v_next.transpose() << std::endl;
-
     target.SetCoordinate(x_next);
     target.SetVelocity(v_next);
 }

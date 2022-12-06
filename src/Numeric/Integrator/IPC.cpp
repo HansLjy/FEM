@@ -3,10 +3,10 @@
 //
 
 #include "IPC.h"
-#include "Target/CollisionAwareTarget.h"
+#include "Target/IPCBarrierTarget.h"
 
 void IPC::Step(Target &target, double h) const {
-    auto& collision_aware_target = dynamic_cast<CollisionAwareTarget&>(target);
+    auto& IPCTarget = dynamic_cast<IPCBarrierTarget&>(target);
     const int dof = target.GetDOF();
     VectorXd x(dof), v(dof), force(dof);
     target.GetCoordinate(x);
@@ -40,7 +40,7 @@ void IPC::Step(Target &target, double h) const {
         }
 
         /* contact aware line search */
-        double alpha = collision_aware_target.GetMaxTimeStep(p);
+        double alpha = IPCTarget.GetMaxStep(p);
         VectorXd x_next;
         while (true) {
             x_next = x + alpha * p;
@@ -55,7 +55,7 @@ void IPC::Step(Target &target, double h) const {
     if (step >= _max_iter) {
         spdlog::warn("Barrier-aware Newton not converge");
     } else {
-//        spdlog::info("Barrier-aware Newton converge in {} steps", step);
+        spdlog::info("Barrier-aware Newton converge in {} steps", step);
     }
 
     target.SetCoordinate(x);

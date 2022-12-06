@@ -14,8 +14,6 @@
 
 class Constraint;
 class SystemIterator;
-class SystemTarget;
-class DomainTarget;
 
 class System {
 public:
@@ -58,35 +56,6 @@ protected:
 
     std::vector<Constraint*> _constraints;
     std::map<std::string, int> _index;
-
-    Target* _target;
-};
-
-class SystemTarget : public Target {
-public:
-    explicit SystemTarget(System& system) : _system(&system) {}
-
-    int GetDOF() const override;
-    void GetCoordinate(Ref<VectorXd> x) const override;
-    void GetVelocity(Ref<VectorXd> v) const override;
-    void SetCoordinate(const Ref<const VectorXd> &x) override;
-    void SetVelocity(const Ref<const VectorXd> &v) override;
-    void GetMass(COO &coo, int offset_x, int offset_y) const override;
-    double GetPotentialEnergy() const override;
-    double GetPotentialEnergy(const Ref<const Eigen::VectorXd> &x) const override;
-    void GetPotentialEnergyGradient(Ref<VectorXd> gradient) const override;
-    void GetPotentialEnergyGradient(const Ref<const VectorXd> &x, Ref<VectorXd> gradient) const override;
-    void GetPotentialEnergyHessian(COO &coo, int offset_x, int offset_y) const override;
-    void GetPotentialEnergyHessian(const Ref<const Eigen::VectorXd> &x, COO &coo, int offset_x, int offset_y) const override;
-    void GetExternalForce(Ref<VectorXd> force) const override;
-    VectorXd GetConstraint(const Eigen::VectorXd &x) const override;
-    void GetConstraintGradient(SparseMatrixXd &gradient, const Eigen::VectorXd &x) const override;
-    ~SystemTarget() override = default;
-
-    DERIVED_DECLARE_CLONE(Target)
-
-protected:
-    System* _system;
 };
 
 #include "ObjectIterator.h"

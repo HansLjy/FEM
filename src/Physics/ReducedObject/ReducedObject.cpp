@@ -49,19 +49,7 @@ void ReducedObject::SetProxyVelocity() {
         } \
     }
 
-#define LUMP2DWithInfo(FuncName, VarName) \
-    COO coo_full;    \
-    _proxy->Get##FuncName(rotation, position, coo_full, 0, 0); \
-    SparseMatrixXd VarName(_proxy->GetDOF(), _proxy->GetDOF()); \
-    VarName.setFromTriplets(coo_full.begin(), coo_full.end()); \
-    SparseMatrixXd VarName##_reduced = _base.transpose() * VarName * _base; \
-    for (int i = 0; i < VarName##_reduced.outerSize(); ++i) { \
-        for (SparseMatrixXd::InnerIterator it(VarName##_reduced, i); it; ++it) { \
-            coo.push_back(Tripletd(it.row() + x_offset, it.col() + y_offset, it.value())); \
-        } \
-    }
-
-void ReducedObject::GetMass(COO &coo, int x_offset, int y_offset) const {
+void ReducedObject::GetInnerMass(COO &coo, int x_offset, int y_offset) const {
     LUMP2D(Mass, mass)
 }
 
@@ -98,8 +86,8 @@ void ReducedObject::AddExternalForce(const ExternalForce &force) {
     _proxy->AddExternalForce(force);
 }
 
-Vector3d ReducedObject::GetTotalExternalForce(const Matrix3d &rotation, const Vector3d &position) const {
-    return _proxy->GetTotalExternalForce(rotation, position);
+Vector3d ReducedObject::GetTotalExternalForce() const {
+    return _proxy->GetTotalExternalForce();
 }
 
 VectorXd
@@ -131,6 +119,11 @@ void ReducedObject::GetInnerConstraintGradient(const Eigen::VectorXd &x, COO &co
 
 void ReducedObject::GetRenderShape(Eigen::MatrixXd &vertices, Eigen::MatrixXi &topo) const {
     _proxy->GetRenderShape(vertices, topo);
+}
+
+void ReducedObject::SetFrame(const Eigen::Matrix3d &rotation, const Eigen::Vector3d &translation) {
+    Object::SetFrame(rotation, translation);
+    _proxy->SetFrame(rotation, translation);
 }
 
 ReducedObject::~ReducedObject() {

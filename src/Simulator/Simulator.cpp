@@ -72,8 +72,8 @@ void Simulator::Simulate(const std::string& output_dir) {
             MatrixXd vertices;
             obj->GetRenderShape(vertices, topo);
             write_binary(itr_file, vertices);
-            write_binary(itr_file, obj->_frame_rotation);
-            write_binary(itr_file, obj->_frame_x);
+            write_binary(itr_file, obj->GetFrameRotation());
+            write_binary(itr_file, obj->GetFrameX());
         }
 		itr_file.close();
         current_time += _time_step;
@@ -115,7 +115,7 @@ void Simulator::InitializeScene(Scene &scene) {
         obj->GetRenderShape(vertices, topo);
 //        std::cerr << "Rotation " << id << ":\n" << itr->GetRotation() << std::endl;
 //        std::cerr << "Translation " << id << ":\n" << itr->GetTranslation().transpose() << std::endl;
-        _obj_id2scene_id.push_back(scene.AddMesh(vertices, topo, obj->_frame_rotation, obj->_frame_x));
+        _obj_id2scene_id.push_back(scene.AddMesh(vertices, topo, obj->GetFrameRotation(), obj->GetFrameX()));
     }
 }
 
@@ -131,7 +131,7 @@ void Simulator::Processing(Scene &scene) {
         MatrixXi topo;
         obj->GetRenderShape(vertices, topo);
         scene.SelectData(_obj_id2scene_id[id]);
-        scene.SetMesh(vertices, topo, obj->_frame_rotation, obj->_frame_x);
+        scene.SetMesh(vertices, topo, obj->GetFrameRotation(), obj->GetFrameX());
     }
     auto delta_t = clock() - t;
     spdlog::info("fps = {}", (int)(CLOCKS_PER_SEC / delta_t));

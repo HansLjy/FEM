@@ -28,19 +28,32 @@ Object::~Object() {
 }
 
 Object::Object(const Object &rhs)
-    : _frame_x(rhs._frame_x), _frame_rotation(rhs._frame_rotation), _extra_force(rhs._extra_force), _x(rhs._x), _v(rhs._v){
+    : _extra_force(rhs._extra_force), _frame_x(rhs._frame_x), _frame_rotation(rhs._frame_rotation), _x(rhs._x), _v(rhs._v){
     for (const auto& ext_force : rhs._external_forces) {
         _external_forces.push_back(ext_force->Clone());
     }
 }
 
-VectorXd Object::GetExternalForce(const Matrix3d &rotation, const Vector3d &position) const {
+VectorXd Object::GetFixExternalForce() const {
     VectorXd external_force(_x.size());
     external_force.setZero();
     for (const auto& ext_force : _external_forces) {
-        external_force -= ext_force->EnergyGradient(*this, rotation, position);
+        external_force -= ext_force->EnergyGradient(*this, _frame_rotation, _frame_x);
     }
-    return external_force + _extra_force;
+    return external_force;
+}
+
+void Object::SetFrame(const Eigen::Matrix3d &rotation, const Eigen::Vector3d &translation) {
+    _frame_rotation = rotation;
+    _frame_x = translation;
+}
+
+Vector3d Object::GetFrameX() {
+    return _frame_x;
+}
+
+Matrix3d Object::GetFrameRotation() {
+    return _frame_rotation;
 }
 
 ShapedObject::~ShapedObject() {
@@ -57,7 +70,7 @@ void ShapedObject::GetRenderShape(Eigen::MatrixXd &vertices, Eigen::MatrixXi &to
 
 SampledObject::SampledObject(const Eigen::VectorXd &mass) : _mass(mass) {}
 
-void SampledObject::GetMass(COO &coo, int x_offset, int y_offset) const {
+void SampledObject::GetInnerMass(COO &coo, int x_offset, int y_offset) const {
     int num_points = _mass.size();
     for (int i = 0, j = 0; i < num_points; i++, j += 3) {
         coo.push_back(Tripletd(x_offset + j, y_offset + j, _mass(i)));
@@ -75,8 +88,8 @@ double SampledObject::GetTotalMass() const {
     return total_mass;
 }
 
-Vector3d SampledObject::GetTotalExternalForce(const Matrix3d &rotation, const Vector3d &position) const {
-    VectorXd force = GetExternalForce(rotation, position);
+Vector3d SampledObject::GetTotalExternalForce() const {
+    VectorXd force = GetFixExternalForce();
     int num_points = force.size() / 3;
     Vector3d total_force = Vector3d::Zero();
     for (int i = 0, j = 0; i < num_points; i++, j += 3) {

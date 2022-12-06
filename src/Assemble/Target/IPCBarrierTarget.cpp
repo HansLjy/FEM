@@ -4,27 +4,17 @@
 
 #include "IPCBarrierTarget.h"
 
-DEFINE_CLONE(Target, IPCBarrierTarget)
+void IPCBarrierTarget::UpdateInfo(const Eigen::VectorXd &x, int time_stamp) {
+    // TODO
+}
 
 double IPCBarrierTarget::GetBarrierEnergy() const {
     return 0;
     // TODO
 }
 
-double IPCBarrierTarget::GetBarrierEnergy(const Ref<const Eigen::VectorXd> &x) const {
-    return 0;
-    // TODO
-}
-
 VectorXd IPCBarrierTarget::GetBarrierEnergyGradient() const {
-    VectorXd gradient(CollisionAwareTarget::GetDOF());
-    gradient.setZero();
-    return gradient;
-    // TODO
-}
-
-VectorXd IPCBarrierTarget::GetBarrierEnergyGradient(const Ref<const Eigen::VectorXd> &x) const {
-    VectorXd gradient(CollisionAwareTarget::GetDOF());
+    VectorXd gradient(GetDOF());
     gradient.setZero();
     return gradient;
     // TODO
@@ -34,7 +24,7 @@ void IPCBarrierTarget::GetBarrierEnergyHessian(COO &coo, int offset_x, int offse
     // TODO
 }
 
-void IPCBarrierTarget::GetBarrierEnergyHessian(const Ref<const Eigen::VectorXd> &x, COO &coo, int offset_x,
-                                               int offset_y) const {
+double IPCBarrierTarget::GetMaxStep(const Eigen::VectorXd &p) {
+    return 1;
     // TODO
 }

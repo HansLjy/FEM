@@ -9,9 +9,13 @@ SystemStepper::SystemStepper(const json &config) : TimeStepper(config) {
     _integrator = IntegratorFactory::GetIntegrator(integrator_config["type"], integrator_config);
 }
 
+void SystemStepper::Bind(System &system) {
+    TimeStepper::Bind(system);
+    _target = new Target(SystemIterator(system));
+}
+
 void SystemStepper::Step(double h) const {
-    SystemTarget target(*_system);
-    _integrator->Step(target, h);
+    _integrator->Step(*_target, h);
 }
 
 SystemStepper::~SystemStepper() {

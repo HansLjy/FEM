@@ -69,6 +69,8 @@ Matrix<double, dim, dim> PositiveProject(const Eigen::Matrix<double, dim, dim>& 
     return eigen_vectors * eigen_values.asDiagonal() * eigen_vectors.transpose();
 }
 
+void SparseToCOO(const SparseMatrixXd& mat, COO& coo, int offset_x, int offset_y);
+
 #include "fstream"
 
 template<class Matrix>

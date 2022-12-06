@@ -12,7 +12,6 @@
 
 using nlohmann::json;
 
-class DomainTarget;
 class DomainIterator;
 class GroupDomainIterator;
 class DomainDFSStepper;
@@ -25,6 +24,12 @@ public:
     void UpdateSettings(const json &config) override;
     std::unique_ptr<ObjectIterator> GetIterator() override;
 
+    void SetObjectInfo() {
+        SetObjectExtraForce();
+        SetObjectExtraMass();
+    }
+
+    void SetObjectFrame();
 
     /**
      * Calculate x, v, a, omega, alpha, R of subdomain
@@ -35,8 +40,6 @@ public:
      *          acceleration of single objects.
      */
     virtual void CalculateSubdomainFrame(const VectorXd& a) = 0;
-    void SetObjectFrame();
-    virtual void SetObjectExtraForce() = 0;
 
     void BottomUpCalculation();
     void TopDownCalculationPrev();
@@ -48,7 +51,6 @@ public:
     ~Domain() override;
     Domain(const Domain& rhs) = delete;
 
-    friend class DomainTarget;
     friend class DomainIterator;
     friend class GroupDomainIterator;
     friend class DomainDFSStepper;
@@ -57,6 +59,10 @@ public:
 protected:
     double GetTotalMass() const;
     Vector3d GetTotalExternalForce() const;
+
+    /* Set object info based on domain info */
+    virtual void SetObjectExtraForce() = 0;
+    virtual void SetObjectExtraMass() = 0;
 
     /* top down calculation */
     void CalculateInterfaceForce();
@@ -97,18 +103,6 @@ protected:
 };
 
 #include <stack>
-
-class DomainTarget : public SystemTarget {
-public:
-    explicit DomainTarget(Domain& domain) : SystemTarget(domain), _domain(&domain) {}
-    void GetMass(COO &coo, int offset_x, int offset_y) const override;
-    void GetExternalForce(Ref<VectorXd> force) const override;
-
-    DERIVED_DECLARE_CLONE(Target)
-
-protected:
-    Domain* _domain;
-};
 
 class DomainIterator : public ObjectIterator {
 public:

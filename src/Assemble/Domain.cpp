@@ -6,8 +6,6 @@
 
 #include "JsonUtil.h"
 
-DEFINE_CLONE(Target, DomainTarget)
-
 Domain::Domain(const nlohmann::json &config)
     : System(config["system"]){
 
@@ -24,23 +22,12 @@ Domain::Domain(const nlohmann::json &config)
         Domain* subdomain = DomainFactory::GetDomain(subdomain_config["type"], subdomain_config);
         AddSubdomain(*subdomain, subdomain_config["position"]);
     }
-    delete _target;
-    _target = new DomainTarget(*this);
 }
 
 Domain::~Domain() {
     for (const auto& subdomain : _subdomains) {
         delete subdomain;
     }
-}
-
-void DomainTarget::GetExternalForce(Ref<VectorXd> force) const {
-    int current_row = 0;
-    for (const auto& obj : _domain->_objs) {
-        force.segment(current_row, obj->GetDOF()) = obj->GetExternalForce(_domain->_frame_rotation, _domain->_frame_x);
-        current_row += obj->GetDOF();
-    }
-    force += _domain->_interface_force + _domain->_inertial_force;
 }
 
 double Domain::GetTotalMass() const {
@@ -54,7 +41,7 @@ double Domain::GetTotalMass() const {
 Vector3d Domain::GetTotalExternalForce() const {
     Vector3d total_external_force = Vector3d::Zero();
     for (const auto& obj : _objs) {
-        total_external_force += obj->GetTotalExternalForce(_frame_rotation, _frame_x);
+        total_external_force += obj->GetTotalExternalForce();
     }
     return total_external_force;
 }
@@ -113,13 +100,8 @@ void Domain::CalculateInertialForce() {
 
 void Domain::SetObjectFrame() {
     for (auto& object : _objs) {
-        object->_frame_x = _frame_x;
-        object->_frame_rotation = _frame_rotation;
+        object->SetFrame(_frame_rotation, _frame_x);
     }
-}
-
-void Domain::SetObjectExtraForce() {
-
 }
 
 #include "JsonUtil.h"
@@ -138,16 +120,6 @@ void Domain::CalculateLumpedMass() {
     _lumped_mass.setZero();
     for (int i = 0; i < num_subdomains; i++) {
         _lumped_mass += _subdomains[i]->_total_mass * _subdomain_projections[i].transpose() * _subdomain_projections[i];
-    }
-}
-
-void DomainTarget::GetMass(COO &coo, int offset_x, int offset_y) const {
-    const auto& domain = dynamic_cast<const Domain*>(_system);
-    SystemTarget::GetMass(coo, offset_x, offset_y);
-    for (int i = 0; i < domain->_lumped_mass.outerSize(); i++) {
-        for (SparseMatrixXd::InnerIterator it(domain->_lumped_mass, i); it; ++it) {
-            coo.push_back(Tripletd(it.row() + offset_x, it.row() + offset_y, it.value()));
-        }
     }
 }
 

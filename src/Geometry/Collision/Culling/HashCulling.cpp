@@ -16,8 +16,8 @@ void HashCulling::ComputeConstraintSet(const Ref<const Eigen::VectorXd> &x,
     int obj_id = 0;
     for (auto itr = begin->Clone(); !itr->IsDone(); itr->Forward()) {
         const auto& obj = itr->GetObject();
-        const Matrix3d rotation = obj->_frame_rotation;
-        const Vector3d translation = obj->_frame_x;
+        const Matrix3d rotation = obj->GetFrameRotation();
+        const Vector3d translation = obj->GetFrameX();
 
         MatrixXd vertices;
         MatrixXi face_topo, edge_topo;
@@ -57,8 +57,8 @@ void HashCulling::ComputeConstraintSet(const Ref<const Eigen::VectorXd> &x,
     obj_id = 0;
     for (auto itr = begin->Clone(); !itr->IsDone(); itr->Forward()) {
         const auto& obj = itr->GetObject();
-        const Matrix3d rotation = obj->_frame_rotation;
-        const Vector3d translation = obj->_frame_x;
+        const Matrix3d rotation = obj->GetFrameRotation();
+        const Vector3d translation = obj->GetFrameX();
         MatrixXd vertices;
         MatrixXi face_topo, edge_topo;
         obj->GetCollisionShape(x.segment(cur_offset, obj->GetDOF()), vertices, face_topo, edge_topo);

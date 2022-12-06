@@ -1,11 +1,11 @@
 {
   "simulation-config": {
-    "duration": 0.01,
+    "duration": 0.1,
     "time-step": 0.01
   },
   "time-stepper": {
     "type": "domain-bfs-stepper",
-    "collision-aware": true,
+    "collision-aware": false,
     "collision": {
       "type": "ipc-barrier",
       "culling": {
@@ -16,7 +16,7 @@
       "d": 1e-5
     },
     "integrator": {
-      "type": "ipc",
+      "type": "incremental-potential",
       "tolerance": 1e-3,
       "max-iteration": 10,
       "optimizer": {

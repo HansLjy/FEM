@@ -11,12 +11,14 @@
 class SystemStepper : public TimeStepper {
 public:
     explicit SystemStepper(const json& config);
+    void Bind(System &system) override;
     void Step(double h) const override;
 
     ~SystemStepper() override;
 
 protected:
     Integrator* _integrator;
+    Target* _target;
 };
 
 #endif //FEM_SYSTEMSTEPPER_H

@@ -19,7 +19,7 @@ public:
 
     // note: if any derived class found that mass is a constant matrix
     //       it should override it. This function will evaluate every time
-    void GetMass(COO &coo, int x_offset, int y_offset) const override;
+    void GetInnerMass(COO &coo, int x_offset, int y_offset) const override;
     double GetTotalMass() const override;
 
     double GetPotential() const override;
@@ -31,7 +31,7 @@ public:
 
     void AddExternalForce(const ExternalForce &force) override;
 
-    Vector3d GetTotalExternalForce(const Matrix3d &rotation, const Vector3d &position) const override;
+    Vector3d GetTotalExternalForce() const override;
 
     VectorXd GetInertialForce(const Eigen::Vector3d &v, const Eigen::Vector3d &a, const Eigen::Vector3d &omega,
                               const Eigen::Vector3d &alpha, const Eigen::Matrix3d &rotation) const override;
@@ -41,6 +41,8 @@ public:
     void GetInnerConstraintGradient(const VectorXd &x, COO &coo, int x_offset, int y_offset) const override;
 
     void GetRenderShape(Eigen::MatrixXd &vertices, Eigen::MatrixXi &topo) const override;
+
+    void SetFrame(const Eigen::Matrix3d &rotation, const Eigen::Vector3d &translation) override;
 
     MIDDLE_DECLARE_CLONE(Object)
 

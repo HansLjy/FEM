@@ -5,6 +5,7 @@ project(NumericMethod)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 file(GLOB_RECURSE NUMERIC_SOURCE
+        Target.cpp
         Constraint/*.cpp
         Optimizer/*.cpp
         Integrator/*.cpp)

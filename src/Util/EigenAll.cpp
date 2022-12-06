@@ -42,3 +42,11 @@ Vector3d SkewVector(const Matrix3d& mat) {
     Matrix3d skew_matrix = (mat - mat.transpose()) / 2;
     return (Vector3d() << skew_matrix(2, 1), skew_matrix(0, 2), skew_matrix(1, 0)).finished();
 }
+
+void SparseToCOO(const SparseMatrixXd& mat, COO& coo, int offset_x, int offset_y) {
+    for (int k = 0; k < mat.outerSize(); k++) {
+        for (SparseMatrixXd::InnerIterator itr(mat, k); itr; ++itr) {
+            coo.push_back(Tripletd(itr.row() + offset_x, itr.col() + offset_y, itr.value()));
+        }
+    }
+}

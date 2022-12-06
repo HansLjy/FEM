@@ -7,6 +7,7 @@
 
 #include "EigenAll.h"
 #include "Pattern.h"
+#include "ObjectIterator.h"
 
 /**
  * Target is the general target problem encountered
@@ -14,13 +15,17 @@
  */
 class Target {
 public:
-    virtual int GetDOF() const = 0;
+    explicit Target(const ObjectIterator& objs);
 
-    virtual void GetCoordinate(Ref<VectorXd> x) const = 0;
-    virtual void GetVelocity(Ref<VectorXd> v) const = 0;
+    int GetDOF() const {
+        return _dof;
+    }
 
-    virtual void SetCoordinate(const Ref<const VectorXd> &x) = 0;
-    virtual void SetVelocity(const Ref<const VectorXd> &v) = 0;
+    void GetCoordinate(Ref<VectorXd> x) const;
+    void GetVelocity(Ref<VectorXd> v) const;
+
+    void SetCoordinate(const Ref<const VectorXd> &x);
+    void SetVelocity(const Ref<const VectorXd> &v);
 
     void GetMass(SparseMatrixXd& mass) const {
         COO coo;
@@ -28,36 +33,36 @@ public:
         mass.resize(GetDOF(), GetDOF());
         mass.setFromTriplets(coo.begin(), coo.end());
     }
-    virtual void GetMass(COO& coo, int offset_x, int offset_y) const = 0;
+    void GetMass(COO& coo, int offset_x, int offset_y) const;
 
-    virtual double GetPotentialEnergy() const = 0;
-    virtual double GetPotentialEnergy(const Ref<const VectorXd>& x) const = 0;
-    virtual void GetPotentialEnergyGradient(Ref<VectorXd> gradient) const = 0;
-    virtual void GetPotentialEnergyGradient(const Ref<const VectorXd> &x, Ref<VectorXd> gradient) const = 0;
+    virtual double GetPotentialEnergy() const;
+    virtual double GetPotentialEnergy(const Ref<const VectorXd>& x) const;
+    virtual void GetPotentialEnergyGradient(Ref<VectorXd> gradient) const;
+    virtual void GetPotentialEnergyGradient(const Ref<const VectorXd> &x, Ref<VectorXd> gradient) const;
     void GetPotentialEnergyHessian(SparseMatrixXd& hessian) const {
         COO coo;
         GetPotentialEnergyHessian(coo, 0, 0);
         hessian.resize(GetDOF(), GetDOF());
         hessian.setFromTriplets(coo.begin(), coo.end());
     }
-    virtual void GetPotentialEnergyHessian(COO& coo, int offset_x, int offset_y) const = 0;
+    virtual void GetPotentialEnergyHessian(COO& coo, int offset_x, int offset_y) const;
     void GetPotentialEnergyHessian(const Ref<const VectorXd>& x, SparseMatrixXd& hessian) const {
         COO coo;
         GetPotentialEnergyHessian(x, coo, 0, 0);
         hessian.resize(GetDOF(), GetDOF());
         hessian.setFromTriplets(coo.begin(), coo.end());
     }
-    virtual void GetPotentialEnergyHessian(const Ref<const Eigen::VectorXd> &x, COO &coo, int offset_x, int offset_y) const = 0;
-    virtual void GetExternalForce(Ref<VectorXd> force) const = 0;
-
-    virtual VectorXd GetConstraint(const VectorXd &x) const = 0;
-    virtual void GetConstraintGradient(SparseMatrixXd &gradient, const VectorXd &x) const = 0;
+    virtual void GetPotentialEnergyHessian(const Ref<const Eigen::VectorXd> &x, COO &coo, int offset_x, int offset_y) const;
+    void GetExternalForce(Ref<VectorXd> force) const;
 
     virtual void UpdateInfo(const VectorXd& x, int time_stamp) {}
 
     virtual ~Target() = default;
 
-    BASE_DECLARE_CLONE(Target)
+protected:
+    int _dof;
+    std::vector<Object*> _objs;
+    std::vector<int> _offsets;
 };
 
 #endif //FEM_TARGET_H

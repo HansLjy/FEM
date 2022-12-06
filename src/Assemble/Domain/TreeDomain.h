@@ -16,6 +16,7 @@ public:
     void UpdateSettings(const nlohmann::json &config) override;
     void CalculateSubdomainFrame(const Eigen::VectorXd &a) override;
     void SetObjectExtraForce() override;
+    void SetObjectExtraMass() override;
 
     SparseMatrixXd GetSubdomainProjection(const nlohmann::json &position) override;
     void RecordSubdomain(const nlohmann::json &position) override;
