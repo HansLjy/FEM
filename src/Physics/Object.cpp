@@ -5,8 +5,41 @@
 #include "Object.h"
 #include "Shape.h"
 
+Object::Object(const Eigen::VectorXd &x) : _extra_force(x.size()), _x(x), _v(x.size()) {
+    _v.setZero();
+    _extra_force.setZero();
+}
+
+Object::Object(const Eigen::VectorXd &x, const Eigen::VectorXd &v) : _extra_force(x.size()), _x(x), _v(v) {
+    _extra_force.setZero();
+}
+
+int Object::GetDOF() const {
+    return _x.size();
+}
+
+const VectorXd &Object::GetCoordinate() const {
+    return _x;
+}
+
+const VectorXd &Object::GetVelocity() const {
+    return _v;
+}
+
+void Object::SetCoordinate(const Ref<const Eigen::VectorXd> &x) {
+    _x = x;
+}
+
+void Object::SetVelocity(const Ref<const Eigen::VectorXd> &v) {
+    _v = v;
+}
+
 void Object::AddExternalForce(const ExternalForce &force) {
     _external_forces.push_back(force.Clone());
+}
+
+VectorXd Object::GetExternalForce() const {
+    return GetFixExternalForce() + _extra_force;
 }
 
 int Object::GetConstraintSize() const {
@@ -41,6 +74,11 @@ VectorXd Object::GetFixExternalForce() const {
         external_force -= ext_force->EnergyGradient(*this, _frame_rotation, _frame_x);
     }
     return external_force;
+}
+
+void Object::GetMass(COO &coo, int x_offset, int y_offset) {
+    GetInnerMass(coo, x_offset, y_offset);
+    SparseToCOO(_extra_mass, coo, x_offset, y_offset);
 }
 
 void Object::SetFrame(const Eigen::Matrix3d &rotation, const Eigen::Vector3d &translation) {

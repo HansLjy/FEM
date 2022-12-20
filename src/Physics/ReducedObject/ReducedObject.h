@@ -12,8 +12,8 @@ class ReducedObject : public Object {
 public:
     ReducedObject(const VectorXd &x, const Object &proxy, const SparseMatrixXd &base, const VectorXd &shift);
 
-    void SetCoordinate(const Eigen::VectorXd &x) override;
-    void SetVelocity(const Eigen::VectorXd &v) override;
+    void SetCoordinate(const Ref<const Eigen::VectorXd> &x) override;
+    void SetVelocity(const Ref<const Eigen::VectorXd> &v) override;
     void SetProxyCoordinate();
     void SetProxyVelocity();
 
@@ -22,11 +22,10 @@ public:
     void GetInnerMass(COO &coo, int x_offset, int y_offset) const override;
     double GetTotalMass() const override;
 
-    double GetPotential() const override;
     double GetPotential(const Ref<const Eigen::VectorXd> &x) const override;
-    VectorXd GetPotentialGradient() const override;
+
     VectorXd GetPotentialGradient(const Ref<const Eigen::VectorXd> &x) const override;
-    void GetPotentialHessian(COO &coo, int x_offset, int y_offset) const override;
+
     void GetPotentialHessian(const Ref<const Eigen::VectorXd> &x, COO &coo, int x_offset, int y_offset) const override;
 
     void AddExternalForce(const ExternalForce &force) override;

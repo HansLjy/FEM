@@ -56,14 +56,6 @@ void Target::GetMass(COO &coo, int offset_x, int offset_y) const {
     ASSEMBLE_2D(Mass)
 }
 
-double Target::GetPotentialEnergy() const {
-    double energy = 0;
-    for (const auto& obj : _objs) {
-        energy += obj->GetPotential();
-    }
-    return energy;
-}
-
 double Target::GetPotentialEnergy(const Ref<const Eigen::VectorXd> &x) const {
     double energy = 0;
     int cur_offset = 0;
@@ -72,10 +64,6 @@ double Target::GetPotentialEnergy(const Ref<const Eigen::VectorXd> &x) const {
         cur_offset += obj->GetDOF();
     }
     return energy;
-}
-
-void Target::GetPotentialEnergyGradient(Ref<Eigen::VectorXd> gradient) const {
-    ASSEMBLE_1D(PotentialGradient, gradient)
 }
 
 #define ASSEMBLE_1D_ELSEWHERE(FuncName, X, var) \
@@ -88,10 +76,6 @@ void Target::GetPotentialEnergyGradient(Ref<Eigen::VectorXd> gradient) const {
 
 void Target::GetPotentialEnergyGradient(const Ref<const Eigen::VectorXd> &x, Ref<Eigen::VectorXd> gradient) const {
     ASSEMBLE_1D_ELSEWHERE(PotentialGradient, x, gradient)
-}
-
-void Target::GetPotentialEnergyHessian(COO &coo, int offset_x, int offset_y) const {
-    ASSEMBLE_2D(PotentialHessian)
 }
 
 #define ASSEMBLE_2D_ELSEWHERE(FuncName, X) \

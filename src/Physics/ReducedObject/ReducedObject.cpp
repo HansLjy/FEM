@@ -7,12 +7,12 @@
 ReducedObject::ReducedObject(const VectorXd &x, const Object &proxy, const SparseMatrixXd &base, const VectorXd &shift)
     : Object(x), _proxy(proxy.Clone()), _base(base), _shift(shift) {}
 
-void ReducedObject::SetCoordinate(const Eigen::VectorXd &x) {
+void ReducedObject::SetCoordinate(const Ref<const Eigen::VectorXd> &x) {
     Object::SetCoordinate(x);
     SetProxyCoordinate();
 }
 
-void ReducedObject::SetVelocity(const Eigen::VectorXd &v) {
+void ReducedObject::SetVelocity(const Ref<const Eigen::VectorXd> &v) {
     Object::SetVelocity(v);
     SetProxyVelocity();
 }
@@ -57,24 +57,12 @@ double ReducedObject::GetTotalMass() const {
     return _proxy->GetTotalMass();
 }
 
-double ReducedObject::GetPotential() const {
-    return _proxy->GetPotential();
-}
-
 double ReducedObject::GetPotential(const Ref<const Eigen::VectorXd> &x) const {
     return _proxy->GetPotential(_base * x + _shift);
 }
 
-VectorXd ReducedObject::GetPotentialGradient() const {
-    return _base.transpose() * _proxy->GetPotentialGradient();
-}
-
 VectorXd ReducedObject::GetPotentialGradient(const Ref<const Eigen::VectorXd> &x) const {
     return _base.transpose() * _proxy->GetPotentialGradient(_base * x + _shift);
-}
-
-void ReducedObject::GetPotentialHessian(COO &coo, int x_offset, int y_offset) const {
-    LUMP2D(PotentialHessian, hessian)
 }
 
 void

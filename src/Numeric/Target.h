@@ -35,17 +35,8 @@ public:
     }
     void GetMass(COO& coo, int offset_x, int offset_y) const;
 
-    virtual double GetPotentialEnergy() const;
     virtual double GetPotentialEnergy(const Ref<const VectorXd>& x) const;
-    virtual void GetPotentialEnergyGradient(Ref<VectorXd> gradient) const;
     virtual void GetPotentialEnergyGradient(const Ref<const VectorXd> &x, Ref<VectorXd> gradient) const;
-    void GetPotentialEnergyHessian(SparseMatrixXd& hessian) const {
-        COO coo;
-        GetPotentialEnergyHessian(coo, 0, 0);
-        hessian.resize(GetDOF(), GetDOF());
-        hessian.setFromTriplets(coo.begin(), coo.end());
-    }
-    virtual void GetPotentialEnergyHessian(COO& coo, int offset_x, int offset_y) const;
     void GetPotentialEnergyHessian(const Ref<const VectorXd>& x, SparseMatrixXd& hessian) const {
         COO coo;
         GetPotentialEnergyHessian(x, coo, 0, 0);

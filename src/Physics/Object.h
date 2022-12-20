@@ -11,53 +11,22 @@
 
 class Object {
 public:
-    Object(const VectorXd& x) : _extra_force(x.size()), _x(x), _v(x.size()) {
-        _v.setZero();
-        _extra_force.setZero();
-    }
-    Object(const VectorXd& x, const VectorXd& v) : _extra_force(x.size()), _x(x), _v(v) {
-        _extra_force.setZero();
-    }
+    Object(const VectorXd& x);
+    Object(const VectorXd& x, const VectorXd& v);
 
-    int GetDOF() const {
-        return _x.size();
-    }
-
-    const VectorXd & GetCoordinate() const {
-        return _x;
-    }
-
-    const VectorXd & GetVelocity() const {
-        return _v;
-    }
-
-    virtual void SetCoordinate(const VectorXd& x) {
-        _x = x;
-    }
-
-    virtual void SetVelocity(const VectorXd& v) {
-        _v = v;
-    }
+    int GetDOF() const;
+    const VectorXd & GetCoordinate() const;
+    const VectorXd & GetVelocity() const;
+    virtual void SetCoordinate(const Ref<const VectorXd>& x);
+    virtual void SetVelocity(const Ref<const VectorXd>& v);
 
     // General mass (sparse matrix form)
-    void GetMass(COO& coo, int x_offset, int y_offset) {
-        GetInnerMass(coo, x_offset, y_offset);
-        SparseToCOO(_extra_mass, coo, x_offset, y_offset);
-    }
+    void GetMass(COO& coo, int x_offset, int y_offset);
     virtual void GetInnerMass(COO &coo, int x_offset, int y_offset) const = 0;           // General mass (coo form)
     virtual double GetTotalMass() const = 0;
 
-    virtual double GetPotential() const {
-        return GetPotential(_x);
-    }
     virtual double GetPotential(const Ref<const VectorXd>& x) const = 0;
-    virtual VectorXd GetPotentialGradient() const {
-        return GetPotentialGradient(_x);
-    }
     virtual VectorXd GetPotentialGradient(const Ref<const VectorXd>& x) const = 0;
-    virtual void GetPotentialHessian(COO &coo, int x_offset, int y_offset) const {
-        GetPotentialHessian(_x, coo, x_offset, y_offset);
-    }
     virtual void GetPotentialHessian(const Ref<const VectorXd>& x, COO& coo, int x_offset, int y_offset) const = 0;
 
     virtual VectorXd
@@ -66,9 +35,7 @@ public:
 
     virtual void AddExternalForce(const ExternalForce& force);
 
-    VectorXd GetExternalForce() const {
-        return GetFixExternalForce() + _extra_force;
-    }
+    VectorXd GetExternalForce() const;
     VectorXd GetFixExternalForce() const;
     virtual Vector3d GetTotalExternalForce() const = 0;
 
