@@ -90,4 +90,11 @@ void read_binary(std::ifstream &in, MatrixType &matrix) {
     in.read((char *) matrix.data(), rows * cols * sizeof(typename MatrixType::Scalar));
 }
 
+template <typename Mat>
+Mat VConcat(const Mat& A, const Mat& B) {
+	Mat res(A.rows() + B.rows(), A.cols());
+	res << A, B;
+	return res;
+}
+
 #endif

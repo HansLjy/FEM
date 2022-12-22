@@ -4,7 +4,7 @@
 
 #include "Simulator.h"
 #include "Integrator/Integrator.h"
-#include "Shape.h"
+#include "RenderShape/RenderShape.h"
 #include "nlohmann/json.hpp"
 #include "JsonUtil.h"
 #include <string>

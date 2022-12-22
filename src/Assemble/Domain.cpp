@@ -46,7 +46,7 @@ Vector3d Domain::GetTotalExternalForce() const {
     return total_external_force;
 }
 
-void Domain::CalculateTotalMass() {
+void Domain::_CalculateTotalMass() {
     _total_mass = GetTotalMass();
     for (const auto& subdomain : _subdomains) {
         subdomain->CalculateTotalMass();
