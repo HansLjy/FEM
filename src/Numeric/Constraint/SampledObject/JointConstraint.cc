@@ -4,8 +4,6 @@
 
 #include "JointConstraint.h"
 
-DEFINE_CLONE(Constraint, JointConstraint)
-
 JointConstraint::JointConstraint(int object1_id, int point1_id, int object2_id, int point2_id)
     : Constraint(2, 3, {object1_id, object2_id}),
       _point_offsets({point1_id * 3, point2_id * 3}){}

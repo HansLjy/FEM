@@ -59,5 +59,3 @@ void CurveShape::GetSurface(const Object &object, MatrixXd &vertices, MatrixXi &
         }
     }
 }
-
-DEFINE_CLONE(RenderShape, CurveShape)

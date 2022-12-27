@@ -10,10 +10,8 @@
 class ReducedLeaf : public ReducedObject {
 public:
     explicit ReducedLeaf(const json& config);
-    ReducedLeaf(double density, double thickness, double k_stretch, double k_shear, double k_bend_max, double k_bend_min,
+    ReducedLeaf(bool collision_enabled, double density, double thickness, double k_stretch, double k_shear, double k_bend_max, double k_bend_min,
                 int u_segments, int v_segments, const VectorXd& control_points);
-
-    DERIVED_DECLARE_CLONE(Object)
 
 protected:
     static VectorXd GenerateX(const VectorXd& control_points);

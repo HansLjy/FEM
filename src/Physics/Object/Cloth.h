@@ -10,7 +10,6 @@
 
 class ClothShape;
 class ReducedBezierSurface;
-class ClothPhysics;
 
 class Cloth : public SampledObject {
 public:
@@ -40,11 +39,8 @@ public:
 	double GetPotential(const Ref<const VectorXd> &x) const override;
 	VectorXd GetPotentialGradient(const Ref<const VectorXd> &x) const override;
 	void GetPotentialHessian(const Ref<const VectorXd> &x, COO &coo, int x_offset, int y_offset) const override;
-
-    DERIVED_DECLARE_CLONE(Object)
-
+	
     friend class ClothShape;
-	friend class ClothPhysics;
     friend class ReducedBezierSurface;
 
 protected:

@@ -32,8 +32,6 @@ public:
 
     virtual ~Constraint() = default;
 
-    BASE_DECLARE_CLONE(Constraint)
-
 protected:
     const int _num_objects;
     const int _constraint_size;

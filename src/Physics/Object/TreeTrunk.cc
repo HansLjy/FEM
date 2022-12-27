@@ -6,8 +6,6 @@
 #include "RenderShape/TreeShape/TreeTrunkShape.h"
 #include "Collision/CollisionShape/TreeTrunkCollisionShape.h"
 
-DEFINE_CLONE(Object, TreeTrunk)
-
 TreeTrunk::TreeTrunk(bool collision_enabled, double rho, double youngs_module, double radius_max, double radius_min, const VectorXd &x, const Vector3d &root)
                      : SampledObject(new TreeTrunkShape(radius_max, radius_min), collision_enabled ? (CollisionShape*) new TreeTrunkCollisionShape : new NullCollisionShape, x, GenerateMass(x, rho, radius_max, radius_min)),
                        _num_points(x.size() / 3), _root(root) {

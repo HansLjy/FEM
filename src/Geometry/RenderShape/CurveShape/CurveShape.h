@@ -13,8 +13,6 @@ public:
     CurveShape(double radius = 0.1);
     void GetSurface(const Object &object, MatrixXd &vertices, MatrixXi &topos) const override;
 
-    DERIVED_DECLARE_CLONE(RenderShape)
-
 public:
     const double _radius;
 };

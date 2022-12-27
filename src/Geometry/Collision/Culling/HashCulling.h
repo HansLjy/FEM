@@ -27,9 +27,8 @@ public:
 
     HashCulling(double grid_size, unsigned int hash_table_size) : _edge_hash_table(grid_size, hash_table_size),
                                                                   _vertice_hash_table(grid_size, hash_table_size) {}
-    void ComputeConstraintSet(const Ref<const Eigen::VectorXd> &x, const std::shared_ptr<const ObjectIterator> &begin, int time_stamp, double d, std::vector<CollisionInfo> &info) override;
 
-    DERIVED_DECLARE_CLONE(CollisionCulling)
+	void ComputeConstraintSet(const Ref<const VectorXd> &x, const std::vector<Object *> &objs, int time_stamp, double d, std::vector<CollisionInfo> &info) override;
 protected:
     SpatialHashing<EdgePrimitiveInfo> _edge_hash_table;
     SpatialHashing<VertexPrimitiveInfo> _vertice_hash_table;

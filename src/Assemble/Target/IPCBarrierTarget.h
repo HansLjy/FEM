@@ -9,8 +9,8 @@
 
 class IPCBarrierTarget : public Target {
 public:
-    IPCBarrierTarget(const ObjectIterator& itr)
-        : Target(itr) {}
+    IPCBarrierTarget(const std::vector<Object*>& objs)
+        : Target(objs) {}
 
     void UpdateInfo(const Eigen::VectorXd &x, int time_stamp) override;
 

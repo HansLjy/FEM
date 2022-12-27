@@ -5,23 +5,25 @@
 #include "HashCulling.h"
 #include "SpatialHashing/SpatialHashing.hpp"
 #include "Collision/CollisionUtility.h"
+#include "Object.h"
 
-DEFINE_CLONE(CollisionCulling, HashCulling)
-
-void HashCulling::ComputeConstraintSet(const Ref<const Eigen::VectorXd> &x,
-                                       const std::shared_ptr<const ObjectIterator> &begin, int time_stamp, double d,
-                                       std::vector<CollisionInfo> &info) {
+void HashCulling::ComputeConstraintSet(const Ref<const VectorXd> &x, const std::vector<Object *> &objs, int time_stamp, double d, std::vector<CollisionInfo> &info) {
     /* insert into hash table */
     int cur_offset = 0;
+	for (auto obj : objs) {
+		obj->ComputeCollisionShape(x.segment(cur_offset, obj->GetDOF()));
+		cur_offset += obj->GetDOF();
+	}
+
+	cur_offset = 0;
     int obj_id = 0;
-    for (auto itr = begin->Clone(); !itr->IsDone(); itr->Forward()) {
-        const auto& obj = itr->GetObject();
+    for (auto obj : objs) {
         const Matrix3d rotation = obj->GetFrameRotation();
         const Vector3d translation = obj->GetFrameX();
 
-        MatrixXd vertices;
-        MatrixXi face_topo, edge_topo;
-        obj->GetCollisionShape(x.segment(cur_offset, obj->GetDOF()), vertices, face_topo, edge_topo);
+		const auto& vertices = obj->GetCollisionVertices();
+		const auto& face_topo = obj->GetCollisionFaceTopo();
+		const auto& edge_topo = obj->GetCollisionEdgeTopo();
         const int num_vertices = vertices.rows();
         const int num_faces = face_topo.rows();
         const int num_edges = edge_topo.rows();
@@ -55,13 +57,13 @@ void HashCulling::ComputeConstraintSet(const Ref<const Eigen::VectorXd> &x,
 
     cur_offset = 0;
     obj_id = 0;
-    for (auto itr = begin->Clone(); !itr->IsDone(); itr->Forward()) {
-        const auto& obj = itr->GetObject();
+    for (auto obj : objs) {
         const Matrix3d rotation = obj->GetFrameRotation();
         const Vector3d translation = obj->GetFrameX();
-        MatrixXd vertices;
-        MatrixXi face_topo, edge_topo;
-        obj->GetCollisionShape(x.segment(cur_offset, obj->GetDOF()), vertices, face_topo, edge_topo);
+
+		const auto& vertices = obj->GetCollisionVertices();
+		const auto& face_topo = obj->GetCollisionFaceTopo();
+		const auto& edge_topo = obj->GetCollisionEdgeTopo();
 
         const int num_faces = face_topo.rows();
         const int num_edges = edge_topo.rows();

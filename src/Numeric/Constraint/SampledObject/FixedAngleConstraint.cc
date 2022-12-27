@@ -4,8 +4,6 @@
 
 #include "FixedAngleConstraint.h"
 
-DEFINE_CLONE(Constraint, FixedAngleConstraint)
-
 FixedAngleConstraint::FixedAngleConstraint(const Eigen::Vector3d &direction, int object_id, int point_id1,
                                            int point_id2)
                                            : Constraint(1, 1, {object_id}),

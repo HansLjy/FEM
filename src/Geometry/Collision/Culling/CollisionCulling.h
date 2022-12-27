@@ -5,7 +5,10 @@
 #ifndef FEM_COLLISIONCULLING_H
 #define FEM_COLLISIONCULLING_H
 
-#include "ObjectIterator.h"
+#include "EigenAll.h"
+#include "Pattern.h"
+
+class Object;
 
 struct CollisionInfo {
     enum struct CollisionType {
@@ -18,10 +21,9 @@ struct CollisionInfo {
 
 class CollisionCulling {
 public:
-    virtual void ComputeConstraintSet(const Ref<const VectorXd> &x, const std::shared_ptr<const ObjectIterator> &itr, int time_stamp, double d,
+    virtual void ComputeConstraintSet(const Ref<const VectorXd> &x, const std::vector<Object*>& objs , int time_stamp, double d,
                                       std::vector<CollisionInfo> &info) = 0;
 
-    BASE_DECLARE_CLONE(CollisionCulling)
     virtual ~CollisionCulling() = default;
 };
 

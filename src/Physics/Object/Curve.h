@@ -19,7 +19,6 @@ public:
 	VectorXd GetPotentialGradient(const Ref<const VectorXd> &x) const override;
 	void GetPotentialHessian(const Ref<const VectorXd> &x, COO &coo, int x_offset, int y_offset) const override;
 
-    DERIVED_DECLARE_CLONE(Object)
 
     friend class CurveGravity;
 

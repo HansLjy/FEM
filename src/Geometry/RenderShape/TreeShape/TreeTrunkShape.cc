@@ -3,9 +3,7 @@
 //
 
 #include "TreeTrunkShape.h"
-#include "Tree/TreeTrunk.h"
-
-DEFINE_CLONE(RenderShape, TreeTrunkShape)
+#include "Object/TreeTrunk.h"
 
 TreeTrunkShape::TreeTrunkShape(double radius_max, double radius_min)
     : _radius_max(radius_max), _radius_min(radius_min) {}

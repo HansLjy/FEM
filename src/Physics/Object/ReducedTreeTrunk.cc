@@ -9,22 +9,21 @@
 #include "ReducedBezierCurve.h"
 #include "Collision/CollisionShape/ReducedTreeTrunkCollisionShape.h"
 
-DEFINE_CLONE(Object, ReducedTreeTrunk)
-
 ReducedTreeTrunk::ReducedTreeTrunk(const json &config)
     : ReducedTreeTrunk(
+		config["collision-enabled"],
         config["segments"], config["density"], config["youngs-module"],
         config["radius-max"], config["radius-min"],
         Json2Vec(config["root"]), Json2VecX(config["control-points"])
 ) {}
 
-ReducedTreeTrunk::ReducedTreeTrunk(int num_segments, double rho, double youngs_module, double radius_max,
+ReducedTreeTrunk::ReducedTreeTrunk(bool collision_enabled, int num_segments, double rho, double youngs_module, double radius_max,
                                    double radius_min,
                                    const Vector3d &root, const VectorXd &control_points)
    : ReducedObject(new ReducedRenderShape,
-				   new ReducedTreeTrunkCollisionShape,
+				   collision_enabled ? (CollisionShape*) new ReducedTreeTrunkCollisionShape : new NullCollisionShape,
 				   control_points.segment<9>(3),
-                   new TreeTrunk(rho, youngs_module, radius_max, radius_min,
+                   new TreeTrunk(false, rho, youngs_module, radius_max, radius_min,
                              GenerateX(num_segments, control_points), root),
                    GenerateBase(num_segments),
                    GenerateShift(num_segments, control_points.segment<3>(0))),

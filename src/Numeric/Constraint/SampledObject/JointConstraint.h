@@ -12,8 +12,6 @@ public:
     JointConstraint(int object1_id, int point1_id, int object2_id, int point2_id);
     VectorXd GetValue(const Eigen::VectorXd &x) const override;
     void GetGradient(const Eigen::VectorXd &x, COO &coo, int x_offset) const override;
-
-    DERIVED_DECLARE_CLONE(Constraint)
 protected:
     std::array<int, 2> _point_offsets;
 };

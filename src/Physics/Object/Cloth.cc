@@ -9,8 +9,6 @@
 #include "unsupported/Eigen/KroneckerProduct"
 #include "JsonUtil.h"
 
-DEFINE_CLONE(Object, Cloth)
-
 Cloth::Cloth(const json &config)
     : Cloth(config["collision-enabled"], config["density"], config["thickness"], config["k-stretch"], config["k-shear"], config["k-bend-max"], config["k-bend-min"],
             Json2Vec<2>(config["max-direction"]), Json2Vec(config["start"]), Json2Vec(config["u-end"]), Json2Vec(config["v-end"]),
@@ -63,7 +61,7 @@ Cloth::Cloth(bool collision_enabled, double rho, double thickness, double k_stre
         F.col(1) = e2;
 
         _inv(i) = F.inverse();
-        _pFpx(i) = Eigen::KroneckerProduct<Matrix3d, Matrix3d>(_inv(i), Matrix3d::Identity());
+        _pFpx(i) = Eigen::KroneckerProduct<Matrix2d, Matrix3d>(_inv(i), Matrix3d::Identity());
 
         for (int j = 0; j < 3; j++) {
             edges.push_back(

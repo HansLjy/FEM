@@ -4,8 +4,6 @@
 
 #include "FixedPointConstraint.h"
 
-DEFINE_CLONE(Constraint, FixedPointConstraint)
-
 FixedPointConstraint::FixedPointConstraint(const Vector3d &fixed_point, int object_id, int point_id)
     : Constraint(1, 3, {object_id}), _point_offset(point_id * 3), _fixed_point(fixed_point) {}
 

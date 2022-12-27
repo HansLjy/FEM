@@ -3,9 +3,7 @@
 //
 
 #include "ClothShape.h"
-#include "Cloth/Cloth.h"
-
-DEFINE_CLONE(RenderShape, ClothShape)
+#include "Object/Cloth.h"
 
 void ClothShape::GetSurface(const Object &object, Eigen::MatrixXd &vertices, Eigen::MatrixXi &topos) const {
     auto& cloth = dynamic_cast<const Cloth&>(object);

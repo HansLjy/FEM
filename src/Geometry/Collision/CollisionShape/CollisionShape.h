@@ -18,8 +18,8 @@ public:
     const MatrixXi& GetCollisionFaceTopo() const {return _face_topo;}
 
 	virtual ~CollisionShape() = default;
-
-	BASE_DECLARE_CLONE(CollisionShape)
+	CollisionShape() = default;
+	CollisionShape(const CollisionShape& rhs) = delete;
 
 protected:
     MatrixXd _vertices;
@@ -30,7 +30,6 @@ protected:
 class NullCollisionShape : public CollisionShape {
 public:
 	void ComputeCollisionShape(const Object &obj, const Ref<const VectorXd> &x) override {}
-	DERIVED_DECLARE_CLONE(CollisionShape)
 };
 
 #endif //FEM_COLLISIONSHAPE_H

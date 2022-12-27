@@ -32,8 +32,8 @@ void Object::SetVelocity(const Ref<const Eigen::VectorXd> &v) {
     _v = v;
 }
 
-void Object::AddExternalForce(const ExternalForce &force) {
-	_external_forces.push_back(force.Clone());
+void Object::AddExternalForce(ExternalForce* force) {
+	_external_forces.push_back(force);
 }
 
 VectorXd Object::GetExternalForce() const {
@@ -83,12 +83,6 @@ Object::~Object() {
 	delete _collision_shape;
 	for (const auto& external_force : _external_forces) {
 		delete external_force;
-	}
-}
-
-Object::Object(const Object& rhs) : _render_shape(rhs._render_shape->Clone()), _collision_shape(rhs._collision_shape->Clone()), _x(rhs._x), _v(rhs._v) {
-	for (const auto& external_force : rhs._external_forces) {
-		_external_forces.push_back(external_force->Clone());
 	}
 }
 
@@ -152,6 +146,15 @@ Vector3d SampledObject::GetTotalExternalForce() const {
 
 // Reduced Object
 
+void ReducedObject::GetPotentialHessian(const Ref<const VectorXd> &x, COO &coo, int x_offset, int y_offset) const {
+	COO coo_full;
+    _proxy->GetPotentialHessian(_base * x + _shift, coo_full, 0, 0);
+    SparseMatrixXd proxy_hessian(_proxy->GetDOF(), _proxy->GetDOF());
+    proxy_hessian.setFromTriplets(coo_full.begin(), coo_full.end());
+    SparseMatrixXd reduced_hessian = _base.transpose() * proxy_hessian * _base;
+	SparseToCOO(reduced_hessian, coo, x_offset, y_offset);
+}
+
 void ReducedObject::GetMass(COO &coo, int x_offset, int y_offset) const {
 	COO coo_full;
     _proxy->GetMass(coo_full, 0, 0);
@@ -186,10 +189,10 @@ DecomposedObject::~DecomposedObject() {
 	}
 }
 
-void DecomposedObject::AddExternalForce(const ExternalForce &force) {
+void DecomposedObject::AddExternalForce(ExternalForce* force) {
 	_proxy->AddExternalForce(force);
 	for (auto& child : _children) {
-		child->AddExternalForce(force);
+		child->AddExternalForce(force->Clone());
 	}
 }
 
@@ -213,6 +216,10 @@ void DecomposedObject::GetMass(COO &coo, int x_offset, int y_offset) const {
 
 VectorXd DecomposedObject::GetExternalForce() const {
 	return _proxy->GetExternalForce() + _interface_force + GetInertialForce(_frame_v, _frame_a, _frame_angular_velocity, _frame_angular_acceleration, _frame_rotation);
+}
+
+void DecomposedObject::ComputeCollisionShape(const Ref<const VectorXd> &x) {
+	// TODO:
 }
 
 void DecomposedObject::Aggregate() {
@@ -284,10 +291,16 @@ void DecomposedObject::Initialize() {
 #include "Object/TreeTrunk.h"
 
 BEGIN_DEFINE_XXX_FACTORY(Object)
-    ADD_PRODUCT("curve", Curve)
-    ADD_PRODUCT("reduced-bezier-curve", ReducedBezierCurve)
     ADD_PRODUCT("cloth", Cloth)
+    ADD_PRODUCT("curve", Curve)
+	ADD_PRODUCT("decomposed-treetrunk", DecomposedTreeTrunk)
+    ADD_PRODUCT("reduced-bezier-curve", ReducedBezierCurve)
     ADD_PRODUCT("reduced-bezier-surface", ReducedBezierSurface)
+	ADD_PRODUCT("reduced-leaf", ReducedLeaf)
+	ADD_PRODUCT("reduced-treetrunk", ReducedTreeTrunk)
     ADD_PRODUCT("tree-trunk", ReducedTreeTrunk)
-    ADD_PRODUCT("leaf", ReducedLeaf)
+END_DEFINE_XXX_FACTORY
+
+BEGIN_DEFINE_XXX_FACTORY(DecomposedObject)
+	ADD_PRODUCT("decomposed-treetrunk", DecomposedTreeTrunk)
 END_DEFINE_XXX_FACTORY

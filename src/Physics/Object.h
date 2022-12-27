@@ -9,7 +9,6 @@
 #include "Pattern.h"
 #include "ExternalForce/ExternalForce.h"
 
-class Physics;
 class RenderShape;
 class CollisionShape;
 
@@ -37,9 +36,9 @@ public:
     virtual VectorXd GetPotentialGradient(const Ref<const VectorXd>& x) const = 0;
     virtual void GetPotentialHessian(const Ref<const VectorXd>& x, COO& coo, int x_offset, int y_offset) const = 0;
 
-    virtual void AddExternalForce(const ExternalForce& force);
+    virtual void AddExternalForce(ExternalForce* force);
     virtual VectorXd GetExternalForce() const;
-    virtual Vector3d GetTotalExternalForce() const;
+    virtual Vector3d GetTotalExternalForce() const = 0;
 
 	virtual VectorXd GetInertialForce(const Vector3d &v, const Vector3d &a, const Vector3d &omega, const Vector3d &alpha, const Matrix3d &rotation) const = 0;
 
@@ -54,7 +53,6 @@ public:
     virtual const MatrixXi& GetCollisionFaceTopo() const;
 
 	/* Frame relevant */
-	virtual void SetFrame(const Matrix3d& rotation, const Vector3d& shift);
 	virtual Vector3d GetFrameX() const;
 	virtual Matrix3d GetFrameRotation() const;
 
@@ -62,10 +60,9 @@ public:
 	virtual void Initialize() {}
 
     virtual ~Object();
-    Object(const Object& rhs);
+    Object(const Object& rhs) = delete;
     Object& operator=(const Object& rhs) = delete;
 
-    BASE_DECLARE_CLONE(Object)
 	friend class DecomposedObject;
 
 protected:
@@ -77,6 +74,8 @@ protected:
     VectorXd _v;
 	int _dof;
 };
+
+class SampledObjectGravity;
 
 class SampledObject : public Object {
 public:
@@ -91,6 +90,8 @@ public:
 	Vector3d GetTotalExternalForce() const override;
 
 	VectorXd GetInertialForce(const Vector3d &v, const Vector3d &a, const Vector3d &omega, const Vector3d &alpha, const Matrix3d &rotation) const override;
+
+	friend class SampledObjectGravity;
 
 protected:
 	VectorXd _mass;
@@ -121,16 +122,11 @@ public:
 	VectorXd GetPotentialGradient(const Ref<const VectorXd> &x) const override { return _base.transpose() * _proxy->GetPotentialGradient(_base * x + _shift);}
 	void GetPotentialHessian(const Ref<const VectorXd> &x, COO &coo, int x_offset, int y_offset) const override;
 
-	void AddExternalForce(const ExternalForce &force) override {_proxy->AddExternalForce(force);}
+	void AddExternalForce(ExternalForce*force) override {_proxy->AddExternalForce(force);}
 	VectorXd GetExternalForce() const override {return _base.transpose() * _proxy->GetExternalForce();}
 	Vector3d GetTotalExternalForce() const override {return _proxy->GetTotalExternalForce();}
 
 	VectorXd GetInertialForce(const Vector3d &v, const Vector3d &a, const Vector3d &omega, const Vector3d &alpha, const Matrix3d &rotation) const override {return _base.transpose() * _proxy->GetInertialForce(v, a, omega, alpha, rotation);}
-
-	void SetFrame(const Matrix3d &rotation, const Vector3d &shift) override {
-		Object::SetFrame(rotation, shift);
-		_proxy->SetFrame(rotation, shift);
-	}
 
 	friend class ReducedRenderShape;
 
@@ -161,7 +157,7 @@ public:
 	VectorXd GetPotentialGradient(const Ref<const VectorXd> &x) const override {return _proxy->GetPotentialGradient(x);}
 	void GetPotentialHessian(const Ref<const VectorXd> &x, COO &coo, int x_offset, int y_offset) const override {_proxy->GetPotentialHessian(x, coo, x_offset, y_offset);}
 
-	void AddExternalForce(const ExternalForce &force) override;
+	void AddExternalForce(ExternalForce *force) override;
 	VectorXd GetExternalForce() const override;
 	Vector3d GetTotalExternalForce() const override {return _proxy->GetTotalExternalForce();}
 
@@ -175,7 +171,6 @@ public:
 	const MatrixXi & GetCollisionFaceTopo() const override {return _proxy->GetCollisionFaceTopo();}
 
 	/* Frame relevant */
-	void SetFrame(const Matrix3d &rotation, const Vector3d &shift) override;
 	Vector3d GetFrameX() const override;
 	Matrix3d GetFrameRotation() const override;
 

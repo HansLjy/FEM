@@ -11,9 +11,7 @@ class TreeTrunkShape : public RenderShape {
 public:
     TreeTrunkShape(double radius_max, double radius_min);
     void GetSurface(const Object &object, Eigen::MatrixXd &vertices, Eigen::MatrixXi &topos) const override;
-
-    DERIVED_DECLARE_CLONE(RenderShape)
-
+	
 protected:
     const double _radius_max;
     const double _radius_min;

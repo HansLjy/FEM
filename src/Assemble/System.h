@@ -28,7 +28,7 @@ public:
      *  otherwise, return -1.
      *  Failure could be the result of name collision
      */
-    int AddObject(const Object& obj, const std::string& name);
+    int AddObject(Object* obj, const std::string& name);
     Object * GetObject(int idx);
     const Object* GetObject(int idx) const;
     void Initialize(const json &config);

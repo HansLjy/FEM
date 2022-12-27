@@ -9,21 +9,19 @@
 #include "Collision/CollisionShape/ReducedLeafCollisionShape.h"
 #include "JsonUtil.h"
 
-DEFINE_CLONE(Object, ReducedLeaf)
-
 ReducedLeaf::ReducedLeaf(const json &config)
-    : ReducedLeaf(config["density"], config["thickness"], config["k-stretch"], config["k-shear"],
+    : ReducedLeaf(config["collision-enabled"], config["density"], config["thickness"], config["k-stretch"], config["k-shear"],
                   config["k-bend-max"], config["k-bend-min"],
                   config["u-segments"], config["v-segments"],
                   Json2VecX(config["control-points"])){}
 
-ReducedLeaf::ReducedLeaf(double density, double thickness, double k_stretch, double k_shear, double k_bend_max, double k_bend_min,
+ReducedLeaf::ReducedLeaf(bool collision_enabled, double density, double thickness, double k_stretch, double k_shear, double k_bend_max, double k_bend_min,
                          int u_segments, int v_segments, const VectorXd& control_points)
                          : ReducedObject(
 								new ReducedRenderShape,
-								new ReducedLeafCollisionShape,
+								collision_enabled ? (CollisionShape*) new ReducedLeafCollisionShape : new NullCollisionShape,
 								GenerateX(control_points),
-								new Cloth(density, thickness, k_stretch, k_shear, k_bend_max, k_bend_min,
+								new Cloth(false, density, thickness, k_stretch, k_shear, k_bend_max, k_bend_min,
 									GenerateMaxBendDir(control_points),
 									GenerateClothX(control_points, u_segments, v_segments),
 									GenerateClothUV(control_points, u_segments, v_segments),

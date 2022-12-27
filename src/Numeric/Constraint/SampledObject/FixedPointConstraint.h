@@ -13,8 +13,7 @@ public:
     FixedPointConstraint(const Vector3d& fixed_point, int object_id, int point_id);
     VectorXd GetValue(const VectorXd &x) const override;
     void GetGradient(const VectorXd &x, COO &coo, int x_offset) const override;
-
-    DERIVED_DECLARE_CLONE(Constraint)
+	
 protected:
     int _point_offset;
     Vector3d _fixed_point;

@@ -12,10 +12,9 @@ class DecomposedTreeTrunk;
 class ReducedTreeTrunk : public ReducedObject {
 public:
     explicit ReducedTreeTrunk(const json& config);
-    ReducedTreeTrunk(int num_segments, double rho, double youngs_module, double radius_max, double radius_min,
+    ReducedTreeTrunk(bool collision_enabled, int num_segments, double rho, double youngs_module, double radius_max, double radius_min,
                      const Vector3d &root, const VectorXd &control_points);
 
-    DERIVED_DECLARE_CLONE(Object)
     friend class DecomposedTreeTrunk;
 
 protected:

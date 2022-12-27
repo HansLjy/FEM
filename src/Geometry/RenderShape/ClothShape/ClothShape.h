@@ -11,8 +11,6 @@ class ClothShape : public RenderShape {
 public:
     void GetSurface(const Object &object, Eigen::MatrixXd &vertices, Eigen::MatrixXi &topos) const override;
     ~ClothShape() override = default;
-
-    DERIVED_DECLARE_CLONE(RenderShape)
 };
 
 #endif //FEM_CLOTHSHAPE_H

@@ -9,12 +9,10 @@
 #include "Curve.h"
 #include <vector>
 
-DEFINE_CLONE(Object, ReducedBezierCurve)
-
 ReducedBezierCurve::ReducedBezierCurve(const nlohmann::json &config) :
         ReducedBezierCurve(
-                config["segments"], config["density"], config["alpha-max"], config["alpha-min"],
-                Json2VecX(config["control-points"])
+			config["collision-enabled"], config["segments"], config["density"], config["alpha-max"], config["alpha-min"],
+			Json2VecX(config["control-points"])
         ) {}
 
 VectorXd
@@ -34,12 +32,12 @@ ReducedBezierCurve::GenerateSamplePoints(int num_segments, const VectorXd &contr
 
 #include "Curve.h"
 
-ReducedBezierCurve::ReducedBezierCurve(int num_segments, double rho, double alpha_max, double alpha_min,
+ReducedBezierCurve::ReducedBezierCurve(bool collision_enabled, int num_segments, double rho, double alpha_max, double alpha_min,
                                        const VectorXd &control_points)
         : ReducedObject(new ReducedRenderShape,
-						new ReducedBezierCurveCollisionShape,
+						collision_enabled ? (CollisionShape*) new ReducedBezierCurveCollisionShape : new NullCollisionShape,
 						control_points,
-                        new Curve(rho, alpha_max, alpha_min, GenerateSamplePoints(num_segments, control_points)),
+                        new Curve(false, rho, alpha_max, alpha_min, GenerateSamplePoints(num_segments, control_points)),
                         GenerateBase(num_segments),
                         GenerateShift(num_segments)) {}
 
