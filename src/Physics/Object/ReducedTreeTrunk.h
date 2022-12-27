@@ -7,7 +7,7 @@
 
 #include "Object.h"
 
-class TreeDomain;
+class DecomposedTreeTrunk;
 
 class ReducedTreeTrunk : public ReducedObject {
 public:
@@ -16,7 +16,7 @@ public:
                      const Vector3d &root, const VectorXd &control_points);
 
     DERIVED_DECLARE_CLONE(Object)
-    friend class TreeDomain;
+    friend class DecomposedTreeTrunk;
 
 protected:
     const Vector3d _x_root;

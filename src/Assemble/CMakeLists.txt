@@ -1,12 +1,11 @@
 cmake_minimum_required(VERSION 3.22)
 
 file(GLOB_RECURSE ASSEMBLE_SOURCE
-        TimeStepper/*.cpp
-        Domain/*.cpp
-        Target/*.cpp
+        TimeStepper/*.cc
+        Target/*.cc
         )
 
-list(APPEND ASSEMBLE_SOURCE Domain.cpp System.cpp TimeStepper.cpp)
+list(APPEND ASSEMBLE_SOURCE System.cpp TimeStepper.cpp)
 
 add_library(Assemble ${ASSEMBLE_SOURCE})
 target_include_directories(Assemble PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})

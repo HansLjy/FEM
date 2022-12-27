@@ -6,18 +6,12 @@
 #include "Constraint/Constraint.h"
 #include "spdlog/spdlog.h"
 
-System::System(const nlohmann::json &config) : _dof(0), _constraint_size(0) {
+System::System(const nlohmann::json &config) : _dof(0) {
     const auto& objects_config = config["objects"];
     for (const auto& object_config : objects_config) {
         const auto& object = ObjectFactory::GetObject(object_config["type"], object_config);
         AddObject(*object, object_config["name"]);
         delete object;
-    }
-    const auto& constraints_config = config["constraints"];
-    for (const auto& constraint_config : constraints_config) {
-        const auto& constraint = ConstraintFactory::GetConstraint(*this, constraint_config);
-        AddConstraint(*constraint);
-        delete constraint;
     }
 
     const auto& external_forces_config = config["external-forces"];
@@ -38,7 +32,6 @@ int System::AddObject(const Object &obj, const std::string &name) {
     }
     _objs.push_back(obj.Clone());
     _dof += obj.GetDOF();
-    _constraint_size += obj.GetConstraintSize();
     return new_idx;
 }
 
@@ -54,12 +47,6 @@ int System::GetOffset(int idx) const {
     return _offset[idx];
 }
 
-int System::AddConstraint(const Constraint &constraint) {
-    _constraints.push_back(constraint.Clone());
-    _constraint_size += constraint.GetSize();
-    return _constraints.size() - 1;
-}
-
 int System::GetIndex(const std::string &name) const {
     const auto& result = _index.find(name);
     if (result == _index.end()) {
@@ -69,7 +56,11 @@ int System::GetIndex(const std::string &name) const {
     return (*result).second;
 }
 
-void System::UpdateSettings(const json &config) {
+void System::Initialize(const json &config) {
+	for (auto& obj : _objs) {
+		obj->Initialize();
+	}
+	
     int cur_offset = 0;
     const int size = _objs.size();
     if (_offset.size() != size) {
@@ -79,15 +70,28 @@ void System::UpdateSettings(const json &config) {
         _offset[i] = cur_offset;
         cur_offset += _objs[i]->GetDOF();
     }
-    for (auto& constraint : _constraints) {
-        for (int i = 0; i < constraint->GetObjectsNum(); i++) {
-            constraint->SetOffset(i, _offset[constraint->GetObjectIndex(i)]);
-        }
-    }
-}
+	_all_objs.clear();
+	_level_bar.clear();
+	int head = 0, tail = 0, level_end = 0;
+	_level_bar.push_back(0);
+	for (const auto& obj : _objs) {
+		_all_objs.push_back(obj);
+		tail++;
+	}
+	while (head < tail) {
+		if (level_end == head) {
+			_level_bar.push_back(level_end = tail);
+		}
+		const auto obj = _all_objs[head++];
+		if (obj->IsDcomposed()) {
+			const auto& decomposed_object = dynamic_cast<DecomposedObject*>(obj);
+			for (const auto& child : decomposed_object->_children) {
+				_all_objs.push_back(child);
+				tail++;
+			}
+		}
+	}
 
-std::unique_ptr<ObjectIterator> System::GetIterator() {
-    return std::unique_ptr<ObjectIterator>(new SystemIterator(*this));
 }
 
 System::~System(){
@@ -95,24 +99,3 @@ System::~System(){
         delete obj;
     }
 }
-
-SystemIterator::SystemIterator(System &system)
-        : ObjectIterator(system._objs.size() == 0), _system(&system), _obj_id(0), _cur_size(system._objs.size()) {}
-
-void SystemIterator::Forward() {
-    _obj_id++;
-    if (_obj_id == _cur_size) {
-        _is_done = true;
-    }
-}
-
-Object *SystemIterator::GetObject() {
-    return _system->_objs[_obj_id];
-}
-
-#include "Domain/TreeDomain.h"
-
-BEGIN_DEFINE_XXX_FACTORY(System)
-    ADD_PRODUCT("system", System)
-    ADD_PRODUCT("tree-domain", TreeDomain)
-END_DEFINE_XXX_FACTORY

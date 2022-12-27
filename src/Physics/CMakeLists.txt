@@ -1,11 +1,8 @@
 cmake_minimum_required(VERSION 3.22)
 
 file(GLOB_RECURSE PHYSICS_SOURCE_FILE
-        Curve/*.cpp
-        ExternalForce/*.cpp
-        ReducedObject/*.cpp
-        Cloth/*.cpp
-        Tree/*.cpp
+        ExternalForce/*.cc
+		Object/*.cc
         )
 list(APPEND PHYSICS_SOURCE_FILE Object.cpp)
 

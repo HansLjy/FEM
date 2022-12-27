@@ -12,8 +12,8 @@ class CurveGravity;
 class Curve : public SampledObject {
 public:
 	Curve(const json& config);
-	Curve(double rho, double alpha_max, double alpha_min, const Vector3d &start, const Vector3d &end, int num_segments) : Curve(rho, alpha_max, alpha_min, GetX(start, end, num_segments)) {}
-    Curve(double rho, double alpha_max, double alpha_min, const VectorXd &x);
+	Curve(bool collision_enabled, double rho, double alpha_max, double alpha_min, const Vector3d &start, const Vector3d &end, int num_segments) : Curve(collision_enabled, rho, alpha_max, alpha_min, GetX(start, end, num_segments)) {}
+    Curve(bool collision_enabled, double rho, double alpha_max, double alpha_min, const VectorXd &x);
 
 	double GetPotential(const Ref<const VectorXd> &x) const override;
 	VectorXd GetPotentialGradient(const Ref<const VectorXd> &x) const override;

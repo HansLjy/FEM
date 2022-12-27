@@ -5,12 +5,12 @@
 #include "Target.h"
 #include "Object.h"
 
-Target::Target(const ObjectIterator &objs) {
+Target::Target(const std::vector<Object*> & objs, int begin, int end) {
     _dof = 0;
-    for (auto itr = objs.Clone(); !itr->IsDone(); itr->Forward()) {
-        _objs.push_back(itr->GetObject());
+    for (int i = begin; i < end; i++) {
+        _objs.push_back(objs[i]);
         _offsets.push_back(_dof);
-        _dof += itr->GetObject()->GetDOF();
+        _dof += objs[i]->GetDOF();
     }
 }
 

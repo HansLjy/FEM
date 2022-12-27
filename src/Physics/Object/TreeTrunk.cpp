@@ -8,10 +8,8 @@
 
 DEFINE_CLONE(Object, TreeTrunk)
 
-TreeTrunk::TreeTrunk(double rho, double youngs_module, double radius_max, double radius_min,
-                     const VectorXd &x,
-                     const Vector3d &root)
-                     : SampledObject(new TreeTrunkShape(radius_max, radius_min), new TreeTrunkCollisionShape, x, GenerateMass(x, rho, radius_max, radius_min)),
+TreeTrunk::TreeTrunk(bool collision_enabled, double rho, double youngs_module, double radius_max, double radius_min, const VectorXd &x, const Vector3d &root)
+                     : SampledObject(new TreeTrunkShape(radius_max, radius_min), collision_enabled ? (CollisionShape*) new TreeTrunkCollisionShape : new NullCollisionShape, x, GenerateMass(x, rho, radius_max, radius_min)),
                        _num_points(x.size() / 3), _root(root) {
     _alpha.resize(_num_points - 1);
     _stiffness.resize(_num_points - 1);

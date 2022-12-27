@@ -26,8 +26,8 @@ void Simulator::LoadScene(const std::string &config) {
     std::ifstream system_config_file(CONFIG_PATH + system_config_file_path);
     const json system_config = json::parse(system_config_file);
     system_config_file.close();
-    _system = SystemFactory::GetSystem(system_config["type"], system_config);
-    _system->UpdateSettings(system_config);
+    _system = new System(system_config);
+    _system->Initialize(system_config);
 
     const auto& renderer_config_json = config_json["renderer"];
     const auto& camera_config_json = renderer_config_json["camera"];
@@ -52,13 +52,14 @@ void Simulator::Simulate(const std::string& output_dir) {
     int itr_id = 0;
     int obj_id = 0;
 	std::ofstream topo_file(output_dir + "/topo");
-    for (auto itr = _system->GetIterator(); !itr->IsDone(); itr->Forward(), obj_id++) {
-        const auto& obj = itr->GetObject();
+
+	for (const auto& obj : _system->_all_objs) {
         MatrixXi topo;
         MatrixXd vertices;
         obj->GetRenderShape(vertices, topo);
         write_binary(topo_file, topo);
-    }
+	}
+
 	topo_file.close();
     const int object_number = obj_id;
 
@@ -66,8 +67,7 @@ void Simulator::Simulate(const std::string& output_dir) {
         _time_stepper->Step(_time_step);
         obj_id = 0;
 		std::ofstream itr_file(output_dir + "/itr" + std::to_string(itr_id));
-        for (auto itr = _system->GetIterator(); !itr->IsDone(); itr->Forward(), obj_id++) {
-            const auto& obj = itr->GetObject();
+        for (const auto& obj : _system->_all_objs) {
             MatrixXi topo;
             MatrixXd vertices;
             obj->GetRenderShape(vertices, topo);
@@ -108,8 +108,7 @@ void Simulator::InitializeScene(Scene &scene) {
     );
 
     int id = 0;
-    for (auto itr = _system->GetIterator(); !itr->IsDone(); itr->Forward(), id++) {
-        const auto obj = itr->GetObject();
+    for (const auto& obj : _system->_all_objs) {
         MatrixXd vertices;
         MatrixXi topo;
         obj->GetRenderShape(vertices, topo);
@@ -125,8 +124,7 @@ void Simulator::Processing(Scene &scene) {
     auto t = clock();
     _time_stepper->Step(_time_step);
     int id = 0;
-    for (auto itr = _system->GetIterator(); !itr->IsDone(); itr->Forward(), id++) {
-        const auto obj = itr->GetObject();
+    for (const auto& obj : _system->_all_objs) {
         MatrixXd vertices;
         MatrixXi topo;
         obj->GetRenderShape(vertices, topo);

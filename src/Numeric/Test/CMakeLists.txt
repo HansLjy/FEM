@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.22)
 
-file(GLOB NUMERIC_TEST_SOURCE *.cpp *.cc)
+file(GLOB NUMERIC_TEST_SOURCE *.cc *.cc)
 
 enable_testing()
 add_executable(NumericTest ${NUMERIC_TEST_SOURCE})

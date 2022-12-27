@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.22)
 
-file(GLOB GEOMETRY_TEST_SOURCE *.cpp)
+file(GLOB GEOMETRY_TEST_SOURCE *.cc)
 
 
 if (GEOMETRY_TEST_SOURCE)

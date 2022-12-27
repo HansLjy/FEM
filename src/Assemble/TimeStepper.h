@@ -11,9 +11,11 @@ class TimeStepper {
 public:
     explicit TimeStepper(const json& config)
         : _collision_aware(config["collision-aware"]), _collision_config(config["collision"]){}
-    virtual void Bind(System& system);
+    
+	virtual void Bind(System& system);
     virtual void Step(double h) const = 0;
     virtual ~TimeStepper() = default;
+	TimeStepper(const TimeStepper& rhs) = delete;
 
 protected:
     System* _system = nullptr;

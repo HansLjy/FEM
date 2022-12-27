@@ -1,12 +1,8 @@
 cmake_minimum_required(VERSION 3.22)
 
 file(GLOB_RECURSE GEOMETRY_SOURCE_FILE
-        RenderShape/CurveShape/*.cpp
-        RenderShape/ClothShape/*.cpp
-        Mesh/*.cpp
-        Rigid/*.cpp
-        RenderShape/TreeShape/*.cpp
-        Collision/*.cpp
+        RenderShape/*.cc
+        Collision/*.cc
     )
 
 if(BUILD_TEST)

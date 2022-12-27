@@ -3,6 +3,7 @@
 //
 
 #include "Object.h"
+#include "JsonUtil.h"
 #include "RenderShape/RenderShape.h"
 
 Object::Object(RenderShape* render_shape, CollisionShape* collision_shape, const Eigen::VectorXd &x) : _render_shape(render_shape), _collision_shape(collision_shape), _x(x), _v(x.size()), _dof(x.size()) {
@@ -149,12 +150,52 @@ Vector3d SampledObject::GetTotalExternalForce() const {
 	return total_external_force;
 }
 
+// Reduced Object
+
+void ReducedObject::GetMass(COO &coo, int x_offset, int y_offset) const {
+	COO coo_full;
+    _proxy->GetMass(coo_full, 0, 0);
+    SparseMatrixXd mass(_proxy->GetDOF(), _proxy->GetDOF());
+    mass.setFromTriplets(coo_full.begin(), coo_full.end());
+    SparseMatrixXd mass_reduced = _base.transpose() * mass * _base;
+	SparseToCOO(mass_reduced, coo, x_offset, y_offset);
+}
+
+
 // Decomposed Object
 
+DecomposedObject::DecomposedObject(Object* proxy, const json& config) : _proxy(proxy) {
+	if (config["is-root"]) {
+        _frame_x = Json2Vec(config["x"]);
+        _frame_v = Vector3d::Zero();
+        _frame_a = Vector3d::Zero();
+        _frame_rotation = Json2Matrix3d(config["rotation"]);
+        _frame_angular_velocity = Vector3d::Zero();
+        _frame_angular_acceleration = Vector3d::Zero();
+    }
+	const auto& children_config = config["children"];
+	for (const auto& child_config : children_config) {
+		AddChild(*DecomposedObjectFactory::GetDecomposedObject(child_config["type"], child_config), child_config["position"]);
+	}
+}
+
 DecomposedObject::~DecomposedObject() {
+	delete _proxy;
 	for (const auto& child : _children) {
 		delete child;
 	}
+}
+
+void DecomposedObject::AddExternalForce(const ExternalForce &force) {
+	_proxy->AddExternalForce(force);
+	for (auto& child : _children) {
+		child->AddExternalForce(force);
+	}
+}
+
+void DecomposedObject::AddChild(DecomposedObject &child, const json &position) {
+	_children.push_back(&child);
+	_children_rest_rotations.push_back(Matrix3d(AngleAxisd(double(position["angle"]) / 180.0 * EIGEN_PI, Json2Vec(position["axis"]))));
 }
 
 Vector3d DecomposedObject::GetFrameX() const {
@@ -227,26 +268,23 @@ void DecomposedObject::Aggregate() {
     }
 }
 
-void ReducedObject::GetMass(COO &coo, int x_offset, int y_offset) const {
-	COO coo_full;
-    _proxy->GetMass(_base * x + _shift, coo_full, 0, 0);
-    SparseMatrixXd mass(_proxy->GetDOF(), _proxy->GetDOF());
-    VarName.setFromTriplets(coo_full.begin(), coo_full.end());
-    SparseMatrixXd mass_reduced = _base.transpose() * mass * _base;
-	SparseToCOO(mass_reduced, coo, x_offset, y_offset)
+void DecomposedObject::Initialize() {
+	VectorXd a(_proxy->GetDOF());
+	a.setZero();
+	CalculateChildrenFrame(a);
 }
 
-#include "Curve/InextensibleCurve.h"
-#include "ReducedObject/ReducedBezierCurve.h"
-#include "Curve/ExtensibleCurve.h"
-#include "Cloth/Cloth.h"
-#include "ReducedObject/ReducedBezierSurface.h"
-#include "Tree/ReducedTreeTrunk.h"
-#include "Tree/ReducedLeaf.h"
+#include "Object/Curve.h"
+#include "Object/Cloth.h"
+#include "Object/DecomposedTree.h"
+#include "Object/ReducedBezierCurve.h"
+#include "Object/ReducedBezierSurface.h"
+#include "Object/ReducedLeaf.h"
+#include "Object/ReducedTreeTrunk.h"
+#include "Object/TreeTrunk.h"
 
 BEGIN_DEFINE_XXX_FACTORY(Object)
-    ADD_PRODUCT("inextensible-curve", InextensibleCurve)
-    ADD_PRODUCT("extensible-curve", ExtensibleCurve)
+    ADD_PRODUCT("curve", Curve)
     ADD_PRODUCT("reduced-bezier-curve", ReducedBezierCurve)
     ADD_PRODUCT("cloth", Cloth)
     ADD_PRODUCT("reduced-bezier-surface", ReducedBezierSurface)

@@ -18,10 +18,10 @@ VectorXd Curve::GetX(const Vector3d &start, const Vector3d &end, int num_segment
 }
 
 
-Curve::Curve(const json& config) : Curve(config["density"], config["alpha-max"], config["alpha-min"], Json2Vec(config["start"]), Json2Vec(config["end"]), config["segments"]) {}
+Curve::Curve(const json& config) : Curve(config["collision-enabled"], config["density"], config["alpha-max"], config["alpha-min"], Json2Vec(config["start"]), Json2Vec(config["end"]), config["segments"]) {}
 
-Curve::Curve(double rho, double alpha_max, double alpha_min, const VectorXd &x)
-    : SampledObject(new CurveShape, new CurveCollisionShape, x, GenerateMass(rho, x)), _k(100 * alpha_min), _num_points(x.size() / 3) {
+Curve::Curve(bool collision_enabled, double rho, double alpha_max, double alpha_min, const VectorXd &x)
+    : SampledObject(new CurveShape, collision_enabled ? (CollisionShape*) new CurveCollisionShape : new NullCollisionShape, x, GenerateMass(rho, x)), _k(100 * alpha_min), _num_points(x.size() / 3) {
     _alpha.resize(_num_points - 1);
     if (_num_points > 2) {
         const double delta_alpha = (alpha_min - alpha_max) / (_num_points - 3);
@@ -44,8 +44,6 @@ Curve::Curve(double rho, double alpha_max, double alpha_min, const VectorXd &x)
     _voronoi_length(0) = _rest_length(0) / 2;
     _voronoi_length(_num_points - 1) = _rest_length(_num_points - 2) / 2;
 }
-
-#include "JsonUtil.h"
 
 VectorXd Curve::GenerateMass(double rho, const Eigen::VectorXd &x) {
     int num_points = x.size() / 3;

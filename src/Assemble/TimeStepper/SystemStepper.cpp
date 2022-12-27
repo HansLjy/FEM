@@ -3,6 +3,7 @@
 //
 
 #include "SystemStepper.h"
+#include "Target.h"
 
 SystemStepper::SystemStepper(const json &config) : TimeStepper(config) {
     const auto& integrator_config = config["integrator"];
@@ -11,7 +12,7 @@ SystemStepper::SystemStepper(const json &config) : TimeStepper(config) {
 
 void SystemStepper::Bind(System &system) {
     TimeStepper::Bind(system);
-    _target = new Target(SystemIterator(system));
+    _target = new Target(system._objs);
 }
 
 void SystemStepper::Step(double h) const {
@@ -21,4 +22,3 @@ void SystemStepper::Step(double h) const {
 SystemStepper::~SystemStepper() {
     delete _integrator;
 }
-

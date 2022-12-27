@@ -7,7 +7,9 @@
 
 #include "EigenAll.h"
 #include "Pattern.h"
-#include "ObjectIterator.h"
+
+class Object;
+class ObjectIterator;
 
 /**
  * Target is the general target problem encountered
@@ -15,7 +17,9 @@
  */
 class Target {
 public:
-    explicit Target(const ObjectIterator& objs);
+    explicit Target(const std::vector<Object*>& objs) : Target(objs, 0, objs.size()) {}
+	explicit Target(const std::vector<Object*>& objs, int begin, int end);
+
 
     int GetDOF() const {
         return _dof;

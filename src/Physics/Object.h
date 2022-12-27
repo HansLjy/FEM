@@ -17,6 +17,7 @@ class DecomposedObject;
 
 class Object {
 public:
+	Object() = default;
     Object(RenderShape* render_shape, CollisionShape* collision_shape, const VectorXd& x);
     Object(RenderShape* render_shape, CollisionShape* collision_shape, const VectorXd& x, const VectorXd& v);
 
@@ -57,6 +58,9 @@ public:
 	virtual Vector3d GetFrameX() const;
 	virtual Matrix3d GetFrameRotation() const;
 
+	virtual bool IsDcomposed() { return false;}
+	virtual void Initialize() {}
+
     virtual ~Object();
     Object(const Object& rhs);
     Object& operator=(const Object& rhs) = delete;
@@ -92,6 +96,8 @@ protected:
 	VectorXd _mass;
 };
 
+class ReducedRenderShape;
+
 class ReducedObject : public Object {
 public:
 	ReducedObject(RenderShape* render_shape, CollisionShape* collision_shape, const VectorXd& x, Object* proxy, const SparseMatrixXd& base, const VectorXd& shift)
@@ -126,14 +132,20 @@ public:
 		_proxy->SetFrame(rotation, shift);
 	}
 
+	friend class ReducedRenderShape;
+
 protected:
 	Object* _proxy;
 	const SparseMatrixXd _base;
 	const VectorXd _shift;
 };
 
+class System;
+
 class DecomposedObject : public Object {
 public:
+	explicit DecomposedObject(Object* proxy, const json& config);
+
 	int GetDOF() const override {return _proxy->GetDOF();};
 	const VectorXd & GetCoordinate() const override {return _proxy->GetCoordinate();}
 	const VectorXd & GetVelocity() const override {return _proxy->GetVelocity();}
@@ -149,7 +161,7 @@ public:
 	VectorXd GetPotentialGradient(const Ref<const VectorXd> &x) const override {return _proxy->GetPotentialGradient(x);}
 	void GetPotentialHessian(const Ref<const VectorXd> &x, COO &coo, int x_offset, int y_offset) const override {_proxy->GetPotentialHessian(x, coo, x_offset, y_offset);}
 
-	void AddExternalForce(const ExternalForce &force) override {_proxy->AddExternalForce(force);}
+	void AddExternalForce(const ExternalForce &force) override;
 	VectorXd GetExternalForce() const override;
 	Vector3d GetTotalExternalForce() const override {return _proxy->GetTotalExternalForce();}
 
@@ -172,22 +184,28 @@ public:
 	 * @brief Calculate frame of the children
 	 * @note This is a non-recursive function
 	 */
-	virtual void CalculateChildrenFrame() = 0;
+	virtual void CalculateChildrenFrame(const Ref<const VectorXd>& a) = 0;
 	/**
 	 * @brief Aggregate infomation from bottom to top
 	 * @note This is a recursive function
 	 */
 	void Aggregate();
-	virtual void AddChild(const DecomposedObject& child, const json& position) = 0;
+	void AddChild(DecomposedObject& child, const json& position);
+
+	bool IsDcomposed() override {return true;}
+	void Initialize() override;
 	
 	~DecomposedObject() override;
 	DecomposedObject(const DecomposedObject& rhs);
+
+	friend class System;
 
 protected:
 	Object* _proxy;
 
 	std::vector<DecomposedObject*> _children;
-	std::vector<SparseMatrixXd> _children_projections;
+	std::vector<Matrix3d> _children_rest_rotations;
+	std::vector<SparseMatrixXd> _children_projections; // this will be set by derived class during initialization
 	
 	std::vector<MatrixXd> _extra_vertices;
 	std::vector<MatrixXi> _extra_edge_topos;
@@ -213,5 +231,6 @@ protected:
 };
 
 DECLARE_XXX_FACTORY(Object)
+DECLARE_XXX_FACTORY(DecomposedObject)
 
 #endif //FEM_OBJECT_H

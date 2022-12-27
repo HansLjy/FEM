@@ -12,23 +12,23 @@
 DEFINE_CLONE(Object, Cloth)
 
 Cloth::Cloth(const json &config)
-    : Cloth(config["density"], config["thickness"], config["k-stretch"], config["k-shear"], config["k-bend-max"], config["k-bend-min"],
+    : Cloth(config["collision-enabled"], config["density"], config["thickness"], config["k-stretch"], config["k-shear"], config["k-bend-max"], config["k-bend-min"],
             Json2Vec<2>(config["max-direction"]), Json2Vec(config["start"]), Json2Vec(config["u-end"]), Json2Vec(config["v-end"]),
             config["u-segments"], config["v-segments"], config["stretch-u"], config["stretch-v"]){}
 
-Cloth::Cloth(double rho, double thickness, double k_stretch, double k_shear, double k_bend_max, double k_bend_min,
+Cloth::Cloth(bool collision_enabled, double rho, double thickness, double k_stretch, double k_shear, double k_bend_max, double k_bend_min,
              const Eigen::Vector2d &max_bend_dir, const Eigen::Vector3d &start, const Eigen::Vector3d &u_end,
              const Eigen::Vector3d &v_end, int num_u_segments, int num_v_segments, double stretch_u, double stretch_v)
-             : Cloth(rho, thickness, k_stretch, k_shear, k_bend_max, k_bend_min, max_bend_dir,
+             : Cloth(collision_enabled, rho, thickness, k_stretch, k_shear, k_bend_max, k_bend_min, max_bend_dir,
                      GeneratePosition(start, u_end, v_end, num_u_segments, num_v_segments),
                      GenerateUVCoord(start, u_end, v_end, num_u_segments, num_v_segments),
                      GenerateTopo(num_u_segments, num_v_segments),
                      stretch_u, stretch_v) {}
 
-Cloth::Cloth(double rho, double thickness, double k_stretch, double k_shear, double k_bend_max, double k_bend_min,
+Cloth::Cloth(bool collision_enabled, double rho, double thickness, double k_stretch, double k_shear, double k_bend_max, double k_bend_min,
              const Eigen::Vector2d &max_bend_dir, const Eigen::VectorXd &x, const Eigen::VectorXd &uv_corrd,
              const Eigen::MatrixXi &topo, double stretch_u, double stretch_v)
-             : SampledObject(new ClothShape, new ClothCollisionShape, x, GenerateMass(rho, uv_corrd, topo)),
+             : SampledObject(new ClothShape, collision_enabled ? (CollisionShape*)(new ClothCollisionShape) : new NullCollisionShape, x, GenerateMass(rho, uv_corrd, topo)),
                _num_points(x.size() / 3),
                _num_triangles(topo.rows()),
                _k_stretch(k_stretch), _k_shear(k_shear),

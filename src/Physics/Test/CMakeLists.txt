@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.22)
 
 enable_testing()
 
-file(GLOB PhysicsTestSource *.cpp)
+file(GLOB PhysicsTestSource *.cc)
 
 add_executable(PhysicsTest ${PhysicsTestSource})
 

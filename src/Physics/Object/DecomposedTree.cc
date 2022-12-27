@@ -1,34 +1,29 @@
-//
-// Created by hansljy on 11/9/22.
-//
+#include "DecomposedTree.h"
+#include "ReducedTreeTrunk.h"
 
-#include "TreeDomain.h"
-#include "Tree/ReducedTreeTrunk.h"
-#include "typeinfo"
-
-TreeDomain::TreeDomain(const nlohmann::json &config) :
-    Domain(config), _tree_trunk(
-        _subdomains.empty()
-        ? nullptr
-        : dynamic_cast<ReducedTreeTrunk*>(GetObject(GetIndex("trunk")))
-    ), _tree_trunk_offset(0) {}
-
-void TreeDomain::UpdateSettings(const nlohmann::json &config) {
-    Domain::UpdateSettings(config);
-    _tree_trunk_offset = _subdomains.empty() ? 0 : GetOffset(GetIndex("trunk"));
+DecomposedTreeTrunk::DecomposedTreeTrunk(const json& config)
+: DecomposedObject(new ReducedTreeTrunk(config["proxy"]), config) {
+	_tree_trunk = dynamic_cast<ReducedTreeTrunk*>(_proxy);
+	const int num_children = _children.size();
+	const auto& children_config = config["children"];
+	for (int i = 0; i < num_children; i++) {
+		const double distance = children_config[i]["distance-to-root"];
+		_children_projections.push_back(GetChildProjection(distance));
+		_children_positions.push_back(distance);
+	}
 }
 
-void TreeDomain::CalculateSubdomainFrame(const Eigen::VectorXd &a) {
-    const auto& points = _tree_trunk->_proxy->GetCoordinate();
+void DecomposedTreeTrunk::CalculateChildrenFrame(const Ref<const VectorXd> &a) {
+	const auto& points = _tree_trunk->_proxy->GetCoordinate();
     const auto& velocity = _tree_trunk->_proxy->GetVelocity();
-    const VectorXd acceleration = _tree_trunk->_base * a.segment(_tree_trunk_offset, _tree_trunk->GetDOF());
+    const VectorXd acceleration = _tree_trunk->_base * a;
     const int num_points = points.size() / 3;
     const int num_segments = num_points - 1;
     const double delta_t = 1.0 / num_segments;
-    const int num_subdomains = _subdomains.size();
+    const int num_children = _children.size();
 
     double current_t = 0;
-    int num_subdomain_processed = 0;
+    int num_children_processed = 0;
     Matrix3d rotation_accumulated = Matrix3d::Identity();    // the root frame is supposed to be I3
     Vector3d x_prev = _tree_trunk->_x_root;              // x_{i - 1}
     Vector3d x_current = points.segment<3>(0);          // x_i
@@ -111,9 +106,9 @@ void TreeDomain::CalculateSubdomainFrame(const Eigen::VectorXd &a) {
                             + Ri * alpha_accumulated * Ri.transpose();
         omega_accumulated = current_omega + Ri * omega_accumulated * Ri.transpose();
 
-        while (num_subdomain_processed < num_subdomains && _positions[num_subdomain_processed] <= current_t + delta_t) {
+        while (num_children_processed < num_children && _children_positions[num_children_processed] <= current_t + delta_t) {
             // calculate the physics quantities relative to current frame
-            const double portion = (_positions[num_subdomain_processed] - current_t) / delta_t;
+            const double portion = (_children_positions[num_children_processed] - current_t) / delta_t;
             Matrix3d rotation_rel = rotation_accumulated;
             Vector3d x_rel = x_current + portion * (x_next - x_current);
             Vector3d v_rel = v_current + portion * (v_next - v_current);
@@ -121,26 +116,24 @@ void TreeDomain::CalculateSubdomainFrame(const Eigen::VectorXd &a) {
             Vector3d omega_rel = SkewVector(omega_accumulated);
             Vector3d alpha_rel = SkewVector(alpha_accumulated);
 
-            auto subdomain = dynamic_cast<TreeDomain*>(_subdomains[num_subdomain_processed]);
+            auto child = dynamic_cast<DecomposedTreeTrunk*>(_children[num_children_processed]);
 
             const auto& R = _frame_rotation;
-            subdomain->_frame_x = _frame_x + R * x_rel;
-            subdomain->_frame_v = _frame_v + _frame_angular_velocity.cross(R * x_rel) + R * v_rel;
-            subdomain->_frame_a = _frame_a + _frame_angular_acceleration.cross(R * x_rel)
+            child->_frame_x = _frame_x + R * x_rel;
+            child->_frame_v = _frame_v + _frame_angular_velocity.cross(R * x_rel) + R * v_rel;
+            child->_frame_a = _frame_a + _frame_angular_acceleration.cross(R * x_rel)
                                   + _frame_angular_velocity.cross(_frame_angular_velocity.cross(R * x_rel))
                                   + 2 * _frame_angular_velocity.cross(R * v_rel) + R * a_rel;
 //            subdomain->_frame_rotation = R * rotation_rel;
-            subdomain->_frame_rotation = R * rotation_rel * _subdomain_rest_rotations[num_subdomain_processed];
-            subdomain->_frame_angular_velocity = _frame_angular_velocity + SkewVector(R * HatMatrix(omega_rel) * R.transpose());
-            subdomain->_frame_angular_acceleration = _frame_angular_acceleration + SkewVector(
+            child->_frame_rotation = R * rotation_rel * _children_rest_rotations[num_children_processed];
+            child->_frame_angular_velocity = _frame_angular_velocity + SkewVector(R * HatMatrix(omega_rel) * R.transpose());
+            child->_frame_angular_acceleration = _frame_angular_acceleration + SkewVector(
                 R * HatMatrix(alpha_rel) * R.transpose()
                 + HatMatrix(_frame_angular_velocity) * R * HatMatrix(omega_rel) * R.transpose()
                 - R * HatMatrix(omega_rel) * R.transpose() * HatMatrix(_frame_angular_velocity)
             );
 
-            subdomain->SetObjectFrame();
-
-            num_subdomain_processed++;
+            num_children_processed++;
         }
 
         x_prev = x_current;
@@ -152,36 +145,12 @@ void TreeDomain::CalculateSubdomainFrame(const Eigen::VectorXd &a) {
     }
 }
 
-void TreeDomain::SetObjectExtraForce() {
-    int cur_offset = 0;
-    for (auto& obj : _objs) {
-        obj->_extra_force = _inertial_force.segment(cur_offset, obj->GetDOF());
-        cur_offset += obj->GetDOF();
-    }
-    if (!_subdomains.empty()) {
-        _tree_trunk->_extra_force += _interface_force;
-    }
-}
-
-void TreeDomain::SetObjectExtraMass() {
-    if (!_subdomains.empty()) {
-        _tree_trunk->_extra_mass = _lumped_mass;
-    }
-}
-
-SparseMatrixXd TreeDomain::GetSubdomainProjection(const nlohmann::json &position) {
-    const double t = position["distance-to-root"];
-    const int num_segments = _tree_trunk->_proxy->GetDOF() / 3 - 1;
+SparseMatrixXd DecomposedTreeTrunk::GetChildProjection(double distance) const {
+	const int num_segments = _tree_trunk->_proxy->GetDOF() / 3 - 1;
     const double delta_t = 1.0 / num_segments;
-    const int segment_id = floor(t / delta_t);
-    const double coef = (t - delta_t * segment_id) / delta_t;
+    const int segment_id = floor(distance / delta_t);
+    const double coef = (distance - delta_t * segment_id) / delta_t;
     const auto& project_prev = _tree_trunk->_base.block(3 * segment_id, 0, 3, 9);
     const auto& project_next = _tree_trunk->_base.block(3 * (segment_id + 1), 0, 3, 9);
     return project_prev * (1 - coef) + project_next * coef;
-}
-
-#include "JsonUtil.h"
-
-void TreeDomain::RecordSubdomain(const nlohmann::json &position) {
-    _positions.push_back(position["distance-to-root"]);
 }
