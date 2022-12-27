@@ -2,7 +2,7 @@
 // Created by hansljy on 10/28/22.
 //
 
-#include "Cloth/Cloth.h"
+#include "Object/Cloth.h"
 #include "FiniteDifference.h"
 #include "gtest/gtest.h"
 #include "spdlog/spdlog.h"

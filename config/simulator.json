@@ -4,7 +4,7 @@
     "time-step": 0.01
   },
   "time-stepper": {
-    "type": "domain-bfs-stepper",
+    "type": "system-stepper",
     "collision-aware": false,
     "collision": {
       "type": "ipc-barrier",
@@ -27,7 +27,7 @@
       }
     }
   },
-  "system-config": "/model/tree-model.json",
+  "system-config": "/model/test.json",
   "renderer": {
     "camera":  {
       "position": [10, 0, 10],

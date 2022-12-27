@@ -3,7 +3,7 @@
 //
 
 #include "gtest/gtest.h"
-#include "Tree/TreeTrunk.h"
+#include "Object/TreeTrunk.h"
 
 class TreeTrunkForTest;
 void TreeTrunkRandomize(TreeTrunkForTest& tree_trunk);
