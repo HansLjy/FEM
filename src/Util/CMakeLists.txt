@@ -60,7 +60,7 @@ CPMAddPackage(
 )
 
 
-set(FEM_UTILITY_SOURCE EigenAll.cpp JsonUtil.cpp)
+set(FEM_UTILITY_SOURCE EigenAll.cc JsonUtil.cc)
 
 if (BUILD_TEST)
 	add_subdirectory(TestUtility)

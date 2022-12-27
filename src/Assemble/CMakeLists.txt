@@ -5,7 +5,7 @@ file(GLOB_RECURSE ASSEMBLE_SOURCE
         Target/*.cc
         )
 
-list(APPEND ASSEMBLE_SOURCE System.cpp TimeStepper.cpp)
+list(APPEND ASSEMBLE_SOURCE System.cc TimeStepper.cc)
 
 add_library(Assemble ${ASSEMBLE_SOURCE})
 target_include_directories(Assemble PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
