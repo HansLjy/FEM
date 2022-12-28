@@ -107,7 +107,6 @@ void Simulator::InitializeScene(Scene &scene) {
         _light_Kc, _light_Kl, _light_Kq
     );
 
-    int id = 0;
     for (const auto& obj : _system->_all_objs) {
         MatrixXd vertices;
         MatrixXi topo;
@@ -124,11 +123,12 @@ void Simulator::Processing(Scene &scene) {
     auto t = clock();
     _time_stepper->Step(_time_step);
     int id = 0;
+
     for (const auto& obj : _system->_all_objs) {
         MatrixXd vertices;
         MatrixXi topo;
         obj->GetRenderShape(vertices, topo);
-        scene.SelectData(_obj_id2scene_id[id]);
+        scene.SelectData(_obj_id2scene_id[id++]);
         scene.SetMesh(vertices, topo, obj->GetFrameRotation(), obj->GetFrameX());
     }
     auto delta_t = clock() - t;

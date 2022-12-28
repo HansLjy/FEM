@@ -66,6 +66,8 @@ void System::Initialize(const json &config) {
         _offset[i] = cur_offset;
         cur_offset += _objs[i]->GetDOF();
     }
+
+	// For decomposed object
 	_all_objs.clear();
 	_level_bar.clear();
 	int head = 0, tail = 0, level_end = 0;
@@ -87,7 +89,6 @@ void System::Initialize(const json &config) {
 			}
 		}
 	}
-
 }
 
 System::~System(){

@@ -7,7 +7,7 @@ DecomposedTreeTrunk::DecomposedTreeTrunk(const json& config)
 	const int num_children = _children.size();
 	const auto& children_config = config["children"];
 	for (int i = 0; i < num_children; i++) {
-		const double distance = children_config[i]["distance-to-root"];
+		const double distance = children_config[i]["position"]["distance-to-root"];
 		_children_projections.push_back(GetChildProjection(distance));
 		_children_positions.push_back(distance);
 	}

@@ -23,7 +23,7 @@ void IPIntegrator::Step(Target &target, double h) const {
     SparseMatrixXd mass;
     target.GetMass(mass);
 
-    Eigen::SimplicialLDLT LDLT_solver(mass);
+    Eigen::SimplicialLDLT<SparseMatrixXd> LDLT_solver(mass);
     VectorXd a = LDLT_solver.solve(force);
 
     VectorXd x_hat = x + h * v + h * h * a;

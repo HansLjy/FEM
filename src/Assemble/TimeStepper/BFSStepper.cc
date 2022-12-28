@@ -19,7 +19,7 @@ void BFSStepper::Bind(System &system) {
 }
 
 void BFSStepper::Step(double h) const {
-	for (int i = 0; i < _system->_level_bar[0]; i++) {
+	for (int i = 0; i < _system->_level_bar[1]; i++) {
 		if (_system->_all_objs[i]->IsDcomposed()) {
 			auto root = dynamic_cast<DecomposedObject*>(_system->_all_objs[i]);
 			root->Aggregate();
