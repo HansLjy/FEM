@@ -14,7 +14,7 @@ public:
         : TreeTrunkForTest(rho, alpha, GenerateX(start, end, num_segments), root) {}
 
     TreeTrunkForTest(double rho, double youngs_module, const VectorXd &x, const Vector3d& root)
-        : Object(x), TreeTrunk(rho, youngs_module, 0.1, 0.1, x, root) {}
+        : TreeTrunk(false, rho, youngs_module, 0.1, 0.1, x, root) {}
 
     static VectorXd GenerateX(const Vector3d& start, const Vector3d& end, int num_segments) {
         VectorXd x(3 * (num_segments + 1));
@@ -53,7 +53,7 @@ TEST(TreeTrunkTest, EnergyGradientTest) {
     EXPECT_NEAR((numeric_hessian - analytic_hessian).norm() / numeric_hessian.size(), 0, 1e-2);
 }
 
-#include "Tree/ReducedTreeTrunk.h"
+#include "Object/ReducedTreeTrunk.h"
 
 class ReducedTreeTrunkForTest;
 void ReducedTreeTrunkRandomize(ReducedTreeTrunkForTest& tree_trunk);
@@ -61,7 +61,7 @@ void ReducedTreeTrunkRandomize(ReducedTreeTrunkForTest& tree_trunk);
 class ReducedTreeTrunkForTest : public ReducedTreeTrunk {
 public:
     ReducedTreeTrunkForTest(int num_segments, double rho, double youngs_module, const Vector3d& root, const VectorXd &control_points)
-            : ReducedTreeTrunk(num_segments, rho, youngs_module, 0.1, 0.1, root, control_points) {}
+            : ReducedTreeTrunk(false, num_segments, rho, youngs_module, 0.1, 0.1, root, control_points) {}
 
     friend void ReducedTreeTrunkRandomize(ReducedTreeTrunkForTest& tree_trunk);
 };

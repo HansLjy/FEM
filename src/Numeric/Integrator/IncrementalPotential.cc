@@ -23,6 +23,11 @@ void IPIntegrator::Step(Target &target, double h) const {
     SparseMatrixXd mass;
     target.GetMass(mass);
 
+	// std::cerr << "Mass:\n" << mass.toDense() << std::endl;
+	// std::cerr << "Force:\n" << force.transpose() << std::endl;
+
+	// exit(-1);
+
     Eigen::SimplicialLDLT<SparseMatrixXd> LDLT_solver(mass);
     VectorXd a = LDLT_solver.solve(force);
 

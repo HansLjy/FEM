@@ -15,8 +15,7 @@ public:
     ClothForTest(double rho, double thickness, double k_stretch, double k_shear, double k_bend,
                  const Vector3d& start, const Vector3d& u_end, const Vector3d& v_end,
                  int num_u_segments, int num_v_segments, double stretch_u, double stretch_v)
-                 : Object(Cloth::GeneratePosition(start, u_end, v_end, num_u_segments, num_v_segments)),
-                   Cloth(rho, thickness, k_stretch, k_shear, k_bend, k_bend, Vector2d::Random(),
+                 : Cloth(false, rho, thickness, k_stretch, k_shear, k_bend, k_bend, Vector2d::Random(),
                          start, u_end, v_end,
                          num_u_segments, num_v_segments) {}
 

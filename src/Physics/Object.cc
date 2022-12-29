@@ -41,7 +41,7 @@ VectorXd Object::GetExternalForce() const {
 	ext_force.setZero();
 
 	for (const auto& external_force: _external_forces) {
-		ext_force += external_force->EnergyGradient(*this, GetFrameRotation(), GetFrameX());
+		ext_force -= external_force->EnergyGradient(*this, GetFrameRotation(), GetFrameX());
 	}
 	return ext_force;
 }
@@ -180,6 +180,9 @@ DecomposedObject::DecomposedObject(Object* proxy, const json& config) : _proxy(p
 	for (const auto& child_config : children_config) {
 		AddChild(*DecomposedObjectFactory::GetDecomposedObject(child_config["type"], child_config), child_config["position"]);
 	}
+
+	_interface_force.resize(_proxy->GetDOF());
+	_lumped_mass.resize(_proxy->GetDOF(), _proxy->GetDOF());
 }
 
 DecomposedObject::~DecomposedObject() {
@@ -242,23 +245,15 @@ void DecomposedObject::Aggregate() {
 	}
 	
 	int num_children = _children.size();
-	int dof = GetDOF();
 	
 	/* Lumped Mass */
-	if (_lumped_mass.rows() != dof || _lumped_mass.cols() != dof) {
-		_lumped_mass.resize(dof, dof);
-	}
-	
+	_lumped_mass.setZero();
 	for (int i = 0; i < num_children; i++) {
 		_lumped_mass += _children[i]->_total_mass * _children_projections[i].transpose() * _children_projections[i];
 	}
 
 	/* Interface Force */
-	if(_interface_force.size() != dof) {
-        _interface_force.resize(dof);
-    }
     _interface_force.setZero();
-
     Matrix3d frame_angular_velocity = HatMatrix(_frame_angular_velocity);
     Matrix3d omega = _frame_rotation.transpose() * frame_angular_velocity;
     Matrix3d omega2 = omega * frame_angular_velocity;
@@ -294,6 +289,7 @@ BEGIN_DEFINE_XXX_FACTORY(Object)
     ADD_PRODUCT("cloth", Cloth)
     ADD_PRODUCT("curve", Curve)
 	ADD_PRODUCT("decomposed-treetrunk", DecomposedTreeTrunk)
+	ADD_PRODUCT("decomposed-leaf", DecomposedLeaf)
     ADD_PRODUCT("reduced-bezier-curve", ReducedBezierCurve)
     ADD_PRODUCT("reduced-bezier-surface", ReducedBezierSurface)
 	ADD_PRODUCT("reduced-leaf", ReducedLeaf)
@@ -303,4 +299,5 @@ END_DEFINE_XXX_FACTORY
 
 BEGIN_DEFINE_XXX_FACTORY(DecomposedObject)
 	ADD_PRODUCT("decomposed-treetrunk", DecomposedTreeTrunk)
+	ADD_PRODUCT("decomposed-leaf", DecomposedLeaf)
 END_DEFINE_XXX_FACTORY

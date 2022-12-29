@@ -69,7 +69,7 @@ protected:
     static VectorXd GenerateUVCoord(const Vector3d& start, const Vector3d& u_end, const Vector3d& v_end,
                                     int num_u_segments, int num_v_segments);
     static MatrixXi GenerateTopo(int num_u_segments, int num_v_segments);
-    static VectorXd GenerateMass(double rho, const VectorXd &uv_coord, const MatrixXi &topo);
+    static VectorXd GenerateMass(double rho, double thickness, const VectorXd &uv_coord, const MatrixXi &topo);
 	static Eigen::Matrix<double, 9, 5> CalculatePFPX(const Vector3d& e0, const Vector3d& e1, const Vector3d& e2);
 };
 

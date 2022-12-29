@@ -137,6 +137,7 @@ protected:
 };
 
 class System;
+class DecomposedTreeTrunk;
 
 class DecomposedObject : public Object {
 public:
@@ -194,6 +195,7 @@ public:
 	DecomposedObject(const DecomposedObject& rhs);
 
 	friend class System;
+	friend class DecomposedTreeTrunk;
 
 protected:
 	Object* _proxy;

@@ -33,6 +33,6 @@ void Newton::Optimize(const ValueFunc &f, const GradiantFunc &g, const HessianFu
     if (step > 10) {
         spdlog::warn("Newton optimization not converge! Residue: {}", gradient.norm() / gradient.size());
     } else {
-//        spdlog::info("Newton optimization converges in {} steps", step);
+    //    spdlog::info("Newton optimization converges in {} steps", step);
     }
 }

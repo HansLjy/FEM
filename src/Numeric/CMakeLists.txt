@@ -16,5 +16,5 @@ target_link_libraries(Numeric PRIVATE FEMUtility)
 target_link_libraries(Numeric PRIVATE Assemble)
 
 if(BUILD_TEST)
-    add_subdirectory(Test)
+    # add_subdirectory(Test)
 endif()

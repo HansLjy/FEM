@@ -13,8 +13,7 @@ SampledObjectGravity::SampledObjectGravity(const nlohmann::json &config) : Sampl
 
 SampledObjectGravity::SampledObjectGravity(const Eigen::Vector3d &g) : _g(g) {}
 
-double SampledObjectGravity::Energy(const Object &obj, const Eigen::VectorXd &x, const Eigen::Matrix3d &rotation,
-                                    const Eigen::Vector3d &position) const {
+double SampledObjectGravity::Energy(const Object &obj, const Eigen::VectorXd &x, const Eigen::Matrix3d &rotation, const Eigen::Vector3d &position) const {
     const auto& sampled_obj = dynamic_cast<const SampledObject&>(obj);
     double energy = 0;
     const int num_points = sampled_obj._mass.size();

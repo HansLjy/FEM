@@ -26,7 +26,7 @@ Cloth::Cloth(bool collision_enabled, double rho, double thickness, double k_stre
 Cloth::Cloth(bool collision_enabled, double rho, double thickness, double k_stretch, double k_shear, double k_bend_max, double k_bend_min,
              const Eigen::Vector2d &max_bend_dir, const Eigen::VectorXd &x, const Eigen::VectorXd &uv_corrd,
              const Eigen::MatrixXi &topo, double stretch_u, double stretch_v)
-             : SampledObject(new ClothShape, collision_enabled ? (CollisionShape*)(new ClothCollisionShape) : new NullCollisionShape, x, GenerateMass(rho, uv_corrd, topo)),
+             : SampledObject(new ClothShape, collision_enabled ? (CollisionShape*)(new ClothCollisionShape) : new NullCollisionShape, x, GenerateMass(rho, thickness, uv_corrd, topo)),
                _num_points(x.size() / 3),
                _num_triangles(topo.rows()),
                _k_stretch(k_stretch), _k_shear(k_shear),
@@ -490,7 +490,7 @@ MatrixXi Cloth::GenerateTopo(int num_u_segments, int num_v_segments) {
     return topo;
 }
 
-VectorXd Cloth::GenerateMass(double rho, const VectorXd &uv_coord, const MatrixXi &topo) {
+VectorXd Cloth::GenerateMass(double rho, double thickness, const VectorXd &uv_coord, const MatrixXi &topo) {
     int num_triangles = topo.rows();
     int num_points = uv_coord.size() / 2;
     VectorXd mass(num_points);
@@ -501,7 +501,7 @@ VectorXd Cloth::GenerateMass(double rho, const VectorXd &uv_coord, const MatrixX
         Vector2d e2 = uv_coord.segment<2>(index(2) * 2) - uv_coord.segment<2>(index(0) * 2);
         const double S = abs(e1(0) * e2(1) - e1(1) * e2(0)) / 2;
         for (int j = 0; j < 3; j++) {
-            mass(index(j)) += S * rho / 3;
+            mass(index(j)) += S * rho * thickness / 3;
         }
     }
     return mass;

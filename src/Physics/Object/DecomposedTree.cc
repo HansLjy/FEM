@@ -1,5 +1,6 @@
 #include "DecomposedTree.h"
 #include "ReducedTreeTrunk.h"
+#include "ReducedLeaf.h"
 
 DecomposedTreeTrunk::DecomposedTreeTrunk(const json& config)
 : DecomposedObject(new ReducedTreeTrunk(config["proxy"]), config) {
@@ -116,7 +117,7 @@ void DecomposedTreeTrunk::CalculateChildrenFrame(const Ref<const VectorXd> &a) {
             Vector3d omega_rel = SkewVector(omega_accumulated);
             Vector3d alpha_rel = SkewVector(alpha_accumulated);
 
-            auto child = dynamic_cast<DecomposedTreeTrunk*>(_children[num_children_processed]);
+            auto child = dynamic_cast<DecomposedObject*>(_children[num_children_processed]);
 
             const auto& R = _frame_rotation;
             child->_frame_x = _frame_x + R * x_rel;
@@ -154,3 +155,5 @@ SparseMatrixXd DecomposedTreeTrunk::GetChildProjection(double distance) const {
     const auto& project_next = _tree_trunk->_base.block(3 * (segment_id + 1), 0, 3, 9);
     return project_prev * (1 - coef) + project_next * coef;
 }
+
+DecomposedLeaf::DecomposedLeaf(const json& config) : DecomposedObject(new ReducedLeaf(config["proxy"]), config) {}
