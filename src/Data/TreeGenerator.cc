@@ -10,9 +10,9 @@
 using nlohmann::json;
 
 struct Trunk {
-    Trunk(int segments, double length, double density, double youngs_module,
+    Trunk(bool collision_enabled, int segments, double length, double density, double youngs_module,
           double radius_max, double radius_min)
-        : _segments(segments), _density(density), _youngs_module(youngs_module), _radius_max(radius_max), _radius_min(radius_min) {
+        : _collision_enabled(collision_enabled), _segments(segments), _density(density), _youngs_module(youngs_module), _radius_max(radius_max), _radius_min(radius_min) {
         _control_points = {
                 0, 0, 0,
                 0, 0, length / 3,
@@ -23,8 +23,7 @@ struct Trunk {
 
     operator json() const {
         json object;
-        object["type"] = "tree-trunk";
-        object["name"] = "trunk";
+		object["collision-enabled"] = _collision_enabled;
         object["density"] = _density;
         object["youngs-module"] = _youngs_module;
         object["radius-max"] = _radius_max;
@@ -35,6 +34,7 @@ struct Trunk {
         return object;
     }
 
+	bool _collision_enabled;
     int _segments;
     double _density;
     double _youngs_module;
@@ -98,6 +98,7 @@ struct Gravity {
     std::string _name;
 };
 
+bool collision_enabled;
 int max_level;
 double root_length;
 int max_fan_out;
@@ -114,51 +115,46 @@ int leaf_segments;
 double k_stretch, k_shear, k_bend_max, k_bend_min;
 Vector3d g;
 
-json DFS(int cur_level, double cur_length, double parent_radius_max, double parent_radius_min, double theta) {
-    double distance_to_root = 0.6;
-    double cur_radius_max = 0.5 * ((1 - distance_to_root) * parent_radius_max + distance_to_root * parent_radius_min);
-    double cur_radius_min = cur_radius_max / parent_radius_max * parent_radius_min;
+json GenerateTreeObject(int level, double angle, double cur_length, double current_radius_max, double current_radius_min, int fanout, int max_level) {
+	json tree;
+	
+	tree["type"] = "decomposed-treetrunk";
+	tree["proxy"] = json(Trunk(collision_enabled, trunk_segments, cur_length, trunk_density, youngs_module, current_radius_max, current_radius_min));
 
-    double angle = 45;
-//    Vector3d axis = (Vector3d() << Vector2d::Random().normalized(), 0).finished();
-    Vector3d axis = (Vector3d() << cos(theta), sin(theta), 0).finished();
+	if (level == 0) {
+		tree["name"] = "treetrunk";
+		tree["is-root"] = true;
+		tree["x"] = {0, 0, 0};
+		tree["rotation"] = {
+			1, 0, 0,
+			0, 1, 0,
+			0, 0, 1
+		};
+	} else {
+		tree["is-root"] = false;
+		tree["position"]["angle"] = 45;
+		tree["position"]["distance-to-root"] = 0.6;
 
-    json subdomain;
-    subdomain["type"] = "tree-domain";
-    subdomain["is-root"] = false;
-    subdomain["position"]["distance-to-root"] = distance_to_root;
-    subdomain["position"]["angle"] = angle;
-    subdomain["position"]["axis"] = {axis(0), axis(1), axis(2)};
+		const Vector3d vert = (Vector3d() << 0, 0, 1).finished();
+		const Vector3d base_axis = (Vector3d() << 1, 0, 0).finished();
+		Matrix3d rotation = Matrix3d(Eigen::AngleAxisd(angle, vert));
+		Vector3d axis = rotation * base_axis;
+		tree["position"]["axis"] = {axis(0), axis(1), axis(2)};
+	}
 
-    if (cur_level == max_level) {
-        subdomain["system"]["objects"] = {
-                json(Leaf(leaf_density, leaf_thickness, k_stretch, k_shear, k_bend_max, k_bend_min, leaf_segments, leaf_segments, leaf_long_axis, leaf_short_axis))
-        };
-        subdomain["system"]["external-forces"] = {
-                json(Gravity(g, "leaf"))
-        };
-    } else {
-        subdomain["system"]["objects"] = {
-                json(Trunk(trunk_segments, cur_length, trunk_density, youngs_module, cur_radius_max, cur_radius_min))
-        };
-        subdomain["system"]["external-forces"] = {
-                json(Gravity(g, "trunk"))
-        };
-    }
-    subdomain["system"]["constraints"] = json::array();
+	double cur_angle = 0;
+	const double delta_angle = EIGEN_PI * 2 / fanout;
+	const double next_radius_max = current_radius_max * 0.5;
+	const double next_radius_min = current_radius_min * 0.5;
+	const double next_length = cur_length * 0.5;
 
-    subdomain["subdomains"] = json::array();
-    if (cur_level < max_level) {
-//        int num_children = rand() % max_fan_out;
-        double current_angle = 0;
-        double delta_angle = EIGEN_PI * 2 / max_fan_out;
-        for (int i = 0; i < max_fan_out; i++, current_angle += delta_angle) {
-            subdomain["subdomains"].push_back(
-                DFS(cur_level + 1, cur_length * 0.5, cur_radius_max, cur_radius_min, current_angle)
-            );
-        }
-    }
-    return subdomain;
+	tree["children"] = json::array();
+	if (level < max_level) {
+		for (int i = 0; i < max_fan_out; i++, cur_angle += delta_angle) {
+			tree["children"].push_back(GenerateTreeObject(level + 1, cur_angle, next_length, next_radius_max, next_radius_min, fanout, max_level));
+		}
+	}
+	return tree;
 }
 
 void GenerateTree(const std::string& config, const std::string& output_file) {
@@ -167,6 +163,7 @@ void GenerateTree(const std::string& config, const std::string& output_file) {
 
     srand(generator_config["magic-number"]);
 
+	collision_enabled = generator_config["collision-enabled"];
     max_level = generator_config["max-level"];
     root_length = generator_config["root-length"];
     max_fan_out = generator_config["max-fan-out"];
@@ -189,26 +186,12 @@ void GenerateTree(const std::string& config, const std::string& output_file) {
     leaf_thickness = generator_config["leaf-thickness"];
 
     json system;
-    system["type"] = "tree-domain";
-    system["is-root"] = true;
-    system["x"] = {0, 0, 0};
-    system["rotation"] = {
-        1, 0, 0,
-        0, 1, 0,
-        0, 0, 1
-    };
 
-    system["system"]["objects"] = {
-        json(Trunk(trunk_segments, root_length, trunk_density, youngs_module, radius_root_max, radius_root_min))
-    };
-    system["system"]["constraints"] = json::array();
-    system["system"]["external-forces"] = {json(Gravity(g))};
+	system["objects"] = json::array();
+	system["objects"].push_back(GenerateTreeObject(0, 0, root_length, radius_root_max, radius_root_min, max_fan_out, max_level));
 
-    double current_angle = 0;
-    double delta_angle = EIGEN_PI * 2 / max_fan_out;
-    for (int i = 0; i < max_fan_out; i++, current_angle += delta_angle) {
-        system["subdomains"].push_back(DFS(1, root_length * 0.5, radius_root_max, radius_root_min, current_angle));
-    }
+	system["external-forces"] = json::array();
+	system["external-forces"].push_back(json(Gravity(g, "treetrunk")));
 
     std::ofstream output(output_file);
     output << system.dump();

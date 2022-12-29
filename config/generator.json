@@ -1,5 +1,6 @@
 {
   "magic-number": 607,
+  "collision-enabled": false,
   "max-level": 5,
   "max-fan-out": 2,
   "trunk-density": 506,
