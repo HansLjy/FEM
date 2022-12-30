@@ -9,6 +9,7 @@
 #include "unsupported/Eigen/KroneckerProduct"
 
 class ClothShape;
+class ClothCollisionShape;
 class ReducedBezierSurface;
 
 class Cloth : public SampledObject {
@@ -42,6 +43,7 @@ public:
 	
     friend class ClothShape;
     friend class ReducedBezierSurface;
+	friend class ClothCollisionShape;
 
 protected:
     const int _num_points;

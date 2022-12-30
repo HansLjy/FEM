@@ -8,6 +8,7 @@
 #include "Object.h"
 
 class CurveGravity;
+class CurveCollisionShape;
 
 class Curve : public SampledObject {
 public:
@@ -21,6 +22,7 @@ public:
 
 
     friend class CurveGravity;
+	friend class CurveCollisionShape;
 
 protected:
     const double _k;      		// stiffness of the curve
