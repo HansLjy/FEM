@@ -1,5 +1,9 @@
 #include "ReducedTreeTrunkCollisionShape.h"
 
-void ReducedTreeTrunkCollisionShape::ComputeCollisionShape(const Object &obj, const Ref<const VectorXd> &x) {
+void ReducedTreeTrunkCollisionShape::Bind(const Object &obj) {
+	// TODO:
+}
+
+void ReducedTreeTrunkCollisionShape::ComputeCollisionShape(const Ref<const VectorXd> &x) {
 	// TODO:
 }

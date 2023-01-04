@@ -12,5 +12,10 @@ void ClothCollisionShape::Bind(const Object &obj) {
 
 void ClothCollisionShape::ComputeCollisionShape(const Ref<const VectorXd> &x) {
 	const int rows = x.size() / 3;
-	_vertices = Eigen::Map<Matrix<int, Dynamic, 3>, 0, Eigen::Stride<Dynamic, Dynamic>> ((int*)x.data(), rows, 3, Eigen::Stride<Dynamic, Dynamic>(x.outerStride(), x.innerStride()));
+	// _vertices = Eigen::Map<Matrix<int, Dynamic, 3>, 0, Eigen::Stride<Dynamic, Dynamic>> (
+	// 	(int*)x.data(), rows, 3,
+	// 	Eigen::Stride<Dynamic, Dynamic>(
+	// 		x.outerStride(), x.innerStride()
+	// 	)
+	// );
 }

@@ -1,5 +1,9 @@
 #include "ReducedBezierCurveCollisionShape.h"
 
-void ReducedBezierCurveCollisionShape::ComputeCollisionShape(const Object &obj, const Ref<const VectorXd> &x) {
+void ReducedBezierCurveCollisionShape::Bind(const Object &obj) {
+	// TODO:
+}
+
+void ReducedBezierCurveCollisionShape::ComputeCollisionShape(const Ref<const VectorXd> &x) {
 	// TODO:
 }

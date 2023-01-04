@@ -4,5 +4,6 @@
 
 class ReducedTreeTrunkCollisionShape : public CollisionShape {
 public:
-	void ComputeCollisionShape(const Object &obj, const Ref<const VectorXd> &x) override;
+	void Bind(const Object &obj) override;
+	void ComputeCollisionShape(const Ref<const VectorXd> &x) override;
 };

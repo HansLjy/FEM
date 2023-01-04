@@ -60,7 +60,7 @@ CPMAddPackage(
 )
 
 
-set(FEM_UTILITY_SOURCE EigenAll.cc JsonUtil.cc)
+set(FEM_UTILITY_SOURCE EigenAll.cc JsonUtil.cc GeometryUtil.cc)
 
 if (BUILD_TEST)
 	add_subdirectory(TestUtility)

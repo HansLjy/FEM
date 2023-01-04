@@ -50,8 +50,6 @@ public:
     virtual void GetPotentialEnergyHessian(const Ref<const Eigen::VectorXd> &x, COO &coo, int offset_x, int offset_y) const;
     void GetExternalForce(Ref<VectorXd> force) const;
 
-    virtual void UpdateInfo(const VectorXd& x, int time_stamp) {}
-
     virtual ~Target() = default;
 
 protected:

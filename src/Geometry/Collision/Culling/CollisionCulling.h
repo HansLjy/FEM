@@ -10,11 +10,12 @@
 
 class Object;
 
+enum struct CollisionType {
+    kEdgeEdge,
+    kVertexFace
+};
 struct CollisionInfo {
-    enum struct CollisionType {
-        kEdgeEdge,
-        kVertexFace
-    } _type;
+    CollisionType _type;
     int _obj_id1, _obj_id2;
     int _primitive_id1, _primitive_id2;
 };

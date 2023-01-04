@@ -55,7 +55,7 @@ void Object::GetRenderShape(Eigen::MatrixXd &vertices, Eigen::MatrixXi &topo) co
 #include "Collision/CollisionShape/CollisionShape.h"
 
 void Object::ComputeCollisionShape(const Ref<const Eigen::VectorXd> &x) {
-    _collision_shape->ComputeCollisionShape(*this, x);
+    _collision_shape->ComputeCollisionShape(x);
 }
 
 const MatrixXd &Object::GetCollisionVertices() const {
@@ -70,12 +70,20 @@ const MatrixXi &Object::GetCollisionFaceTopo() const {
     return _collision_shape->GetCollisionFaceTopo();
 }
 
+const SparseMatrixXd& Object::GetVertexProjectionMatrix() const {
+	return _collision_shape->GetVertexProjectionMatrix();
+}
+
 Vector3d Object::GetFrameX() const {
 	return Vector3d::Zero();
 }
 
 Matrix3d Object::GetFrameRotation() const {
 	return Matrix3d::Identity();
+}
+
+void Object::Initialize() {
+	_collision_shape->Bind(*this);
 }
 
 Object::~Object() {
@@ -271,6 +279,7 @@ void DecomposedObject::Aggregate() {
 }
 
 void DecomposedObject::Initialize() {
+	_proxy->Initialize();
 	VectorXd a(_proxy->GetDOF());
 	a.setZero();
 	CalculateChildrenFrame(a);

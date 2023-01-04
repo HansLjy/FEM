@@ -10,6 +10,12 @@
 
 class Object;
 
+enum struct PrimitiveType {
+	kVertex,
+	kEdge,
+	kFace
+};
+
 class CollisionShape {
 public:
 	virtual void Bind(const Object& obj) = 0;
@@ -40,7 +46,8 @@ protected:
 
 class NullCollisionShape : public CollisionShape {
 public:
-	void ComputeCollisionShape(const Ref<const VectorXd> &x) override;
+	void Bind(const Object &obj) override {}
+	void ComputeCollisionShape(const Ref<const VectorXd> &x) override {}
 };
 
 #endif //FEM_COLLISIONSHAPE_H

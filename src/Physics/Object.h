@@ -51,13 +51,14 @@ public:
     virtual const MatrixXd& GetCollisionVertices() const;
     virtual const MatrixXi& GetCollisionEdgeTopo() const;
     virtual const MatrixXi& GetCollisionFaceTopo() const;
+	virtual const SparseMatrixXd& GetVertexProjectionMatrix() const;
 
 	/* Frame relevant */
 	virtual Vector3d GetFrameX() const;
 	virtual Matrix3d GetFrameRotation() const;
 
 	virtual bool IsDcomposed() { return false;}
-	virtual void Initialize() {}
+	virtual void Initialize();
 
     virtual ~Object();
     Object(const Object& rhs) = delete;
@@ -170,6 +171,7 @@ public:
 	const MatrixXd & GetCollisionVertices() const override {return _proxy->GetCollisionVertices();}
 	const MatrixXi & GetCollisionEdgeTopo() const override {return _proxy->GetCollisionEdgeTopo();}
 	const MatrixXi & GetCollisionFaceTopo() const override {return _proxy->GetCollisionFaceTopo();}
+	const SparseMatrixXd & GetVertexProjectionMatrix() const override {return _proxy->GetVertexProjectionMatrix();}
 
 	/* Frame relevant */
 	Vector3d GetFrameX() const override;

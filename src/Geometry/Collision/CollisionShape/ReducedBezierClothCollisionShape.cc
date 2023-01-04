@@ -1,5 +1,9 @@
 #include "ReducedBezierClothCollisionShape.h"
 
-void ReducedBezierClothCollisionShape::ComputeCollisionShape(const Object &obj, const Ref<const VectorXd> &x) {
+void ReducedBezierClothCollisionShape::Bind(const Object &obj) {
 	// TODO:
+}
+
+void ReducedBezierClothCollisionShape::ComputeCollisionShape(const Ref<const VectorXd> &x) {
+	// TODO: 
 }

@@ -3,10 +3,11 @@
 //
 
 #include "IPC.h"
+#include "EigenAll.h"
 #include "Target/IPCBarrierTarget.h"
 
 void IPC::Step(Target &target, double h) const {
-    auto& IPCTarget = dynamic_cast<IPCBarrierTarget&>(target);
+    auto& ipc_target = dynamic_cast<IPCBarrierTarget&>(target);
     const int dof = target.GetDOF();
     VectorXd x(dof), v(dof), force(dof);
     target.GetCoordinate(x);
@@ -16,7 +17,7 @@ void IPC::Step(Target &target, double h) const {
     SparseMatrixXd mass;
     target.GetMass(mass);
 
-    Eigen::SimplicialLDLT LDLT_solver(mass);
+    Eigen::SimplicialLDLT<SparseMatrixXd> LDLT_solver(mass);
     VectorXd a = LDLT_solver.solve(force);
 
     VectorXd x_hat = x + h * v + h * h * a;
@@ -27,7 +28,7 @@ void IPC::Step(Target &target, double h) const {
     SparseMatrixXd hessian;
     VectorXd gradient(dof), x_prev(x);
     while(step++ < _max_iter) {
-        target.UpdateInfo(x, time_stamp++);
+        ipc_target.ComputeConstraintSet(x, time_stamp++);
         target.GetPotentialEnergyHessian(x, hessian);
         target.GetPotentialEnergyGradient(x, gradient);
         double prev_energy = h * h * target.GetPotentialEnergy(x) + 0.5 * (x - x_hat).transpose() * mass * (x - x_hat);
@@ -40,11 +41,11 @@ void IPC::Step(Target &target, double h) const {
         }
 
         /* contact aware line search */
-        double alpha = IPCTarget.GetMaxStep(p);
+        double alpha = ipc_target.GetMaxStep(p);
         VectorXd x_next;
         while (true) {
             x_next = x + alpha * p;
-            target.UpdateInfo(x_next, time_stamp++);
+            ipc_target.ComputeConstraintSet(x_next, time_stamp++);
             if (h * h * target.GetPotentialEnergy(x_next) + 0.5 * (x_next - x_hat).transpose() * mass * (x_next - x_hat) < prev_energy) {
                 break;
             }
