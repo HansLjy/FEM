@@ -184,7 +184,7 @@ Vector12d IPCBarrierTarget::GetVFBarrierEnergyGradient(const Vector3d& vertex, c
 Matrix12d IPCBarrierTarget::GetVFBarrierEnergyHessian(const Vector3d& vertex, const Vector3d& face1, const Vector3d& face2, const Vector3d& face3) const {
     double d = GetVFDistance(vertex, face1, face2, face3);
     Vector12d pdpx = GetVFDistanceGradient(vertex, face1, face2, face3);
-    Matrix12d p2dpx2 = GetVFDistanceGradient(vertex, face1, face2, face3);
+    Matrix12d p2dpx2 = GetVFDistanceHessian(vertex, face1, face2, face3);
     
     const double pbpd = -2 * (d - _d_hat) * log(d / _d_hat) - (d - _d_hat) * (d - _d_hat) / d;
     const double p2bpd2 = -2 * log(d / _d_hat) - 4 * (d - _d_hat) / d + (d - _d_hat) * (d - _d_hat) / (d * d);

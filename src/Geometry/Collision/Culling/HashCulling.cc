@@ -80,9 +80,9 @@ void HashCulling::ComputeConstraintSet(const Ref<const VectorXd> &x, const std::
 
             auto candidates = _vertice_hash_table.Find(bb_min, bb_max, time_stamp);
             for (const auto& candidate : candidates) {
-                if (VertexFaceDistance(candidate._vertex, face_vertex1, face_vertex2, face_vertex3) < d) {
+                if (GetVFDistance(candidate._vertex, face_vertex1, face_vertex2, face_vertex3) < d) {
                     info.push_back(CollisionInfo{
-                        CollisionInfo::CollisionType::kVertexFace,
+                        CollisionType::kVertexFace,
                         candidate._obj_id, obj_id,
                         candidate._primitive_id, i
                     });
@@ -102,9 +102,9 @@ void HashCulling::ComputeConstraintSet(const Ref<const VectorXd> &x, const std::
 
             auto candidates = _edge_hash_table.Find(bb_min, bb_max, time_stamp);
             for (const auto& candidate : candidates) {
-                if (EdgeEdgeDistance(candidate._vertex1, candidate._vertex2, edge_vertex1, edge_vertex2) < d) {
+                if (GetEEDistance(candidate._vertex1, candidate._vertex2, edge_vertex1, edge_vertex2) < d) {
                     info.push_back(CollisionInfo{
-                        CollisionInfo::CollisionType::kEdgeEdge,
+                        CollisionType::kEdgeEdge,
                         candidate._obj_id, obj_id,
                         candidate._primitive_id, i
                     });
