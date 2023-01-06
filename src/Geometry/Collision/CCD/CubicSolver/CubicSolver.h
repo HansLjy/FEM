@@ -5,9 +5,11 @@
 #ifndef FEM_CUBICSOLVER_H
 #define FEM_CUBICSOLVER_H
 
+#include "Pattern.h"
+
 class CubicSolver {
 public:
-    CubicSolver(double tolerance);
+    CubicSolver(double tolerance) : _tolerance(tolerance) {}
 
     //<- return minimum root in the interval
     //<- a > 0 must hold
@@ -16,5 +18,7 @@ public:
 protected:
     double _tolerance;
 };
+
+DECLARE_XXX_FACTORY(CubicSolver)
 
 #endif //FEM_CUBICSOLVER_H
