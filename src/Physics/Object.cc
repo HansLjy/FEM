@@ -285,6 +285,16 @@ void DecomposedObject::Initialize() {
 	CalculateChildrenFrame(a);
 }
 
+// Fixed Object
+
+FixedObject::FixedObject(const json& config)
+	: FixedObject(
+		FixedRenderShapeFactory::GetFixedRenderShape(config["render-object"]["type"], config["render-object"]),
+		bool(config["collision-enabled"])
+			? FixedCollisionShapeFactory::GetFixedCollisionShape(config["collision-object"]["type"], config["collision-object"])
+			: (CollisionShape*)(new NullCollisionShape)
+	) {}
+
 #include "Object/Curve.h"
 #include "Object/Cloth.h"
 #include "Object/DecomposedTree.h"
@@ -304,6 +314,7 @@ BEGIN_DEFINE_XXX_FACTORY(Object)
 	ADD_PRODUCT("reduced-leaf", ReducedLeaf)
 	ADD_PRODUCT("reduced-treetrunk", ReducedTreeTrunk)
     ADD_PRODUCT("tree-trunk", ReducedTreeTrunk)
+	ADD_PRODUCT("fixed-object", FixedObject)
 END_DEFINE_XXX_FACTORY
 
 BEGIN_DEFINE_XXX_FACTORY(DecomposedObject)

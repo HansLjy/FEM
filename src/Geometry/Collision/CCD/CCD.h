@@ -6,6 +6,7 @@
 #define FEM_CCD_H
 
 #include "EigenAll.h"
+#include "Pattern.h"
 
 class CCD {
 public:
@@ -18,5 +19,7 @@ public:
                                        const Vector3d& v, const Vector3d& v1, const Vector3d& v2, const Vector3d& v3) = 0;
 
 };
+
+DECLARE_XXX_FACTORY(CCD)
 
 #endif //FEM_CCD_H

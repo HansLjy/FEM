@@ -10,7 +10,7 @@
 class TimeStepper {
 public:
     explicit TimeStepper(const json& config)
-        : _collision_aware(config["collision-aware"]), _collision_config(config["collision"]){}
+        : _target_config(config["target"]) {}
     
 	virtual void Bind(System& system);
     virtual void Step(double h) const = 0;
@@ -19,8 +19,7 @@ public:
 
 protected:
     System* _system = nullptr;
-    bool _collision_aware;
-    json _collision_config;
+    json _target_config;
 };
 
 DECLARE_XXX_FACTORY(TimeStepper)

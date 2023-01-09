@@ -229,6 +229,25 @@ protected:
 	Vector3d _total_external_force;
 };
 
+class FixedObject : public Object {
+public:
+	FixedObject(const json& config);
+	FixedObject(RenderShape* render_shape, CollisionShape* collision_shape)
+		: Object(render_shape, collision_shape, VectorXd(0)) {}
+	
+	double GetMaxVelocity(const Ref<const VectorXd> &v) const override {return 0;}
+	void GetMass(COO &coo, int x_offset, int y_offset) const override {}
+	double GetTotalMass() const override {return 0;}
+
+	double GetPotential(const Ref<const VectorXd> &x) const override {return 0;}
+	VectorXd GetPotentialGradient(const Ref<const VectorXd> &x) const override {return VectorXd(0);}
+	void GetPotentialHessian(const Ref<const VectorXd> &x, COO &coo, int x_offset, int y_offset) const override {}
+
+	Vector3d GetTotalExternalForce() const override {return Vector3d::Zero();}
+
+	VectorXd GetInertialForce(const Vector3d &v, const Vector3d &a, const Vector3d &omega, const Vector3d &alpha, const Matrix3d &rotation) const override {return VectorXd(0);}
+};
+
 DECLARE_XXX_FACTORY(Object)
 DECLARE_XXX_FACTORY(DecomposedObject)
 

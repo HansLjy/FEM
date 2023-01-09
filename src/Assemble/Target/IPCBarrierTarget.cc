@@ -6,6 +6,12 @@
 #include "Collision/Culling/CollisionCulling.h"
 #include "Collision/CollisionUtility.h"
 
+IPCBarrierTarget::IPCBarrierTarget(const std::vector<Object*>& objs, int begin, int end, const json& config)
+    : Target(objs, begin, end, config),
+      _d_hat(config["d-hat"]),
+      _culling(CollisionCullingFactory::GetCollisionCulling(config["culling"]["type"], config["culling"])),
+      _ccd(CCDFactory::GetCCD(config["ccd"]["type"], config["ccd"])) {}
+
 void IPCBarrierTarget::ComputeConstraintSet(const Eigen::VectorXd &x, int time_stamp) {
     _culling->ComputeConstraintSet(x, _objs, time_stamp, _d_hat, _constraint_set);
 }
@@ -163,8 +169,8 @@ void IPCBarrierTarget::GetBarrierEnergyHessian(COO &coo, int offset_x, int offse
 }
 
 double IPCBarrierTarget::GetMaxStep(const Eigen::VectorXd &p) {
+    // TODO:
     return 1;
-    // TODO
 }
 
 double IPCBarrierTarget::GetVFBarrierEnergy(const Vector3d& vertex, const Vector3d& face1, const Vector3d& face2, const Vector3d& face3) const {

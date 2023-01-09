@@ -14,7 +14,9 @@ void BFSStepper::Bind(System &system) {
 	_level_targets.clear();
 	_levels = system._level_bar.size() - 1;
 	for (int i = 0; i < _levels; i++) {
-		_level_targets.push_back(new Target(system._all_objs, system._level_bar[i], _system->_level_bar[i + 1]));
+		_level_targets.push_back(
+            TargetFactory::GetTarget(system._all_objs, system._level_bar[i], _system->_level_bar[i + 1], _target_config["type"], _target_config)
+        );
 	}
 }
 

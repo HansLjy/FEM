@@ -17,9 +17,7 @@ class ObjectIterator;
  */
 class Target {
 public:
-    explicit Target(const std::vector<Object*>& objs) : Target(objs, 0, objs.size()) {}
-	explicit Target(const std::vector<Object*>& objs, int begin, int end);
-
+	explicit Target(const std::vector<Object*>& objs, int begin, int end, const json& config);
 
     int GetDOF() const {
         return _dof;
@@ -56,6 +54,11 @@ protected:
     int _dof;
     std::vector<Object*> _objs;
     std::vector<int> _offsets;
+};
+
+class TargetFactory {
+public:
+    static Target* GetTarget(const std::vector<Object*> objs, int begin, int end, const std::string& type, const json& config);
 };
 
 #endif //FEM_TARGET_H

@@ -5,7 +5,7 @@
 #include "Target.h"
 #include "Object.h"
 
-Target::Target(const std::vector<Object*> & objs, int begin, int end) {
+Target::Target(const std::vector<Object*> & objs, int begin, int end, const json& config) {
     _dof = 0;
     for (int i = begin; i < end; i++) {
         _objs.push_back(objs[i]);
@@ -92,4 +92,16 @@ Target::GetPotentialEnergyHessian(const Ref<const Eigen::VectorXd> &x, COO &coo,
 
 void Target::GetExternalForce(Ref<Eigen::VectorXd> force) const {
     ASSEMBLE_1D(ExternalForce, force)
+}
+
+#include "Target/IPCBarrierTarget.h"
+
+Target* TargetFactory::GetTarget(const std::vector<Object *> objs, int begin, int end, const std::string& type, const json &config) {
+    if (type == "basic") {
+        return new Target(objs, begin, end, config);
+    }
+    if (type == "collision-barriered") {
+        return new IPCBarrierTarget(objs, begin, end, config);
+    }
+    return nullptr;
 }

@@ -12,7 +12,7 @@ SystemStepper::SystemStepper(const json &config) : TimeStepper(config) {
 
 void SystemStepper::Bind(System &system) {
     TimeStepper::Bind(system);
-    _target = new Target(system._objs);
+    _target = TargetFactory::GetTarget(system._objs, 0, system._objs.size(), _target_config["type"], _target_config);
 }
 
 void SystemStepper::Step(double h) const {

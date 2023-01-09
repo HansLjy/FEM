@@ -6,6 +6,7 @@
 #define FEM_IPCBARRIERTARGET_H
 
 #include "Collision/Culling/CollisionCulling.h"
+#include "Collision/CCD/CCD.h"
 #include "EigenAll.h"
 #include "Object.h"
 #include "Target.h"
@@ -16,8 +17,7 @@ class CollisionCulling;
 
 class IPCBarrierTarget : public Target {
 public:
-    IPCBarrierTarget(const std::vector<Object*>& objs, double d)
-        : Target(objs), _d_hat(d) {}
+    IPCBarrierTarget(const std::vector<Object*>& objs, int begin, int end, const json& config);
 
     /**
      * @note This function will actually compute the collision shape of
@@ -57,6 +57,7 @@ protected:
     double _d_hat;
     std::vector<CollisionInfo> _constraint_set;
     CollisionCulling* _culling;
+    CCD* _ccd;
 };
 
 #endif //FEM_IPCBARRIERTARGET_H

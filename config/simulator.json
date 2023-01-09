@@ -5,18 +5,21 @@
   },
   "time-stepper": {
     "type": "bfs-stepper",
-    "collision-aware": false,
-    "collision": {
-      "type": "ipc-barrier",
+    "target": {
+      "type": "collision-barriered",
+      "d-hat": 1e-5,
       "culling": {
         "type": "hash-culling",
         "grid-size": 1e-3,
         "hash-table-size": 4096
       },
-      "d": 1e-5
+      "ccd": {
+        "type": "simple-ccd",
+        "epsilon": 1e-10
+      }
     },
     "integrator": {
-      "type": "incremental-potential",
+      "type": "ipc",
       "tolerance": 1e-3,
       "max-iteration": 10,
       "optimizer": {
@@ -27,7 +30,7 @@
       }
     }
   },
-  "system-config": "/model/tree-model.json",
+  "system-config": "/model/cloth-cube.json",
   "renderer": {
     "camera":  {
       "position": [10, 0, 5],

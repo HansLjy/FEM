@@ -50,4 +50,18 @@ public:
 	void ComputeCollisionShape(const Ref<const VectorXd> &x) override {}
 };
 
+class FixedCollisionShape : public CollisionShape {
+public:
+	FixedCollisionShape(const MatrixXd& vertices, const SparseMatrixXd& projections, const MatrixXi& edge_topo, const MatrixXi& face_topo) {
+		_vertices = vertices;
+		_vertex_projections = projections;
+		_edge_topo = edge_topo;
+		_face_topo = face_topo;
+	}
+	void Bind(const Object &obj) override {}
+	void ComputeCollisionShape(const Ref<const VectorXd> &x) override {}
+};
+
+DECLARE_XXX_FACTORY(FixedCollisionShape)
+
 #endif //FEM_COLLISIONSHAPE_H
