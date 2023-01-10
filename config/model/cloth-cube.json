@@ -14,8 +14,8 @@
             "start": [0, 0, 1],
             "u-end": [1, 0, 1],
             "v-end": [0, 1, 1],
-            "u-segments": 10,
-            "v-segments": 10,
+            "u-segments": 1,
+            "v-segments": 1,
             "stretch-u": 1,
             "stretch-v": 1
         },
@@ -25,13 +25,13 @@
             "collision-enabled": true,
             "render-object": {
                 "type": "rectangle",
-                "min-point": [0, 0, 0],
-                "max-point": [0.5, 0.5, 0.5]
+                "min-point": [0.25, 0.25, 0],
+                "max-point": [0.75, 0.75, 0.5]
             },
             "collision-object": {
                 "type": "rectangle",
-                "min-point": [0, 0, 0],
-                "max-point": [0.5, 0.5, 0.5]
+                "min-point": [0.25, 0.25, 0],
+                "max-point": [0.75, 0.75, 0.5]
             }
         }
     ],

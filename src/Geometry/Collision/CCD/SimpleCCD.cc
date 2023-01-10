@@ -3,6 +3,10 @@
 //
 
 #include "SimpleCCD.h"
+#include "CubicSolver/CubicSolver.h"
+
+SimpleCCD::SimpleCCD(const json& config)
+	: _epsilon(config["epsilon"]), _cubic_solver(CubicSolverFactory::GetCubicSolver(config["cubic-solver"]["type"], config["cubic-solver"])) {}
 
 double SimpleCCD::EdgeEdgeCollision(const Eigen::Vector3d &x11, const Eigen::Vector3d &x12,
                                     const Eigen::Vector3d &x21, const Eigen::Vector3d &x22,
@@ -17,11 +21,12 @@ double SimpleCCD::EdgeEdgeCollision(const Eigen::Vector3d &x11, const Eigen::Vec
     double D = dx1.cross(dx2).dot(dx3);
 
     double t = _cubic_solver->Solve(A, B, C, D, 0, 1);
-    if (t < 0 || CheckEdgeIntersection(x11 + t * v11, x12 + t * v12, x21 + t * v21, x22 + t * v22)) {
-        return t;
-    } else {
-        return -1;
-    }
+
+	if (t >= 0 && CheckEdgeIntersection(x11 + t * v11, x12 + t * v12, x21 + t * v21, x22 + t * v22)) {
+		return t;
+	} else {
+		return 2;
+	}
 }
 
 double SimpleCCD::VertexFaceCollision(const Eigen::Vector3d &x,
@@ -37,10 +42,10 @@ double SimpleCCD::VertexFaceCollision(const Eigen::Vector3d &x,
     double D = dx1.cross(dx2).dot(dx3);
 
     double t = _cubic_solver->Solve(A, B, C, D, 0, 1);
-    if (t < 0 || CheckVertexInFace(x + t * v, x1 + t * v1, x2 + t * v2, x3 + t * v3)) {
+    if (t >= 0 && CheckVertexInFace(x + t * v, x1 + t * v1, x2 + t * v2, x3 + t * v3)) {
         return t;
     } else {
-        return -1;
+        return 2;
     }
 }
 

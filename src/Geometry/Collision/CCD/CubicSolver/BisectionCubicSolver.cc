@@ -14,7 +14,7 @@ double BisectionCubicSolver::Solve(double A, double B, double C, double D, doubl
         return (((A * x) + B) * x + C) * x + D;
     };
 
-    const double FAIL = FAIL;
+    const double FAIL = l - 1;
 
     if (std::abs(A) < _tolerance) {
         if (std::abs(B) < _tolerance) {

@@ -7,15 +7,18 @@
     "type": "bfs-stepper",
     "target": {
       "type": "collision-barriered",
-      "d-hat": 1e-5,
-      "culling": {
-        "type": "hash-culling",
-        "grid-size": 1e-3,
-        "hash-table-size": 4096
-      },
+      "d-hat": 1e-3,
+	  "hashing": {
+		"grid-size": 0.1,
+		"hash-table-size": 4096
+	  },
       "ccd": {
         "type": "simple-ccd",
-        "epsilon": 1e-10
+        "epsilon": 1e-10,
+		"cubic-solver": {
+			"type": "bisection-solver",
+			"tolerance": 1e-10
+		}
       }
     },
     "integrator": {
@@ -33,7 +36,7 @@
   "system-config": "/model/cloth-cube.json",
   "renderer": {
     "camera":  {
-      "position": [10, 0, 5],
+      "position": [2, 0, 0.5],
       "look": [-1, 0, 0],
       "up": [0, 0, 1]
     },

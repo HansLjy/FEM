@@ -22,13 +22,13 @@ void IPC::Step(Target &target, double h) const {
 
     VectorXd x_hat = x + h * v + h * h * a;
 
-    int time_stamp = 0;
-
     int step = 0;
     SparseMatrixXd hessian;
     VectorXd gradient(dof), x_prev(x);
+	static int fuck_itr = 0;
     while(step++ < _max_iter) {
-        ipc_target.ComputeConstraintSet(x, time_stamp++);
+		fuck_itr++;
+        ipc_target.ComputeConstraintSet(x);
         target.GetPotentialEnergyHessian(x, hessian);
         target.GetPotentialEnergyGradient(x, gradient);
         double prev_energy = h * h * target.GetPotentialEnergy(x) + 0.5 * (x - x_hat).transpose() * mass * (x - x_hat);
@@ -45,12 +45,13 @@ void IPC::Step(Target &target, double h) const {
         VectorXd x_next;
         while (true) {
             x_next = x + alpha * p;
-            ipc_target.ComputeConstraintSet(x_next, time_stamp++);
+            ipc_target.ComputeConstraintSet(x_next);
             if (h * h * target.GetPotentialEnergy(x_next) + 0.5 * (x_next - x_hat).transpose() * mass * (x_next - x_hat) < prev_energy) {
                 break;
             }
             alpha *= 0.5;
         }
+		std::cerr << fuck_itr << std::endl;
         x = x_next;
     }
     if (step >= _max_iter) {

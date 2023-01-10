@@ -5,15 +5,57 @@
 #ifndef FEM_IPCBARRIERTARGET_H
 #define FEM_IPCBARRIERTARGET_H
 
-#include "Collision/Culling/CollisionCulling.h"
+#include "Collision/SpatialHashing/SpatialHashing.hpp"
 #include "Collision/CCD/CCD.h"
 #include "EigenAll.h"
 #include "Object.h"
 #include "Target.h"
-#include <Eigen/src/Core/Matrix.h>
+
 #include <vector>
 
 class CollisionCulling;
+
+enum class CollisionType {
+	kVertexFace,
+	kEdgeEdge
+};
+
+struct CollisionInfo {
+	CollisionType _type;
+	int _obj_id1;
+	int _obj_id2;
+	int _primitive_id1;
+	int _primitive_id2;
+};
+
+struct EdgePrimitiveInfo {
+    int _obj_id;
+    int _primitive_id;
+	Vector3d _vertex1;
+	Vector3d _vertex2;
+
+	bool operator<(const EdgePrimitiveInfo& rhs) const {
+		return _obj_id < rhs._obj_id || (_obj_id == rhs._obj_id && _primitive_id < rhs._primitive_id);
+	}
+
+	bool operator==(const EdgePrimitiveInfo& rhs) const {
+		return _obj_id == rhs._obj_id && _primitive_id == rhs._primitive_id;
+	}
+};
+
+struct VertexPrimitiveInfo {
+    int _obj_id;
+    int _primitive_id;
+	Vector3d _vertex;
+
+	bool operator<(const VertexPrimitiveInfo& rhs) const {
+		return _obj_id < rhs._obj_id || (_obj_id == rhs._obj_id && _primitive_id < rhs._primitive_id);
+	}
+
+	bool operator==(const VertexPrimitiveInfo& rhs) const {
+		return _obj_id == rhs._obj_id && _primitive_id == rhs._primitive_id;
+	}
+};
 
 class IPCBarrierTarget : public Target {
 public:
@@ -24,7 +66,7 @@ public:
      *       every object in the system, so you don't need to call other
      *       function to do the job
      */
-    void ComputeConstraintSet(const Eigen::VectorXd &x, int time_stamp);
+    void ComputeConstraintSet(const Eigen::VectorXd &x);
 
     double GetPotentialEnergy(const Ref<const Eigen::VectorXd> &x) const override {
         return Target::GetPotentialEnergy(x) + GetBarrierEnergy();
@@ -43,9 +85,11 @@ public:
     double GetMaxStep(const VectorXd& p);
 
 protected:
-    double GetBarrierEnergy() const;
-    VectorXd GetBarrierEnergyGradient() const;
-    void GetBarrierEnergyHessian(COO &coo, int offset_x, int offset_y) const;
+	double GetFullCCD(const VectorXd& p);
+
+	double GetBarrierEnergy() const;
+	VectorXd GetBarrierEnergyGradient() const;
+	void GetBarrierEnergyHessian(COO &coo, int offset_x, int offset_y) const;
 
     double GetVFBarrierEnergy(const Vector3d& vertex, const Vector3d& face1, const Vector3d& face2, const Vector3d& face3) const;
     double GetEEBarrierEnergy(const Vector3d& edge11, const Vector3d& edge12, const Vector3d& edge21, const Vector3d& edge22) const;
@@ -56,8 +100,11 @@ protected:
 
     double _d_hat;
     std::vector<CollisionInfo> _constraint_set;
-    CollisionCulling* _culling;
     CCD* _ccd;
+	SpatialHashing<EdgePrimitiveInfo> _edge_hash_table;
+	SpatialHashing<VertexPrimitiveInfo> _vertex_hash_table;
+
+	unsigned int _time_stamp = 0;
 };
 
 #endif //FEM_IPCBARRIERTARGET_H

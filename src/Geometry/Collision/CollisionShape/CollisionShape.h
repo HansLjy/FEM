@@ -29,6 +29,7 @@ public:
 	 * 		 derivative of whatever bizarre relationship between them.
 	 */
 	const SparseMatrixXd& GetVertexProjectionMatrix() const {return _vertex_projections;}
+	virtual Vector3d GetCollisionVertexVelocity(const Ref<const VectorXd>& v, int idx) const = 0;
     const MatrixXd& GetCollisionVertices() const {return _vertices;}
     const MatrixXi& GetCollisionEdgeTopo() const {return _edge_topo;}
     const MatrixXi& GetCollisionFaceTopo() const {return _face_topo;}
@@ -48,6 +49,7 @@ class NullCollisionShape : public CollisionShape {
 public:
 	void Bind(const Object &obj) override {}
 	void ComputeCollisionShape(const Ref<const VectorXd> &x) override {}
+	Vector3d GetCollisionVertexVelocity(const Ref<const VectorXd> &p, int idx) const override {return Vector3d::Zero();}
 };
 
 class FixedCollisionShape : public CollisionShape {
@@ -58,6 +60,7 @@ public:
 		_edge_topo = edge_topo;
 		_face_topo = face_topo;
 	}
+	Vector3d GetCollisionVertexVelocity(const Ref<const VectorXd> &p, int idx) const override {return Vector3d::Zero();}
 	void Bind(const Object &obj) override {}
 	void ComputeCollisionShape(const Ref<const VectorXd> &x) override {}
 };

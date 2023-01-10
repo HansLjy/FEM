@@ -58,6 +58,11 @@ void Object::ComputeCollisionShape(const Ref<const Eigen::VectorXd> &x) {
     _collision_shape->ComputeCollisionShape(x);
 }
 
+Vector3d Object::GetCollisionVertexVelocity(const Ref<const VectorXd>& v, int idx) {
+	return _collision_shape->GetCollisionVertexVelocity(v, idx);
+}
+
+
 const MatrixXd &Object::GetCollisionVertices() const {
     return _collision_shape->GetCollisionVertices();
 }

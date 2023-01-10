@@ -25,9 +25,9 @@ public:
         auto bb_min_discrete = GetDiscretePosition(bb_min);
         auto bb_max_discrete = GetDiscretePosition(bb_max);
 
-        for (int x = bb_min_discrete.x(); x < bb_max_discrete.x(); x++) {
-            for (int y = bb_min_discrete.y(); y < bb_max_discrete.y(); y++) {
-                for (int z = bb_min_discrete.z(); z < bb_max_discrete.z(); z++) {
+        for (int x = bb_min_discrete.x(); x <= bb_max_discrete.x(); x++) {
+            for (int y = bb_min_discrete.y(); y <= bb_max_discrete.y(); y++) {
+                for (int z = bb_min_discrete.z(); z <= bb_max_discrete.z(); z++) {
                     unsigned int hash_value = HashValue((Vector<unsigned int, 3>() << x, y, z).finished());
                     HashTableInsert(hash_value, info, time_stamp);
                 }
@@ -41,9 +41,10 @@ public:
         auto bb_min_discrete = GetDiscretePosition(bb_min);
         auto bb_max_discrete = GetDiscretePosition(bb_max);
 
-        for (int x = bb_min_discrete.x(); x < bb_max_discrete.x(); x++) {
-            for (int y = bb_min_discrete.y(); y < bb_max_discrete.y(); y++) {
-                for (int z = bb_min_discrete.z(); z < bb_max_discrete.z(); z++) {
+        for (int x = bb_min_discrete.x(); x <= bb_max_discrete.x(); x++) {
+            for (int y = bb_min_discrete.y(); y <= bb_max_discrete.y(); y++) {
+                for (int z = bb_min_discrete.z(); z <= bb_max_discrete.z(); z++) {
+					// TODO: change it into sorted array merge
                     unsigned int hash_value = HashValue((Vector<unsigned int, 3>() << x, y, z).finished());
                     HashTableFind(hash_value, time_stamp, infos);
                 }
@@ -84,7 +85,11 @@ protected:
     void HashTableFind(unsigned int hash_value, int time_stamp, std::vector<NodeInfo>& info) {
         const auto& hash_entry = _hash_table[hash_value];
         if (hash_entry.time_stamp == time_stamp) {
-            info.insert(info.end(), hash_entry.list.begin(), hash_entry.list.end());
+			for (const auto& cur_info : hash_entry.list) {
+				if (std::find(info.begin(), info.end(), cur_info) == info.end()) {
+					info.push_back(cur_info);
+				}
+			}
         }
     }
 

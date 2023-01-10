@@ -15,3 +15,7 @@ void CurveCollisionShape::Bind(const Object &obj) {
 void CurveCollisionShape::ComputeCollisionShape(const Ref<const VectorXd> &x) {
 	_vertices = x;
 }
+
+Vector3d CurveCollisionShape::GetCollisionVertexVelocity(const Ref<const VectorXd> &v, int idx) const {
+	return v.segment<3>(3 * idx);
+}

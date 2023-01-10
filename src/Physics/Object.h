@@ -48,6 +48,7 @@ public:
     /* Collision relevant */
 	void ComputeCollisionShape() {ComputeCollisionShape(_x);}
     virtual void ComputeCollisionShape(const Ref<const VectorXd>& x);
+	virtual Vector3d GetCollisionVertexVelocity(const Ref<const VectorXd>& v, int idx);
     virtual const MatrixXd& GetCollisionVertices() const;
     virtual const MatrixXi& GetCollisionEdgeTopo() const;
     virtual const MatrixXi& GetCollisionFaceTopo() const;
@@ -168,6 +169,7 @@ public:
 	void GetRenderShape(MatrixXd &vertices, MatrixXi &topo) const override {_proxy->GetRenderShape(vertices, topo);}
 
 	void ComputeCollisionShape(const Ref<const VectorXd> &x) override;
+	Vector3d GetCollisionVertexVelocity(const Ref<const VectorXd>& v, int idx) override {return _proxy->GetCollisionVertexVelocity(v, idx);}
 	const MatrixXd & GetCollisionVertices() const override {return _proxy->GetCollisionVertices();}
 	const MatrixXi & GetCollisionEdgeTopo() const override {return _proxy->GetCollisionEdgeTopo();}
 	const MatrixXi & GetCollisionFaceTopo() const override {return _proxy->GetCollisionFaceTopo();}

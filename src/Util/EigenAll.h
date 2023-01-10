@@ -97,4 +97,11 @@ Mat VConcat(const Mat& A, const Mat& B) {
 	return res;
 }
 
+template <typename ElementType, int cols>
+Eigen::MatrixXd StackVector(const Eigen::Ref<const Eigen::MatrixXd>& x) {
+	const int rows = x.size() / cols;
+	return Eigen::Map<Eigen::Matrix<ElementType, Eigen::Dynamic, Eigen::Dynamic>, 0, Eigen::Stride<Eigen::Dynamic, Eigen::Dynamic>>((ElementType*)(x.data()), rows, cols, Eigen::Stride<Eigen::Dynamic, Eigen::Dynamic>(x.innerStride(), cols * x.innerStride()));
+}
+
+
 #endif
