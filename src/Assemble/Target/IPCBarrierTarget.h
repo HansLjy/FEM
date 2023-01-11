@@ -68,19 +68,9 @@ public:
      */
     void ComputeConstraintSet(const Eigen::VectorXd &x);
 
-    double GetPotentialEnergy(const Ref<const Eigen::VectorXd> &x) const override {
-        return Target::GetPotentialEnergy(x) + GetBarrierEnergy();
-    }
-
-    void GetPotentialEnergyGradient(const Ref<const Eigen::VectorXd> &x, Ref<Eigen::VectorXd> gradient) const override {
-        Target::GetPotentialEnergyGradient(x, gradient);
-        gradient += GetBarrierEnergyGradient();
-    }
-
-    void GetPotentialEnergyHessian(const Ref<const Eigen::VectorXd> &x, COO &coo, int offset_x, int offset_y) const override {
-        Target::GetPotentialEnergyHessian(x, coo, offset_x, offset_y);
-        GetBarrierEnergyHessian(coo, offset_x, offset_y);
-    }
+    double GetPotentialEnergy(const Ref<const Eigen::VectorXd> &x) const override;
+    void GetPotentialEnergyGradient(const Ref<const Eigen::VectorXd> &x, Ref<Eigen::VectorXd> gradient) const override;
+    void GetPotentialEnergyHessian(const Ref<const Eigen::VectorXd> &x, COO &coo, int offset_x, int offset_y) const override;
 
     double GetMaxStep(const VectorXd& p);
 
@@ -98,7 +88,8 @@ protected:
     Matrix12d GetVFBarrierEnergyHessian(const Vector3d& vertex, const Vector3d& face1, const Vector3d& face2, const Vector3d& face3) const;
     Matrix12d GetEEBarrierEnergyHessian(const Vector3d& edge11, const Vector3d& edge12, const Vector3d& edge21, const Vector3d& edge22) const;
 
-    double _d_hat;
+    const double _d_hat;
+	double _kappa;
     std::vector<CollisionInfo> _constraint_set;
     CCD* _ccd;
 	SpatialHashing<EdgePrimitiveInfo> _edge_hash_table;

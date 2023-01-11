@@ -70,6 +70,23 @@ TEST(DistanceFunctionTest, EEDistanceTest) {
 	edge22 << 0, 0.5, -0.5;
 	edge21 << 0, 1.5, -1.5;
 	EXPECT_DOUBLE_EQ(GetEEDistance(edge11, edge12, edge21, edge22), sqrt(0.5));
+
+	// parallel
+	edge21 << 0.5, 0.5, 0.25;
+	edge22 << 0.5, 0.5, 0.75;
+	EXPECT_DOUBLE_EQ(GetEEDistance(edge11, edge12, edge21, edge22), sqrt(0.5));
+
+	edge21 << 0.5, 0.5, 0.25;
+	edge22 << 0.5, 0.5, -0.25;
+	EXPECT_DOUBLE_EQ(GetEEDistance(edge11, edge12, edge21, edge22), sqrt(0.5));
+
+	edge21 << 0.5, 0.5, 0.75;
+	edge22 << 0.5, 0.5, 1.25;
+	EXPECT_DOUBLE_EQ(GetEEDistance(edge11, edge12, edge21, edge22), sqrt(0.5));
+
+	edge21 << 0.5, 0.5, -0.25;
+	edge22 << 0.5, 0.5, 1.25;
+	EXPECT_DOUBLE_EQ(GetEEDistance(edge11, edge12, edge21, edge22), sqrt(0.5));
 }
 
 #include "FiniteDifference.h"

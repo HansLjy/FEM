@@ -9,9 +9,29 @@
 IPCBarrierTarget::IPCBarrierTarget(const std::vector<Object*>& objs, int begin, int end, const json& config)
     : Target(objs, begin, end, config),
       _d_hat(config["d-hat"]),
+	  _kappa(config["kappa"]),
       _ccd(CCDFactory::GetCCD(config["ccd"]["type"], config["ccd"])),
 	  _edge_hash_table(config["hashing"]["grid-size"], config["hashing"]["hash-table-size"]),
 	  _vertex_hash_table(config["hashing"]["grid-size"], config["hashing"]["hash-table-size"]) {}
+
+double IPCBarrierTarget::GetPotentialEnergy(const Ref<const Eigen::VectorXd> &x) const {
+	double barrier_energy = GetBarrierEnergy();
+	if (barrier_energy > 0) {
+		std::cerr << "Barrier energy: " << barrier_energy << std::endl;
+		// exit(-1);
+	}
+	return Target::GetPotentialEnergy(x) + GetBarrierEnergy();
+}
+
+void IPCBarrierTarget::GetPotentialEnergyGradient(const Ref<const Eigen::VectorXd> &x, Ref<Eigen::VectorXd> gradient) const {
+	Target::GetPotentialEnergyGradient(x, gradient);
+	gradient += GetBarrierEnergyGradient();
+}
+
+void IPCBarrierTarget::GetPotentialEnergyHessian(const Ref<const Eigen::VectorXd> &x, COO &coo, int offset_x, int offset_y) const {
+	Target::GetPotentialEnergyHessian(x, coo, offset_x, offset_y);
+	GetBarrierEnergyHessian(coo, offset_x, offset_y);
+}
 
 #define PROCESS_CONSTRAINT_PAIR(Initialization, VF, EE) \
     for (const auto& constraint_pair : _constraint_set) {\
@@ -171,8 +191,8 @@ void IPCBarrierTarget::GetBarrierEnergyHessian(COO &coo, int offset_x, int offse
 }
 
 double IPCBarrierTarget::GetMaxStep(const Eigen::VectorXd &p) {
-    double max_step = 1;
-	
+    double max_step_inside = 1;
+
 	PROCESS_CONSTRAINT_PAIR(
 		const int offset1 = _offsets[constraint_pair._obj_id1];
 		const int dof1 = obj1->GetDOF();
@@ -181,8 +201,8 @@ double IPCBarrierTarget::GetMaxStep(const Eigen::VectorXd &p) {
 		const int dof2 = obj2->GetDOF();
 		const auto& p2 = p.segment(offset2, dof2);,
 
-		max_step = std::min(
-			max_step,
+		max_step_inside = std::min(
+			max_step_inside,
 			_ccd->VertexFaceCollision(
 				rotation1 * vertex + translation1,
 				rotation2 * face1 + translation2,
@@ -195,8 +215,8 @@ double IPCBarrierTarget::GetMaxStep(const Eigen::VectorXd &p) {
 			)
 		);,
 
-		max_step = std::min(
-			max_step,
+		max_step_inside = std::min(
+			max_step_inside,
 			_ccd->EdgeEdgeCollision(
 				rotation1 * edge11 + translation1,
 				rotation1 * edge12 + translation1,
@@ -219,10 +239,17 @@ double IPCBarrierTarget::GetMaxStep(const Eigen::VectorXd &p) {
 
 	double max_step_outside = max_velocity > 0 ? _d_hat / (2 * max_velocity) : 1;
 
-	if (max_step_outside > 0.5 * max_step) {
-		max_step = std::min(max_step, max_step_outside);
+	double max_step;
+	if (max_step_outside > 0.5 * max_step_inside) {
+		max_step = std::min(max_step_outside, max_step_outside);
 	} else {
 		max_step = GetFullCCD(p);
+	}
+
+	if (max_step >= 1) {
+		return max_step;
+	} else {
+		return max_step * 0.8;
 	}
 
 	// if (max_step < 1) {
@@ -345,14 +372,14 @@ void IPCBarrierTarget::ComputeConstraintSet(const Eigen::VectorXd &x) {
 		obj_id++;
     }
 
-	if (!_constraint_set.empty()) {
-		for (const auto& constraint_pair : _constraint_set) {
-			std::cerr << (constraint_pair._type == CollisionType::kEdgeEdge ? "edge-edge" : "vertex-face") << std::endl
-					  << "Objects: " << constraint_pair._obj_id1 << " " << constraint_pair._obj_id2 << std::endl
-					  << "Primitives: " << constraint_pair._primitive_id1 << " " << constraint_pair._primitive_id2 << std::endl;
-		}
-		exit(-1);
-	}
+	// if (!_constraint_set.empty()) {
+	// 	for (const auto& constraint_pair : _constraint_set) {
+	// 		std::cerr << (constraint_pair._type == CollisionType::kEdgeEdge ? "edge-edge" : "vertex-face") << std::endl
+	// 				  << "Objects: " << constraint_pair._obj_id1 << " " << constraint_pair._obj_id2 << std::endl
+	// 				  << "Primitives: " << constraint_pair._primitive_id1 << " " << constraint_pair._primitive_id2 << std::endl;
+	// 	}
+	// 	exit(-1);
+	// }
 }
 
 double IPCBarrierTarget::GetFullCCD(const VectorXd& p) {
