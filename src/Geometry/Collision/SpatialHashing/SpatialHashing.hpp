@@ -22,12 +22,12 @@ public:
     }
 
     void Insert(const Vector3d& bb_min, const Vector3d& bb_max, const NodeInfo& info, int time_stamp) {
-        auto bb_min_discrete = GetDiscretePosition(bb_min);
-        auto bb_max_discrete = GetDiscretePosition(bb_max);
+        Vector<unsigned int, 3> bb_min_discrete = GetDiscretePosition(bb_min);
+        Vector<unsigned int, 3> bb_max_discrete = GetDiscretePosition(bb_max) + Vector<unsigned int, 3>::Constant(1);
 
-        for (int x = bb_min_discrete.x(); x <= bb_max_discrete.x(); x++) {
-            for (int y = bb_min_discrete.y(); y <= bb_max_discrete.y(); y++) {
-                for (int z = bb_min_discrete.z(); z <= bb_max_discrete.z(); z++) {
+        for (unsigned int x = bb_min_discrete.x(); x != bb_max_discrete.x(); x++) {
+            for (unsigned int y = bb_min_discrete.y(); y != bb_max_discrete.y(); y++) {
+                for (unsigned int z = bb_min_discrete.z(); z != bb_max_discrete.z(); z++) {
                     unsigned int hash_value = HashValue((Vector<unsigned int, 3>() << x, y, z).finished());
                     HashTableInsert(hash_value, info, time_stamp);
                 }
@@ -38,12 +38,12 @@ public:
     std::vector<NodeInfo> Find(const Vector3d& bb_min, const Vector3d& bb_max, int time_stamp) {
         std::vector<NodeInfo> infos;
 
-        auto bb_min_discrete = GetDiscretePosition(bb_min);
-        auto bb_max_discrete = GetDiscretePosition(bb_max);
+        Vector<unsigned int, 3> bb_min_discrete = GetDiscretePosition(bb_min);
+        Vector<unsigned int, 3> bb_max_discrete = GetDiscretePosition(bb_max) + Vector<unsigned int, 3>::Constant(1);
 
-        for (int x = bb_min_discrete.x(); x <= bb_max_discrete.x(); x++) {
-            for (int y = bb_min_discrete.y(); y <= bb_max_discrete.y(); y++) {
-                for (int z = bb_min_discrete.z(); z <= bb_max_discrete.z(); z++) {
+        for (unsigned int x = bb_min_discrete.x(); x != bb_max_discrete.x(); x++) {
+            for (unsigned int y = bb_min_discrete.y(); y != bb_max_discrete.y(); y++) {
+                for (unsigned int z = bb_min_discrete.z(); z != bb_max_discrete.z(); z++) {
 					// TODO: change it into sorted array merge
                     unsigned int hash_value = HashValue((Vector<unsigned int, 3>() << x, y, z).finished());
                     HashTableFind(hash_value, time_stamp, infos);

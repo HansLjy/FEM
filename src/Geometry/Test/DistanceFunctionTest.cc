@@ -26,6 +26,52 @@ TEST(DistanceFunctionTest, VFDistanceTest) {
 	EXPECT_DOUBLE_EQ(GetVFDistance(vertex, face1, face2, face3), sqrt(2));
 }
 
+TEST(DistanceFunctionTest, EEDistanceTest) {
+	Vector3d edge11, edge12, edge21, edge22;
+	edge11 << 0, 0, 0;
+	edge12 << 0, 0, 1;
+
+	// line-line
+	edge21 << 1, 0, 0.5;
+	edge22 << 0, 1, 0.5;
+	EXPECT_DOUBLE_EQ(GetEEDistance(edge11, edge12, edge21, edge22), sqrt(0.5));
+
+	// vertex-line
+	edge21 << 1, 0, 1.5;
+	edge22 << 0, 1, 1.5;
+	EXPECT_DOUBLE_EQ(GetEEDistance(edge11, edge12, edge21, edge22), sqrt(0.75));
+
+	edge21 << 1, 0, -0.5;
+	edge22 << 0, 1, -0.5;
+	EXPECT_DOUBLE_EQ(GetEEDistance(edge11, edge12, edge21, edge22), sqrt(0.75));
+
+	edge21 << 0.5, -1.5, 0.5;
+	edge22 << 0.5, -0.5, 0.5;
+	EXPECT_DOUBLE_EQ(GetEEDistance(edge11, edge12, edge21, edge22), sqrt(0.5));
+
+	edge21 << 0.5, 0.5, 0.5;
+	edge22 << 0.5, 1.5, 0.5;
+	EXPECT_DOUBLE_EQ(GetEEDistance(edge11, edge12, edge21, edge22), sqrt(0.5));
+
+	// vertex-vertex
+
+	edge21 << 0, 0.5, 1.5;
+	edge22 << 0, 1.5, 2.5;
+	EXPECT_DOUBLE_EQ(GetEEDistance(edge11, edge12, edge21, edge22), sqrt(0.5));
+
+	edge22 << 0, 0.5, 1.5;
+	edge21 << 0, 1.5, 2.5;
+	EXPECT_DOUBLE_EQ(GetEEDistance(edge11, edge12, edge21, edge22), sqrt(0.5));
+
+	edge21 << 0, 0.5, -0.5;
+	edge22 << 0, 1.5, -1.5;
+	EXPECT_DOUBLE_EQ(GetEEDistance(edge11, edge12, edge21, edge22), sqrt(0.5));
+
+	edge22 << 0, 0.5, -0.5;
+	edge21 << 0, 1.5, -1.5;
+	EXPECT_DOUBLE_EQ(GetEEDistance(edge11, edge12, edge21, edge22), sqrt(0.5));
+}
+
 #include "FiniteDifference.h"
 
 #define DEFINE_WRAPPER_12(TYPE, NAME, VALUE) \

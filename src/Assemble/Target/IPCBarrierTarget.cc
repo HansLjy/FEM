@@ -235,6 +235,8 @@ double IPCBarrierTarget::GetMaxStep(const Eigen::VectorXd &p) {
 
 void IPCBarrierTarget::ComputeConstraintSet(const Eigen::VectorXd &x) {
 	    /* insert into hash table */
+	_constraint_set.clear();
+
     int cur_offset = 0;
 	for (auto obj : _objs) {
 		obj->ComputeCollisionShape(x.segment(cur_offset, obj->GetDOF()));
@@ -331,7 +333,7 @@ void IPCBarrierTarget::ComputeConstraintSet(const Eigen::VectorXd &x) {
             auto candidates = _edge_hash_table.Find(bb_min, bb_max, _time_stamp);
             for (const auto& candidate : candidates) {
 				// TODO: add self-collision
-                if (candidate._obj_id != obj_id && GetEEDistance(candidate._vertex1, candidate._vertex2, edge_vertex1, edge_vertex2) < _d_hat) {
+                if (candidate._obj_id < obj_id && GetEEDistance(candidate._vertex1, candidate._vertex2, edge_vertex1, edge_vertex2) < _d_hat) {
                     _constraint_set.push_back(CollisionInfo{
                         CollisionType::kEdgeEdge,
                         candidate._obj_id, obj_id,
@@ -342,6 +344,15 @@ void IPCBarrierTarget::ComputeConstraintSet(const Eigen::VectorXd &x) {
         }
 		obj_id++;
     }
+
+	if (!_constraint_set.empty()) {
+		for (const auto& constraint_pair : _constraint_set) {
+			std::cerr << (constraint_pair._type == CollisionType::kEdgeEdge ? "edge-edge" : "vertex-face") << std::endl
+					  << "Objects: " << constraint_pair._obj_id1 << " " << constraint_pair._obj_id2 << std::endl
+					  << "Primitives: " << constraint_pair._primitive_id1 << " " << constraint_pair._primitive_id2 << std::endl;
+		}
+		exit(-1);
+	}
 }
 
 double IPCBarrierTarget::GetFullCCD(const VectorXd& p) {
