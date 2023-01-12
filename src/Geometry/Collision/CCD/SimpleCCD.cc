@@ -50,26 +50,26 @@ double SimpleCCD::VertexFaceCollision(const Eigen::Vector3d &x,
 }
 
 bool
-SimpleCCD::CheckVertexInFace(const Eigen::Vector3d &vertex, const Eigen::Vector3d &face1, const Eigen::Vector3d &face2,
-                             const Eigen::Vector3d &face3) {
-    Vector3d delta_x = vertex - face1;
-    double u = delta_x.dot(face2 - face1);
-    double v = delta_x.dot(face3 - face1);
-    return u >= 0 && v >= 0 && u <= 1 && v <= 1 && u + v <= 1;
+SimpleCCD::CheckVertexInFace(const Eigen::Vector3d &vertex, const Eigen::Vector3d &face1, const Eigen::Vector3d &face2, const Eigen::Vector3d &face3) {
+    Matrix<double, 3, 2> A;
+	A.col(0) = face2 - face1;
+	A.col(1) = face3 - face1;
+    Eigen::FullPivLU<Matrix<double, 3, 2>> lu_decomp(A);
+	// we don't need to check the rank, unless the triangle itself degenerates
+	Vector2d sol = lu_decomp.solve(vertex - face1);
+	return sol(0) >= 0 && sol(1) >= 0 && sol(0) + sol(1) <= 1;
 }
 
 //<- https://math.stackexchange.com/questions/3114665/how-to-find-if-two-line-segments-intersect-in-3d
-bool SimpleCCD::CheckEdgeIntersection(const Eigen::Vector3d &edge11, const Eigen::Vector3d &edge12,
-                                      const Eigen::Vector3d &edge21, const Eigen::Vector3d &edge22) {
+bool SimpleCCD::CheckEdgeIntersection(const Eigen::Vector3d &edge11, const Eigen::Vector3d &edge12, const Eigen::Vector3d &edge21, const Eigen::Vector3d &edge22) {
     Matrix<double, 3, 2> A;
     A.col(0) = edge11 - edge12;
     A.col(1) = - edge21 + edge22;
-    Vector3d b = edge22 - edge12;
     Eigen::FullPivLU<Matrix<double, 3, 2>> lu_decomp(A);
 	if (lu_decomp.rank() < 2) {
 		return false;
 	} else {
-		Vector2d sol = lu_decomp.solve(b);
+		Vector2d sol = lu_decomp.solve(edge22 - edge12);
 		return sol(0) >= 0 && sol(0) <= 1 && sol(1) >= 0 && sol(1) <= 1;
 	}
 }

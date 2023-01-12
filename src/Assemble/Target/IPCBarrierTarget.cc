@@ -15,11 +15,6 @@ IPCBarrierTarget::IPCBarrierTarget(const std::vector<Object*>& objs, int begin, 
 	  _vertex_hash_table(config["hashing"]["grid-size"], config["hashing"]["hash-table-size"]) {}
 
 double IPCBarrierTarget::GetPotentialEnergy(const Ref<const Eigen::VectorXd> &x) const {
-	double barrier_energy = GetBarrierEnergy();
-	if (barrier_energy > 0) {
-		std::cerr << "Barrier energy: " << barrier_energy << std::endl;
-		// exit(-1);
-	}
 	return Target::GetPotentialEnergy(x) + GetBarrierEnergy();
 }
 
@@ -81,7 +76,7 @@ double IPCBarrierTarget::GetBarrierEnergy() const {
         barrier_energy += GetVFBarrierEnergy(vertex, face1, face2, face3);,
         barrier_energy += GetEEBarrierEnergy(edge11, edge12, edge21, edge22);
     )
-    return barrier_energy;
+    return barrier_energy * _kappa;
 }
 
 VectorXd IPCBarrierTarget::GetBarrierEnergyGradient() const {
@@ -112,7 +107,7 @@ VectorXd IPCBarrierTarget::GetBarrierEnergyGradient() const {
              + projection2.middleRows(edge_index2(1) * 3, 3).transpose() * single_gradient.segment(9, 3);
     )
 
-    return gradient;
+    return gradient * _kappa;
 }
 
 #define DISPERSE_SINGLE_HESSIAN \
@@ -148,7 +143,7 @@ void IPCBarrierTarget::GetBarrierEnergyHessian(COO &coo, int offset_x, int offse
                     face2 = vertices2.row(face_index(1)),
                     face3 = vertices2.row(face_index(2));
                 
-                SparseMatrixXd single_hessian = GetVFBarrierEnergyHessian(vertex, face1, face2, face3).sparseView();
+                SparseMatrixXd single_hessian = _kappa * GetVFBarrierEnergyHessian(vertex, face1, face2, face3).sparseView();
                 
                 const Ref<const SparseMatrixXd> projection[4] = {
                     projection1.middleRows(vertex_index * 3, 3).transpose(),
@@ -172,7 +167,7 @@ void IPCBarrierTarget::GetBarrierEnergyHessian(COO &coo, int offset_x, int offse
                     edge21 = vertices2.row(edge_index2(0)),
                     edge22 = vertices2.row(edge_index2(1));
                 
-                SparseMatrixXd single_hessian = GetEEBarrierEnergyHessian(edge11, edge12, edge21, edge22).sparseView();
+                SparseMatrixXd single_hessian = _kappa * GetEEBarrierEnergyHessian(edge11, edge12, edge21, edge22).sparseView();
 
                 const Ref<const SparseMatrixXd> projection[4] = {
                     projection1.middleRows(edge_index1(0) * 3, 3).transpose(),
@@ -246,6 +241,8 @@ double IPCBarrierTarget::GetMaxStep(const Eigen::VectorXd &p) {
 		max_step = GetFullCCD(p);
 	}
 
+	// spdlog::info("inside step: {}, outside step: {}, final step: {}", max_step_inside, max_step_outside, max_step);
+
 	if (max_step >= 1) {
 		return max_step;
 	} else {
@@ -256,8 +253,6 @@ double IPCBarrierTarget::GetMaxStep(const Eigen::VectorXd &p) {
 	// 	spdlog::info("Max step for newton: {}", max_step);
 	// 	exit(EXIT_FAILURE);
 	// }
-
-    return max_step;
 }
 
 void IPCBarrierTarget::ComputeConstraintSet(const Eigen::VectorXd &x) {
@@ -475,13 +470,22 @@ double IPCBarrierTarget::GetFullCCD(const VectorXd& p) {
 					const Vector3d vertex = other_obj->GetFrameRotation() * other_obj->GetCollisionVertices().row(candidate._primitive_id).transpose() + other_obj->GetFrameX();
 					const Vector3d vertex_v = other_obj->GetFrameRotation() * other_obj->GetCollisionVertexVelocity(p.segment(_offsets[candidate._obj_id], other_obj->GetDOF()), candidate._primitive_id);
 
-					ttc = std::min(
-						ttc,
+					double new_ttc =
 						_ccd->VertexFaceCollision(
 							vertex, face_vertex1, face_vertex2, face_vertex3,
 							vertex_v, face_vertex_v1, face_vertex_v2, face_vertex_v3
-						)
+						);
+
+					ttc = std::min(
+						ttc,
+						new_ttc
 					);
+					if (new_ttc < 1e-3) {
+						spdlog::info("Vertex-Face case: Object1 = {}, Primitive1 = {}, Object2 = {}, Primitive2 = {}", obj_id, i, candidate._obj_id, candidate._primitive_id);
+
+						std::cerr << "Vertex: " << vertex.transpose() << std::endl;
+						std::cerr << "Face: " << face_vertex1.transpose() << ", " << face_vertex2.transpose() << ", " << face_vertex3.transpose() << std::endl;
+					}
                 }
             }
         }
@@ -512,13 +516,20 @@ double IPCBarrierTarget::GetFullCCD(const VectorXd& p) {
 					Vector3d other_edge_vertex2 = other_obj->GetFrameRotation() * other_obj->GetCollisionVertices().row(other_topo(1)).transpose() + other_obj->GetFrameX();
 					Vector3d other_edge_vertex_v2 = other_obj->GetFrameRotation() * other_obj->GetCollisionVertexVelocity(other_p_obj, other_topo(1));
 					
-					ttc = std::min (
-						ttc,
+					double new_ttc = 
 						_ccd->EdgeEdgeCollision(
 							edge_vertex1, edge_vertex2, other_edge_vertex1, other_edge_vertex2,
 							edge_vertex_v1, edge_vertex_v2, other_edge_vertex_v1, other_edge_vertex_v2
-						)
+						);
+
+					ttc = std::min (
+						ttc,
+						new_ttc
 					);
+
+					if (new_ttc < 1e-5) {
+						spdlog::info("Edge-edge case: Object1 = {}, Primitive1 = {}, Object2 = {}, Primitive2 = {}", obj_id, i, candidate._obj_id, candidate._primitive_id);
+					}
                 }
             }
         }
@@ -526,7 +537,7 @@ double IPCBarrierTarget::GetFullCCD(const VectorXd& p) {
 		obj_id++;
     }
 
-	spdlog::info("Full ccd, ttc = {}", ttc);
+	// spdlog::info("Full ccd, ttc = {}", ttc);
 
 	return ttc;
 }

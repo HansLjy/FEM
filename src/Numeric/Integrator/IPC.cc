@@ -22,12 +22,13 @@ void IPC::Step(Target &target, double h) const {
 
     VectorXd x_hat = x + h * v + h * h * a;
 
+	double residue;
     int step = 0;
     SparseMatrixXd hessian;
     VectorXd gradient(dof), x_prev(x);
-	static int fuck_itr = 0;
+	// static int fuck_itr = 0;
     while(step++ < _max_iter) {
-		fuck_itr++;
+		// fuck_itr++;
         ipc_target.ComputeConstraintSet(x);
         target.GetPotentialEnergyHessian(x, hessian);
         target.GetPotentialEnergyGradient(x, gradient);
@@ -36,7 +37,7 @@ void IPC::Step(Target &target, double h) const {
         LDLT_solver.compute(mass + h * h * hessian);
         VectorXd p = - LDLT_solver.solve(mass * (x - x_hat) + h * h * gradient);
 
-        if (p.norm() / p.size() < _tolerance * h) {
+        if ((residue = p.norm() / p.size()) < _tolerance * h) {
             break;
         }
 
@@ -51,15 +52,16 @@ void IPC::Step(Target &target, double h) const {
             }
             alpha *= 0.5;
         }
-		std::cerr << fuck_itr << std::endl;
+		// std::cerr << fuck_itr << std::endl;
         x = x_next;
     }
     if (step >= _max_iter) {
-        spdlog::warn("Barrier-aware Newton not converge");
+        spdlog::warn("Barrier-aware Newton not converge, residue = {}", residue);
     } else {
-        spdlog::info("Barrier-aware Newton converge in {} steps", step);
+        // spdlog::info("Barrier-aware Newton converge in {} steps", step);
     }
 
+	// std::cerr << x.transpose() << std::endl;
     target.SetCoordinate(x);
     target.SetVelocity((x - x_prev) / h);
 }
