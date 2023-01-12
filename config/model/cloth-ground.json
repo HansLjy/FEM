@@ -1,0 +1,45 @@
+{
+    "objects": [
+        {
+            "type": "cloth",
+            "name": "cloth",
+            "collision-enabled": true,
+            "density": 1130,
+            "thickness": 0.001,
+            "k-stretch": 1e5,
+            "k-shear": 1e4,
+            "k-bend-max": 0.0001,
+            "k-bend-min": 0.0001,
+            "max-direction": [1, 0, 0],
+            "start": [0, 0, 1],
+            "u-end": [0, 0, 0],
+            "v-end": [0, 1, 1],
+            "u-segments": 10,
+			"v-segments": 10,
+            "stretch-u": 1,
+            "stretch-v": 1
+        },
+        {
+            "type": "fixed-object",
+            "name": "cube",
+            "collision-enabled": true,
+            "render-object": {
+                "type": "rectangle",
+                "min-point": [-1, -1, -2],
+                "max-point": [1, 1, -1]
+            },
+            "collision-object": {
+                "type": "rectangle",
+                "min-point": [-1, -1, -2],
+                "max-point": [1, 1, -1]
+            }
+        }
+    ],
+    "external-forces": [
+        {
+            "type": "sampled-object-gravity",
+            "g": [0, 0, -9.8],
+            "object-name": "cloth"
+        }
+    ]
+}

@@ -236,7 +236,7 @@ double IPCBarrierTarget::GetMaxStep(const Eigen::VectorXd &p) {
 
 	double max_step;
 	if (max_step_outside > 0.5 * max_step_inside) {
-		max_step = std::min(max_step_outside, max_step_outside);
+		max_step = std::min(max_step_inside, max_step_outside);
 	} else {
 		max_step = GetFullCCD(p);
 	}
@@ -331,8 +331,10 @@ void IPCBarrierTarget::ComputeConstraintSet(const Eigen::VectorXd &x) {
 
             auto candidates = _vertex_hash_table.Find(bb_min, bb_max, _time_stamp);
             for (const auto& candidate : candidates) {
-				// TODO: add self-collision
-                if (candidate._obj_id != obj_id && GetVFDistance(candidate._vertex, face_vertex1, face_vertex2, face_vertex3) < _d_hat) {
+				if (candidate._obj_id == obj_id && (candidate._primitive_id == topo(0) || candidate._primitive_id == topo(1) || candidate._primitive_id == topo(2))) {
+					continue;
+				}
+                if (GetVFDistance(candidate._vertex, face_vertex1, face_vertex2, face_vertex3) < _d_hat) {
                     _constraint_set.push_back(CollisionInfo{
                         CollisionType::kVertexFace,
                         candidate._obj_id, obj_id,
@@ -354,8 +356,16 @@ void IPCBarrierTarget::ComputeConstraintSet(const Eigen::VectorXd &x) {
 
             auto candidates = _edge_hash_table.Find(bb_min, bb_max, _time_stamp);
             for (const auto& candidate : candidates) {
-				// TODO: add self-collision
-                if (candidate._obj_id < obj_id && GetEEDistance(candidate._vertex1, candidate._vertex2, edge_vertex1, edge_vertex2) < _d_hat) {
+				if (candidate._obj_id > obj_id) {
+					continue;
+				}
+				if (candidate._obj_id == obj_id) {
+					RowVector2i other_topo = _objs[candidate._obj_id]->GetCollisionEdgeTopo().row(candidate._primitive_id);
+					if (other_topo(0) == topo(0) || other_topo(0) == topo(1) || other_topo(1) == topo(0) || other_topo(1) == topo(1)) {
+						continue;
+					}
+				}
+                if (GetEEDistance(candidate._vertex1, candidate._vertex2, edge_vertex1, edge_vertex2) < _d_hat) {
                     _constraint_set.push_back(CollisionInfo{
                         CollisionType::kEdgeEdge,
                         candidate._obj_id, obj_id,
@@ -464,29 +474,29 @@ double IPCBarrierTarget::GetFullCCD(const VectorXd& p) {
 
             auto candidates = _vertex_hash_table.Find(bb_min, bb_max, _time_stamp);
             for (const auto& candidate : candidates) {
-				// TODO: add self-collision
-                if (candidate._obj_id != obj_id) {
-					const auto other_obj = _objs[candidate._obj_id];
-					const Vector3d vertex = other_obj->GetFrameRotation() * other_obj->GetCollisionVertices().row(candidate._primitive_id).transpose() + other_obj->GetFrameX();
-					const Vector3d vertex_v = other_obj->GetFrameRotation() * other_obj->GetCollisionVertexVelocity(p.segment(_offsets[candidate._obj_id], other_obj->GetDOF()), candidate._primitive_id);
+				if (candidate._obj_id == obj_id && (candidate._primitive_id == topo(0) || candidate._primitive_id == topo(1) || candidate._primitive_id == topo(2))) {
+					continue;
+				}
+				const auto other_obj = _objs[candidate._obj_id];
+				const Vector3d vertex = other_obj->GetFrameRotation() * other_obj->GetCollisionVertices().row(candidate._primitive_id).transpose() + other_obj->GetFrameX();
+				const Vector3d vertex_v = other_obj->GetFrameRotation() * other_obj->GetCollisionVertexVelocity(p.segment(_offsets[candidate._obj_id], other_obj->GetDOF()), candidate._primitive_id);
 
-					double new_ttc =
-						_ccd->VertexFaceCollision(
-							vertex, face_vertex1, face_vertex2, face_vertex3,
-							vertex_v, face_vertex_v1, face_vertex_v2, face_vertex_v3
-						);
-
-					ttc = std::min(
-						ttc,
-						new_ttc
+				double new_ttc =
+					_ccd->VertexFaceCollision(
+						vertex, face_vertex1, face_vertex2, face_vertex3,
+						vertex_v, face_vertex_v1, face_vertex_v2, face_vertex_v3
 					);
-					if (new_ttc < 1e-3) {
-						spdlog::info("Vertex-Face case: Object1 = {}, Primitive1 = {}, Object2 = {}, Primitive2 = {}", obj_id, i, candidate._obj_id, candidate._primitive_id);
 
-						std::cerr << "Vertex: " << vertex.transpose() << std::endl;
-						std::cerr << "Face: " << face_vertex1.transpose() << ", " << face_vertex2.transpose() << ", " << face_vertex3.transpose() << std::endl;
-					}
-                }
+				ttc = std::min(
+					ttc,
+					new_ttc
+				);
+				if (new_ttc < 1e-3) {
+					spdlog::info("Vertex-Face case: Object1 = {}, Primitive1 = {}, Object2 = {}, Primitive2 = {}", obj_id, i, candidate._obj_id, candidate._primitive_id);
+
+					std::cerr << "Vertex: " << vertex.transpose() << std::endl;
+					std::cerr << "Face: " << face_vertex1.transpose() << ", " << face_vertex2.transpose() << ", " << face_vertex3.transpose() << std::endl;
+				}
             }
         }
 
@@ -506,31 +516,37 @@ double IPCBarrierTarget::GetFullCCD(const VectorXd& p) {
 
             auto candidates = _edge_hash_table.Find(bb_min, bb_max, _time_stamp);
             for (const auto& candidate : candidates) {
-				// TODO: add self-collision
-                if (candidate._obj_id != obj_id) {
-					const auto other_obj = _objs[candidate._obj_id];
-					const auto other_p_obj = p.segment(_offsets[candidate._obj_id], other_obj->GetDOF());
-					const auto other_topo = other_obj->GetCollisionEdgeTopo().row(candidate._primitive_id);
-					Vector3d other_edge_vertex1 = other_obj->GetFrameRotation() * other_obj->GetCollisionVertices().row(other_topo(0)).transpose() + other_obj->GetFrameX();
-					Vector3d other_edge_vertex_v1 = other_obj->GetFrameRotation() * other_obj->GetCollisionVertexVelocity(other_p_obj, other_topo(0));
-					Vector3d other_edge_vertex2 = other_obj->GetFrameRotation() * other_obj->GetCollisionVertices().row(other_topo(1)).transpose() + other_obj->GetFrameX();
-					Vector3d other_edge_vertex_v2 = other_obj->GetFrameRotation() * other_obj->GetCollisionVertexVelocity(other_p_obj, other_topo(1));
-					
-					double new_ttc = 
-						_ccd->EdgeEdgeCollision(
-							edge_vertex1, edge_vertex2, other_edge_vertex1, other_edge_vertex2,
-							edge_vertex_v1, edge_vertex_v2, other_edge_vertex_v1, other_edge_vertex_v2
-						);
-
-					ttc = std::min (
-						ttc,
-						new_ttc
+				if (candidate._obj_id > obj_id) {
+					continue;
+				}
+				if (candidate._obj_id == obj_id) {
+					RowVector2i other_topo = _objs[candidate._obj_id]->GetCollisionEdgeTopo().row(candidate._primitive_id);
+					if (other_topo(0) == topo(0) || other_topo(0) == topo(1) || other_topo(1) == topo(0) || other_topo(1) == topo(1)) {
+						continue;
+					}
+				}
+				const auto other_obj = _objs[candidate._obj_id];
+				const auto other_p_obj = p.segment(_offsets[candidate._obj_id], other_obj->GetDOF());
+				const auto other_topo = other_obj->GetCollisionEdgeTopo().row(candidate._primitive_id);
+				Vector3d other_edge_vertex1 = other_obj->GetFrameRotation() * other_obj->GetCollisionVertices().row(other_topo(0)).transpose() + other_obj->GetFrameX();
+				Vector3d other_edge_vertex_v1 = other_obj->GetFrameRotation() * other_obj->GetCollisionVertexVelocity(other_p_obj, other_topo(0));
+				Vector3d other_edge_vertex2 = other_obj->GetFrameRotation() * other_obj->GetCollisionVertices().row(other_topo(1)).transpose() + other_obj->GetFrameX();
+				Vector3d other_edge_vertex_v2 = other_obj->GetFrameRotation() * other_obj->GetCollisionVertexVelocity(other_p_obj, other_topo(1));
+				
+				double new_ttc = 
+					_ccd->EdgeEdgeCollision(
+						edge_vertex1, edge_vertex2, other_edge_vertex1, other_edge_vertex2,
+						edge_vertex_v1, edge_vertex_v2, other_edge_vertex_v1, other_edge_vertex_v2
 					);
 
-					if (new_ttc < 1e-5) {
-						spdlog::info("Edge-edge case: Object1 = {}, Primitive1 = {}, Object2 = {}, Primitive2 = {}", obj_id, i, candidate._obj_id, candidate._primitive_id);
-					}
-                }
+				ttc = std::min (
+					ttc,
+					new_ttc
+				);
+
+				if (new_ttc < 1e-5) {
+					spdlog::info("Edge-edge case: Object1 = {}, Primitive1 = {}, Object2 = {}, Primitive2 = {}", obj_id, i, candidate._obj_id, candidate._primitive_id);
+				}
             }
         }
 		cur_offset += obj->GetDOF();
