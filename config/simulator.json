@@ -24,7 +24,7 @@
     },
     "integrator": {
       "type": "ipc",
-      "tolerance": 1e-3,
+      "tolerance": 1e-4,
       "max-iteration": 10,
       "optimizer": {
         "type": "newton",

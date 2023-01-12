@@ -543,7 +543,6 @@ double IPCBarrierTarget::GetFullCCD(const VectorXd& p) {
 }
 
 double IPCBarrierTarget::GetVFBarrierEnergy(const Vector3d& vertex, const Vector3d& face1, const Vector3d& face2, const Vector3d& face3) const {
-
     double d = GetVFDistance(vertex, face1, face2, face3);
     return -(d - _d_hat) * (d - _d_hat) * log(d / _d_hat);
 }
