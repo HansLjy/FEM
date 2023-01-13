@@ -4,10 +4,19 @@ project(FEM)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+# debug mode
 set(CMAKE_CXX_FLAGS_DEBUG "-O0 -ggdb -Wall")
 set(CMAKE_LINK_LIBRARY_FLAG_DEBUG "-g")
 
+# release mode
 set(CMAKE_CXX_FLAGS_RELEASE "-O3")
+
+# profile mode
+set(CMAKE_CXX_FLAGS_PROFILE "-g -O2")
+
+mark_as_advanced(
+	CMAKE_CXX_FLAGS_PROFILE
+)
 
 add_definitions(-DOUTPUT_PATH="${PROJECT_SOURCE_DIR}/output")
 add_definitions(-DCONFIG_PATH="${PROJECT_SOURCE_DIR}/config")

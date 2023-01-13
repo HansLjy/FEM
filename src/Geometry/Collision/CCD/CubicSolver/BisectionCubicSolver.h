@@ -11,6 +11,7 @@
 class BisectionCubicSolver : public CubicSolver {
 public:
     explicit BisectionCubicSolver(const json& config) : BisectionCubicSolver(double(config["tolerance"])) {}
+    ~BisectionCubicSolver() override = default;
     BisectionCubicSolver(double tolerance) : CubicSolver(tolerance) {}
     double Solve(double A, double B, double C, double D, double l, double r) override;
 

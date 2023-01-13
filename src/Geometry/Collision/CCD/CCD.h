@@ -18,6 +18,7 @@ public:
     virtual double VertexFaceCollision(const Vector3d& x, const Vector3d& x1, const Vector3d& x2, const Vector3d& x3,
                                        const Vector3d& v, const Vector3d& v1, const Vector3d& v2, const Vector3d& v3) = 0;
 
+    virtual ~CCD() = default;
 };
 
 DECLARE_XXX_FACTORY(CCD)

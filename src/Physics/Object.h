@@ -14,6 +14,12 @@ class CollisionShape;
 
 class DecomposedObject;
 
+
+enum class CollisionAssemblerType {
+	kNull,
+	kIndex,
+};
+
 class Object {
 public:
 	Object() = default;
@@ -48,6 +54,7 @@ public:
     /* Collision relevant */
 	void ComputeCollisionShape() {ComputeCollisionShape(_x);}
     virtual void ComputeCollisionShape(const Ref<const VectorXd>& x);
+	virtual CollisionAssemblerType GetCollisionAssemblerType() const;
 	virtual Vector3d GetCollisionVertexVelocity(const Ref<const VectorXd>& v, int idx);
     virtual const MatrixXd& GetCollisionVertices() const;
     virtual const MatrixXi& GetCollisionEdgeTopo() const;

@@ -73,3 +73,7 @@ bool SimpleCCD::CheckEdgeIntersection(const Eigen::Vector3d &edge11, const Eigen
 		return sol(0) >= 0 && sol(0) <= 1 && sol(1) >= 0 && sol(1) <= 1;
 	}
 }
+
+SimpleCCD::~SimpleCCD() {
+    delete _cubic_solver;
+}

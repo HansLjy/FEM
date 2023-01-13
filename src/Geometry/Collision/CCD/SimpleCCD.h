@@ -12,6 +12,7 @@
 class SimpleCCD : public CCD {
 public:
     explicit SimpleCCD(const json& config);
+    ~SimpleCCD() override;
 
     double EdgeEdgeCollision(const Eigen::Vector3d &x11, const Eigen::Vector3d &x12, const Eigen::Vector3d &x21, const Eigen::Vector3d &x22, const Eigen::Vector3d &v11, const Eigen::Vector3d &v12, const Eigen::Vector3d &v21, const Eigen::Vector3d &v22) override;
     double VertexFaceCollision(const Eigen::Vector3d &x, const Eigen::Vector3d &x1, const Eigen::Vector3d &x2, const Eigen::Vector3d &x3, const Eigen::Vector3d &v, const Eigen::Vector3d &v1, const Eigen::Vector3d &v2, const Eigen::Vector3d &v3) override;

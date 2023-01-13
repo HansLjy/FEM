@@ -57,9 +57,13 @@ struct VertexPrimitiveInfo {
 	}
 };
 
+/**
+ * @brief warning: this is only for sampled body
+ */
 class IPCBarrierTarget : public Target {
 public:
     IPCBarrierTarget(const std::vector<Object*>& objs, int begin, int end, const json& config);
+    ~IPCBarrierTarget();
 
     /**
      * @note This function will actually compute the collision shape of

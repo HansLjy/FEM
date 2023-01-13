@@ -10,6 +10,7 @@
 class CubicSolver {
 public:
     CubicSolver(double tolerance) : _tolerance(tolerance) {}
+    virtual ~CubicSolver() = default;
 
     //<- return minimum root in the interval
     //<- a > 0 must hold

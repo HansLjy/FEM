@@ -1,7 +1,6 @@
 .idea
 cmake-build-debug
 build
-build-debug
-build-debug-correct
+build*
 output
 .cache

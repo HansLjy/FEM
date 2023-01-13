@@ -5,6 +5,7 @@
 #include "IPCBarrierTarget.h"
 #include "Collision/CollisionUtility.h"
 #include "spdlog/spdlog.h"
+#include "Collision/CollisionShape/CollisionShape.h"
 
 IPCBarrierTarget::IPCBarrierTarget(const std::vector<Object*>& objs, int begin, int end, const json& config)
     : Target(objs, begin, end, config),
@@ -110,28 +111,19 @@ VectorXd IPCBarrierTarget::GetBarrierEnergyGradient() const {
     return gradient * _kappa;
 }
 
-#define DISPERSE_SINGLE_HESSIAN \
-    for (int i = 0, ii = 0; i < 4; i++, ii += 3) { \
-        for (int j = 0, jj = 0; j < 4; j++, jj += 3) { \
-            SparseToCOO(\
-                projection[i] * single_hessian.block(ii, jj, 3, 3) * projection[j].transpose(),\
-                coo, offset_x + offset[i], offset_y + offset[j]\
-            );\
-        }\
-    }
-
 void IPCBarrierTarget::GetBarrierEnergyHessian(COO &coo, int offset_x, int offset_y) const {
     for (const auto& constraint_pair : _constraint_set) {
         const auto obj1 = _objs[constraint_pair._obj_id1];
         const auto obj2 = _objs[constraint_pair._obj_id2];
+
+		CollisionAssemblerType ass_type1 = obj1->GetCollisionAssemblerType(),
+							   ass_type2 = obj2->GetCollisionAssemblerType();
         
         const auto& vertices1 = obj1->GetCollisionVertices();
         const auto& vertices2 = obj2->GetCollisionVertices();
         
-        const auto& projection1 = obj1->GetVertexProjectionMatrix();
-        const auto& projection2 = obj2->GetVertexProjectionMatrix();
-        const int offset1 = _offsets[constraint_pair._obj_id1];
-        const int offset2 = _offsets[constraint_pair._obj_id2];
+        const int offset1 = _offsets[constraint_pair._obj_id1] + offset_x;
+        const int offset2 = _offsets[constraint_pair._obj_id2] + offset_y;
 
         switch (constraint_pair._type) {
             case CollisionType::kVertexFace: {
@@ -143,17 +135,25 @@ void IPCBarrierTarget::GetBarrierEnergyHessian(COO &coo, int offset_x, int offse
                     face2 = vertices2.row(face_index(1)),
                     face3 = vertices2.row(face_index(2));
                 
-                SparseMatrixXd single_hessian = _kappa * GetVFBarrierEnergyHessian(vertex, face1, face2, face3).sparseView();
+                auto single_hessian = _kappa * GetVFBarrierEnergyHessian(vertex, face1, face2, face3);
                 
-                const Ref<const SparseMatrixXd> projection[4] = {
-                    projection1.middleRows(vertex_index * 3, 3).transpose(),
-                    projection2.middleRows(face_index(0) * 3, 3).transpose(),
-                    projection2.middleRows(face_index(1) * 3, 3).transpose(),
-                    projection2.middleRows(face_index(2) * 3, 3).transpose()
-                };
                 const int offset[4] = {offset1, offset2, offset2, offset2};
+				const int index[4] = {vertex_index, face_index(0), face_index(1), face_index(2)};
+				const Object* object[4] = {obj1, obj2, obj2, obj2};
+				const CollisionAssemblerType type[4] = {ass_type1, ass_type2, ass_type2, ass_type2};
 
-                DISPERSE_SINGLE_HESSIAN
+				for (int i = 0, ii = 0; i < 4; i++, ii += 3) {
+					for (int j = 0, jj = 0; j < 4; j++, jj += 3) {
+						AssembleCollisionHessian(
+							*object[i], *object[j],
+							single_hessian.block<3, 3>(ii, jj),
+							type[i], type[j],
+							offset[i], offset[j],
+							index[i], index[j],
+							coo
+						);
+					}
+				}
 
                 break;
             }
@@ -167,18 +167,25 @@ void IPCBarrierTarget::GetBarrierEnergyHessian(COO &coo, int offset_x, int offse
                     edge21 = vertices2.row(edge_index2(0)),
                     edge22 = vertices2.row(edge_index2(1));
                 
-                SparseMatrixXd single_hessian = _kappa * GetEEBarrierEnergyHessian(edge11, edge12, edge21, edge22).sparseView();
+                auto single_hessian = _kappa * GetEEBarrierEnergyHessian(edge11, edge12, edge21, edge22);
 
-                const Ref<const SparseMatrixXd> projection[4] = {
-                    projection1.middleRows(edge_index1(0) * 3, 3).transpose(),
-                    projection1.middleRows(edge_index1(1) * 3, 3).transpose(),
-                    projection2.middleRows(edge_index2(0) * 3, 3).transpose(),
-                    projection2.middleRows(edge_index2(1) * 3, 3).transpose()
-                };
                 const int offset[4] = {offset1, offset1, offset2, offset2};
+				const int index[4] = {edge_index1(0), edge_index1(1), edge_index2(0), edge_index2(1)};
+				const Object* object[4] = {obj1, obj1, obj2, obj2};
+				const CollisionAssemblerType type[4] = {ass_type1, ass_type1, ass_type2, ass_type2};
 
-                DISPERSE_SINGLE_HESSIAN
-
+				for (int i = 0, ii = 0; i < 4; i++, ii += 3) {
+					for (int j = 0, jj = 0; j < 4; j++, jj += 3) {
+						AssembleCollisionHessian(
+							*object[i], *object[j],
+							single_hessian.block<3, 3>(ii, jj),
+							type[i], type[j],
+							offset[i], offset[j],
+							index[i], index[j],
+							coo
+						);
+					}
+				}
                 break;
             }
         }
@@ -602,4 +609,8 @@ Matrix12d IPCBarrierTarget::GetEEBarrierEnergyHessian(const Vector3d& edge11, co
     const double pbpd = -2 * (d - _d_hat) * log(d / _d_hat) - (d - _d_hat) * (d - _d_hat) / d;
     const double p2bpd2 = -2 * log(d / _d_hat) - 4 * (d - _d_hat) / d + (d - _d_hat) * (d - _d_hat) / (d * d);
     return PositiveProject<12>(p2bpd2 * pdpx * pdpx.transpose() + pbpd * p2dpx2);
+}
+
+IPCBarrierTarget::~IPCBarrierTarget() {
+    delete _ccd;
 }

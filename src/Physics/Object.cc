@@ -58,6 +58,10 @@ void Object::ComputeCollisionShape(const Ref<const Eigen::VectorXd> &x) {
     _collision_shape->ComputeCollisionShape(x);
 }
 
+CollisionAssemblerType Object::GetCollisionAssemblerType() const {
+	return _collision_shape->GetCollisionAssemblerType();
+}
+
 Vector3d Object::GetCollisionVertexVelocity(const Ref<const VectorXd>& v, int idx) {
 	return _collision_shape->GetCollisionVertexVelocity(v, idx);
 }

@@ -7,6 +7,7 @@
 
 #include "EigenAll.h"
 #include "Pattern.h"
+#include "Object.h"
 
 class Object;
 
@@ -21,6 +22,10 @@ public:
 	virtual void Bind(const Object& obj) = 0;
     virtual void ComputeCollisionShape(const Ref<const VectorXd>& x) = 0;
 
+	virtual CollisionAssemblerType GetCollisionAssemblerType() const {
+		return CollisionAssemblerType::kIndex;
+	}
+	
 	/**
 	 * @return Projection matrix P of surface vertices. P is defined to 
 	 *		   satisfy the equation Px = surface vertices
@@ -49,6 +54,7 @@ class NullCollisionShape : public CollisionShape {
 public:
 	void Bind(const Object &obj) override {}
 	void ComputeCollisionShape(const Ref<const VectorXd> &x) override {}
+	CollisionAssemblerType GetCollisionAssemblerType() const override {return CollisionAssemblerType::kNull;}
 	Vector3d GetCollisionVertexVelocity(const Ref<const VectorXd> &p, int idx) const override {return Vector3d::Zero();}
 };
 
@@ -63,7 +69,17 @@ public:
 	Vector3d GetCollisionVertexVelocity(const Ref<const VectorXd> &p, int idx) const override {return Vector3d::Zero();}
 	void Bind(const Object &obj) override {}
 	void ComputeCollisionShape(const Ref<const VectorXd> &x) override {}
+	CollisionAssemblerType GetCollisionAssemblerType() const override {return CollisionAssemblerType::kNull;}
 };
+
+void AssembleCollisionHessian(
+	const Object& obj1, const Object& obj2,
+	const Ref<const Matrix3d>& local_hessian,
+	const CollisionAssemblerType& type1, const CollisionAssemblerType& type2,
+	const int offset1, const int offset2,
+	const int index1, const int index2,
+	COO& coo
+);
 
 DECLARE_XXX_FACTORY(FixedCollisionShape)
 
