@@ -7,10 +7,16 @@
 
 #include "RenderShape/RenderShape.h"
 
+class Cloth;
+
 class ClothShape : public RenderShape {
 public:
-    void GetSurface(const Object &object, Eigen::MatrixXd &vertices, Eigen::MatrixXi &topos) const override;
+	void Bind(const Object &obj) override;
+	void GetSurface(MatrixXd &vertices, MatrixXi &topos) const override;
     ~ClothShape() override = default;
+
+protected:
+	const Cloth* _cloth;
 };
 
 #endif //FEM_CLOTHSHAPE_H

@@ -6,9 +6,12 @@
 
 CurveShape::CurveShape(double radius) : _radius(radius) {}
 
-void CurveShape::GetSurface(const Object &object, MatrixXd &vertices, MatrixXi &topos) const {
-    const auto& curve = dynamic_cast<const Curve&>(object);
-    const auto& x_curve = curve.GetCoordinate();
+void CurveShape::Bind(const Object &obj) {
+	_curve = dynamic_cast<const Curve*>(&obj);
+}
+
+void CurveShape::GetSurface(MatrixXd &vertices, MatrixXi &topos) const {
+    const auto& x_curve = _curve->_x;
     int num_points = x_curve.size() / 3;
     vertices.resize(8 * (num_points - 1), 3);
     topos.resize(12 * (num_points - 1), 3);

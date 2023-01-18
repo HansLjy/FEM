@@ -16,7 +16,8 @@
     GetEnergyFunction(func, ValueName, obj)                                         \
                                                                                     \
     Randomize(obj);                                                                 \
-    VectorXd x(obj.GetCoordinate());                                                \
+    VectorXd x(obj.GetDOF());                                                       \
+	obj.GetCoordinate(x);															\
     auto numeric_gradient = FiniteDifferential(func, x, step_gradient);             \
     auto analytic_gradient = obj.Get##ValueName##Gradient(x);                       \
                                                                                     \

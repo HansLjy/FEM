@@ -67,7 +67,7 @@ void Randomize(CurveForTest& curve) {
         delta.setRandom();
         delta.normalize();
         delta *= length;
-        curve._x.block<3, 1>(3 * i, 0) = curve.GetCoordinate().block<3, 1>(3 * (i - 1), 0) + delta;
+        curve._x.block<3, 1>(3 * i, 0) = curve._x.block<3, 1>(3 * (i - 1), 0) + delta;
     }
 }
 

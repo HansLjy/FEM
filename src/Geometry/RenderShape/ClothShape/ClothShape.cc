@@ -5,12 +5,15 @@
 #include "ClothShape.h"
 #include "Object/Cloth.h"
 
-void ClothShape::GetSurface(const Object &object, Eigen::MatrixXd &vertices, Eigen::MatrixXi &topos) const {
-    auto& cloth = dynamic_cast<const Cloth&>(object);
-    const int num_points = cloth._num_points;
+void ClothShape::Bind(const Object &obj) {
+	_cloth = dynamic_cast<const Cloth*>(&obj);
+}
+
+void ClothShape::GetSurface(Eigen::MatrixXd &vertices, Eigen::MatrixXi &topos) const {
+    const int num_points = _cloth->_num_points;
     vertices.resize(num_points, 3);
     for (int i = 0, j = 0; i < num_points; i++, j += 3) {
-        vertices.row(i) = cloth._x.segment<3>(j);
+        vertices.row(i) = _cloth->_x.segment<3>(j);
     }
-    topos = cloth._topo;
+    topos = _cloth->_topo;
 }

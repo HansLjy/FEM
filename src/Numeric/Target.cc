@@ -17,7 +17,7 @@ Target::Target(const std::vector<Object*> & objs, int begin, int end, const json
 #define ASSEMBLE_1D(FuncName, var)  \
     int cur_offset = 0;             \
     for (const auto& obj : _objs) { \
-        var.segment(cur_offset, obj->GetDOF()) = obj->Get##FuncName(); \
+        obj->Get##FuncName(var.segment(cur_offset, obj->GetDOF())); \
         cur_offset += obj->GetDOF();                                   \
     }
 
@@ -91,7 +91,11 @@ Target::GetPotentialEnergyHessian(const Ref<const Eigen::VectorXd> &x, COO &coo,
 }
 
 void Target::GetExternalForce(Ref<Eigen::VectorXd> force) const {
-    ASSEMBLE_1D(ExternalForce, force)
+    int cur_offset = 0;
+    for (const auto& obj : _objs) {
+        force.segment(cur_offset, obj->GetDOF()) = obj->GetExternalForce();
+        cur_offset += obj->GetDOF();
+    }
 }
 
 #include "Target/IPCBarrierTarget.h"

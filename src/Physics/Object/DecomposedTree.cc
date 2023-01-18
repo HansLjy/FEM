@@ -3,7 +3,7 @@
 #include "ReducedLeaf.h"
 
 DecomposedTreeTrunk::DecomposedTreeTrunk(const json& config)
-: DecomposedObject(new ReducedTreeTrunk(config["proxy"]), config) {
+: RigidDecomposedObject(new ReducedTreeTrunk(config["proxy"]), config) {
 	_tree_trunk = dynamic_cast<ReducedTreeTrunk*>(_proxy);
 	const int num_children = _children.size();
 	const auto& children_config = config["children"];
@@ -15,8 +15,9 @@ DecomposedTreeTrunk::DecomposedTreeTrunk(const json& config)
 }
 
 void DecomposedTreeTrunk::CalculateChildrenFrame(const Ref<const VectorXd> &a) {
-	const auto& points = _tree_trunk->_proxy->GetCoordinate();
-    const auto& velocity = _tree_trunk->_proxy->GetVelocity();
+	VectorXd points(_tree_trunk->_proxy->GetDOF()), velocity(_tree_trunk->_proxy->GetDOF());
+	_tree_trunk->_proxy->GetCoordinate(points);
+	_tree_trunk->_proxy->GetVelocity(velocity);
     const VectorXd acceleration = _tree_trunk->_base * a;
     const int num_points = points.size() / 3;
     const int num_segments = num_points - 1;
@@ -117,7 +118,7 @@ void DecomposedTreeTrunk::CalculateChildrenFrame(const Ref<const VectorXd> &a) {
             Vector3d omega_rel = SkewVector(omega_accumulated);
             Vector3d alpha_rel = SkewVector(alpha_accumulated);
 
-            auto child = dynamic_cast<DecomposedObject*>(_children[num_children_processed]);
+            auto child = dynamic_cast<RigidDecomposedObject*>(_children[num_children_processed]);
 
             const auto& R = _frame_rotation;
             child->_frame_x = _frame_x + R * x_rel;
@@ -156,4 +157,4 @@ SparseMatrixXd DecomposedTreeTrunk::GetChildProjection(double distance) const {
     return project_prev * (1 - coef) + project_next * coef;
 }
 
-DecomposedLeaf::DecomposedLeaf(const json& config) : DecomposedObject(new ReducedLeaf(config["proxy"]), config) {}
+DecomposedLeaf::DecomposedLeaf(const json& config) : RigidDecomposedObject(new ReducedLeaf(config["proxy"]), config) {}

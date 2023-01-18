@@ -11,9 +11,11 @@
 class CurveShape : public RenderShape {
 public:
     CurveShape(double radius = 0.1);
-    void GetSurface(const Object &object, MatrixXd &vertices, MatrixXi &topos) const override;
+	void Bind(const Object &obj) override;
+    void GetSurface(MatrixXd &vertices, MatrixXi &topos) const override;
 
 public:
+	const Curve* _curve;
     const double _radius;
 };
 

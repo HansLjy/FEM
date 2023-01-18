@@ -3,6 +3,7 @@
 //
 
 #include "System.h"
+#include "DecomposedObject.h"
 #include "Constraint/Constraint.h"
 #include "spdlog/spdlog.h"
 
@@ -81,8 +82,8 @@ void System::Initialize(const json &config) {
 			_level_bar.push_back(level_end = tail);
 		}
 		const auto obj = _all_objs[head++];
-		if (obj->IsDcomposed()) {
-			const auto& decomposed_object = dynamic_cast<DecomposedObject*>(obj);
+		if (obj->IsDecomposed()) {
+			const auto& decomposed_object = dynamic_cast<RigidDecomposedObject*>(obj);
 			for (const auto& child : decomposed_object->_children) {
 				_all_objs.push_back(child);
 				tail++;

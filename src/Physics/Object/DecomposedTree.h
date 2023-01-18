@@ -1,10 +1,10 @@
 #pragma once
 
-#include "Object.h"
+#include "DecomposedObject.h"
 
 class ReducedTreeTrunk;
 
-class DecomposedTreeTrunk : public DecomposedObject {
+class DecomposedTreeTrunk : public RigidDecomposedObject {
 public:
 	DecomposedTreeTrunk(const json& config);
 	void CalculateChildrenFrame(const Ref<const VectorXd> &a) override;
@@ -18,7 +18,7 @@ protected:
 
 class ReducedLeaf;
 
-class DecomposedLeaf : public DecomposedObject {
+class DecomposedLeaf : public RigidDecomposedObject {
 public:
 	DecomposedLeaf(const json& config);
 	void CalculateChildrenFrame(const Ref<const VectorXd> &a) override {}

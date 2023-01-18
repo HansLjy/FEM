@@ -163,7 +163,7 @@ json GenerateTreeObject(int level, double angle, double cur_length, double curre
 	return tree;
 }
 
-void GenerateTree(const std::string& config, const std::string& output_file) {
+void GenerateTree(const std::string& config) {
     std::ifstream config_file(config);
     json generator_config = json::parse(config_file);
 
@@ -200,10 +200,10 @@ void GenerateTree(const std::string& config, const std::string& output_file) {
 	system["external-forces"] = json::array();
 	system["external-forces"].push_back(json(Gravity(g, "treetrunk")));
 
-    std::ofstream output(output_file);
+    std::ofstream output(CONFIG_PATH + std::string("/model/") + std::string(generator_config["filename"]));
     output << system.dump();
 }
 
 int main() {
-    GenerateTree(CONFIG_PATH "/generator.json", CONFIG_PATH "/model/tree-model.json");
+    GenerateTree(CONFIG_PATH "/generator.json");
 }

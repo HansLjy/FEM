@@ -1,8 +1,22 @@
 #include "RenderShape.h"
+#include "DecomposedObject.h"
 
-void ReducedRenderShape::GetSurface(const Object &object, MatrixXd &vertices, MatrixXi &topos) const {
-	const auto& reduced_obj = dynamic_cast<const ReducedObject&>(object);
-	reduced_obj._proxy->GetRenderShape(vertices, topos);
+void ReducedRenderShape::Bind(const Object &obj) {
+	auto reduced_obj = dynamic_cast<const ReducedObject*>(&obj);
+	_proxy_render_shape = reduced_obj->_proxy->_render_shape;
+}
+
+void ReducedRenderShape::GetSurface(MatrixXd &vertices, MatrixXi &topos) const {
+	_proxy_render_shape->GetSurface(vertices, topos);
+}
+
+void DecomposedRenderShape::Bind(const Object &obj) {
+	auto decomposed_obj = dynamic_cast<const RigidDecomposedObject*>(&obj);
+	_proxy_render_shape = decomposed_obj->_proxy->_render_shape;
+}
+
+void DecomposedRenderShape::GetSurface(MatrixXd &vertices, MatrixXi &topos) const {
+	_proxy_render_shape->GetSurface(vertices, topos);
 }
 
 #include "FixedShape/Rectangle.h"

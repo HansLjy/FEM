@@ -9,6 +9,7 @@
 
 class CurveGravity;
 class CurveCollisionShape;
+class CurveShape;
 
 class Curve : public SampledObject {
 public:
@@ -23,6 +24,7 @@ public:
 
     friend class CurveGravity;
 	friend class CurveCollisionShape;
+	friend class CurveShape;
 
 protected:
     const double _k;      		// stiffness of the curve

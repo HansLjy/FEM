@@ -8,9 +8,12 @@
 TreeTrunkShape::TreeTrunkShape(double radius_max, double radius_min)
     : _radius_max(radius_max), _radius_min(radius_min) {}
 
-void TreeTrunkShape::GetSurface(const Object &object, Eigen::MatrixXd &vertices, Eigen::MatrixXi &topos) const {
-    const auto& curve = dynamic_cast<const TreeTrunk&>(object);
-    const auto& x_curve = curve.GetCoordinate();
+void TreeTrunkShape::Bind(const Object &obj) {
+	_tree_trunk = dynamic_cast<const TreeTrunk*>(&obj);
+}
+
+void TreeTrunkShape::GetSurface(Eigen::MatrixXd &vertices, Eigen::MatrixXi &topos) const {
+    const auto& x_curve = _tree_trunk->_x;
 
     int num_points = x_curve.size() / 3;
     vertices.resize(8 * (num_points - 1), 3);
