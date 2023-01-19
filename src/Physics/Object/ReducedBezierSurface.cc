@@ -6,7 +6,7 @@
 #include "Cloth.h"
 #include "JsonUtil.h"
 #include "RenderShape/RenderShape.h"
-#include "RenderShape/ClothShape/ClothShape.h"
+#include "RenderShape/RenderShape.h"
 #include "Collision/CollisionShape/ReducedBezierClothCollisionShape.h"
 
 ReducedBezierSurface::ReducedBezierSurface(const json &config)

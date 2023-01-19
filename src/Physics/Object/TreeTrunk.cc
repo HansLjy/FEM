@@ -3,11 +3,11 @@
 //
 
 #include "TreeTrunk.h"
+#include "Collision/CollisionShape/CollisionShape.h"
 #include "RenderShape/TreeShape/TreeTrunkShape.h"
-#include "Collision/CollisionShape/TreeTrunkCollisionShape.h"
 
 TreeTrunk::TreeTrunk(bool collision_enabled, double rho, double youngs_module, double radius_max, double radius_min, const VectorXd &x, const Vector3d &root)
-                     : SampledObject(new TreeTrunkShape(radius_max, radius_min), collision_enabled ? (CollisionShape*) new TreeTrunkCollisionShape : new NullCollisionShape, x, GenerateMass(x, rho, radius_max, radius_min)),
+                     : SampledObject(new TreeTrunkShape(radius_max, radius_min), collision_enabled ? (CollisionShape*) new SampledCollisionShape : new NullCollisionShape, x, GenerateMass(x, rho, radius_max, radius_min), 1, GenerateTopo(x.size() / 3)),
                        _num_points(x.size() / 3), _root(root) {
     _alpha.resize(_num_points - 1);
     _stiffness.resize(_num_points - 1);
@@ -264,4 +264,12 @@ VectorXd TreeTrunk::GenerateMass(const VectorXd &x, double rho, double radius_ma
         current_radius -= delta_radius;
     }
     return mass;
+}
+
+MatrixXi TreeTrunk::GenerateTopo(int n) {
+	MatrixXi edge_topo(n - 1, 2);
+	for (int i = 0; i < n - 1; i++) {
+		edge_topo.row(i) << i, i + 1;
+	}
+	return edge_topo;
 }

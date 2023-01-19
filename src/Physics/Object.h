@@ -105,12 +105,14 @@ protected:
 	int _dof;
 };
 
+class SampledRenderShape;
+class SampledCollisionShape;
 class SampledObjectGravity;
 
 class SampledObject : public ConcreteObject {
 public:
-	SampledObject(RenderShape* render_shape, CollisionShape* collision_shape, const VectorXd& x, const VectorXd& mass);
-	SampledObject(RenderShape* render_shape, CollisionShape* collision_shape, const VectorXd& x, const VectorXd& v, const VectorXd& mass);
+	SampledObject(RenderShape* render_shape, CollisionShape* collision_shape, const VectorXd& x, const VectorXd& mass, int dimension, const MatrixXi& topo);
+	SampledObject(RenderShape* render_shape, CollisionShape* collision_shape, const VectorXd& x, const VectorXd& v, const VectorXd& mass, int dimension, const MatrixXi& topo);
 	
 	double GetMaxVelocity(const Ref<const VectorXd> &v) const override;
 
@@ -121,11 +123,15 @@ public:
 
 	VectorXd GetInertialForce(const Vector3d &v, const Vector3d &a, const Vector3d &omega, const Vector3d &alpha, const Matrix3d &rotation) const override;
 
+	friend class SampledRenderShape;
+	friend class SampledCollisionShape;
 	friend class SampledObjectGravity;
 
 protected:
 	VectorXd _mass;
-	MatrixXi _tet_topo, _face_topo, _edge_topo;
+	MatrixXi _edge_topo;
+	MatrixXi _face_topo;
+	MatrixXi _tet_topo;
 };
 
 class ReducedRenderShape;

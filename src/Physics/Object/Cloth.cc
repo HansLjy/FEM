@@ -4,8 +4,8 @@
 
 
 #include "Cloth.h"
-#include "RenderShape/ClothShape/ClothShape.h"
-#include "Collision/CollisionShape/ClothCollisionShape.h"
+#include "Collision/CollisionShape/CollisionShape.h"
+#include "RenderShape/RenderShape.h"
 #include "unsupported/Eigen/KroneckerProduct"
 #include "JsonUtil.h"
 
@@ -26,16 +26,16 @@ Cloth::Cloth(bool collision_enabled, double rho, double thickness, double k_stre
 Cloth::Cloth(bool collision_enabled, double rho, double thickness, double k_stretch, double k_shear, double k_bend_max, double k_bend_min,
              const Eigen::Vector2d &max_bend_dir, const Eigen::VectorXd &x, const Eigen::VectorXd &uv_corrd,
              const Eigen::MatrixXi &topo, double stretch_u, double stretch_v)
-             : SampledObject(new ClothShape, collision_enabled ? (CollisionShape*)(new ClothCollisionShape) : new NullCollisionShape, x, GenerateMass(rho, thickness, uv_corrd, topo)),
+             : SampledObject(new SampledRenderShape, collision_enabled ? (CollisionShape*)(new SampledCollisionShape) : new NullCollisionShape, x, GenerateMass(rho, thickness, uv_corrd, topo), 2, topo),
                _num_points(x.size() / 3),
                _num_triangles(topo.rows()),
                _k_stretch(k_stretch), _k_shear(k_shear),
                _stretch_u(stretch_u), _stretch_v(stretch_v),
-               _uv_coord(uv_corrd), _topo(topo)
+               _uv_coord(uv_corrd)
                {
     _area.resize(_num_triangles);
     for (int i = 0; i < _num_triangles; i++) {
-        RowVector3i index = _topo.row(i);
+        RowVector3i index = _face_topo.row(i);
         Vector2d e1 = uv_corrd.segment<2>(index(1) * 2) - uv_corrd.segment<2>(index(0) * 2);
         Vector2d e2 = uv_corrd.segment<2>(index(2) * 2) - uv_corrd.segment<2>(index(0) * 2);
         const double S = (e1(0) * e2(1) - e1(1) * e2(0)) / 2;
@@ -43,7 +43,7 @@ Cloth::Cloth(bool collision_enabled, double rho, double thickness, double k_stre
             _area(i) = S;
         } else {
             _area(i) = -S;
-            std::swap(_topo(i, 1), _topo(i, 2));
+            std::swap(_face_topo(i, 1), _face_topo(i, 2));
         }
     }
 
@@ -52,7 +52,7 @@ Cloth::Cloth(bool collision_enabled, double rho, double thickness, double k_stre
     _inv.resize(_num_triangles);
     _pFpx.resize(_num_triangles);
     for (int i = 0; i < _num_triangles; i++) {
-        RowVector3i index = _topo.row(i);
+        RowVector3i index = _face_topo.row(i);
         Vector2d e1 = uv_corrd.segment<2>(index(1) * 2) - uv_corrd.segment<2>(index(0) * 2);
         Vector2d e2 = uv_corrd.segment<2>(index(2) * 2) - uv_corrd.segment<2>(index(0) * 2);
 
@@ -114,7 +114,7 @@ Cloth::Cloth(bool collision_enabled, double rho, double thickness, double k_stre
 double Cloth::GetPotential(const Ref<const VectorXd> &x) const {
 	double energy = 0;
     for (int i = 0; i < _num_triangles; i++) {
-        RowVector3i index = _topo.row(i);
+        RowVector3i index = _face_topo.row(i);
         Matrix<double, 3, 2> F;
         F.col(0) = x.segment<3>(3 * index(1)) - x.segment<3>(3 * index(0));
         F.col(1) = x.segment<3>(3 * index(2)) - x.segment<3>(3 * index(0));
@@ -168,7 +168,7 @@ VectorXd Cloth::GetPotentialGradient(const Ref<const VectorXd>& x) const {
     VectorXd gradient(x.size());
     gradient.setZero();
     for (int i = 0; i < _num_triangles; i++) {
-        RowVector3i index = _topo.row(i);
+        RowVector3i index = _face_topo.row(i);
         Vector3d xi = x.segment<3>(3 * index(0));
         Matrix<double, 3, 2> F;
         F.col(0) = x.segment<3>(3 * index(1)) - xi;
@@ -248,7 +248,7 @@ void Cloth::GetPotentialHessian(const Ref<const VectorXd>& x, COO &coo, int x_of
 //    static int cnt = 0;
 //    auto start_t = clock();
     for (int i = 0; i < _num_triangles; i++) {
-        RowVector3i index = _topo.row(i);
+        RowVector3i index = _face_topo.row(i);
         Vector3d xi = x.segment<3>(3 * index(0));
         Matrix<double, 3, 2> F;
         F.col(0) = x.segment<3>(3 * index(1)) - xi;

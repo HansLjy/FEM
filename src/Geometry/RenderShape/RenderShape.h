@@ -15,6 +15,15 @@ public:
     virtual ~RenderShape() = default;
 };
 
+class SampledRenderShape : public RenderShape {
+public:
+	void Bind(const Object &obj) override;
+	void GetSurface(MatrixXd &vertices, MatrixXi &topos) const override;
+
+protected:
+	const SampledObject* _sampled_object;
+};
+
 class ReducedRenderShape : public RenderShape {
 public:
 	ReducedRenderShape() {}

@@ -22,9 +22,7 @@ public:
 	virtual void Bind(const Object& obj) = 0;
     virtual void ComputeCollisionShape(const Ref<const VectorXd>& x) = 0;
 
-	virtual CollisionAssemblerType GetCollisionAssemblerType() const {
-		return CollisionAssemblerType::kIndex;
-	}
+	virtual CollisionAssemblerType GetCollisionAssemblerType() const {return CollisionAssemblerType::kIndex;}
 	
 	/**
 	 * @return Projection matrix P of surface vertices. P is defined to 
@@ -48,6 +46,18 @@ protected:
 	SparseMatrixXd _vertex_projections;
     MatrixXi _edge_topo;
     MatrixXi _face_topo;
+};
+
+class SampledCollisionShape : public CollisionShape {
+public:
+	void Bind(const Object &obj) override;
+	void ComputeCollisionShape(const Ref<const VectorXd> &x) override;
+
+	CollisionAssemblerType GetCollisionAssemblerType() const override {
+		return CollisionAssemblerType::kIndex;
+	}
+
+	Vector3d GetCollisionVertexVelocity(const Ref<const VectorXd> &v, int idx) const override;
 };
 
 class NullCollisionShape : public CollisionShape {

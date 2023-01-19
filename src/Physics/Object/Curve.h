@@ -36,6 +36,7 @@ protected:
 
     static VectorXd GetX(const Vector3d& start, const Vector3d& end, int num_segments);
     static VectorXd GenerateMass(double rho, const VectorXd &x);
+	static MatrixXi GenerateTopo(int n);
 };
 
 #endif //FEM_CURVE_H

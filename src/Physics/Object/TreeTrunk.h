@@ -29,6 +29,7 @@ protected:
 
 private:
     static VectorXd GenerateMass(const VectorXd& x, double rho, double radius_max, double radius_min);
+	static MatrixXi GenerateTopo(int n);
 };
 
 #endif //FEM_TREETRUNK_H

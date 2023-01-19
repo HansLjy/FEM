@@ -54,8 +54,6 @@ protected:
     const double _stretch_u, _stretch_v;
     VectorXd _uv_coord;
     VectorXd _area;             // area of each triangle
-    MatrixXi _topo;             // each row contains the indices of
-                                // three nodes that comprise the triangle
     VectorX<Matrix2d> _inv;     // inverse of (Delta u, Delta v) for every triangle
     VectorX<Matrix6d> _pFpx;    // derivative of F(deform gradient) against xj, xk for every triangle
 

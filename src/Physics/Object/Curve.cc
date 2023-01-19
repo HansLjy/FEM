@@ -5,7 +5,7 @@
 #include "JsonUtil.h"
 #include "Curve.h"
 #include "RenderShape/CurveShape/CurveShape.h"
-#include "Collision/CollisionShape/CurveCollisionShape.h"
+#include "Collision/CollisionShape/CollisionShape.h"
 
 VectorXd Curve::GetX(const Vector3d &start, const Vector3d &end, int num_segments){
     VectorXd x(3 * (num_segments + 1));
@@ -21,7 +21,7 @@ VectorXd Curve::GetX(const Vector3d &start, const Vector3d &end, int num_segment
 Curve::Curve(const json& config) : Curve(config["collision-enabled"], config["density"], config["alpha-max"], config["alpha-min"], Json2Vec(config["start"]), Json2Vec(config["end"]), config["segments"]) {}
 
 Curve::Curve(bool collision_enabled, double rho, double alpha_max, double alpha_min, const VectorXd &x)
-    : SampledObject(new CurveShape, collision_enabled ? (CollisionShape*) new CurveCollisionShape : new NullCollisionShape, x, GenerateMass(rho, x)), _k(100 * alpha_min), _num_points(x.size() / 3) {
+    : SampledObject(new CurveShape, collision_enabled ? (CollisionShape*) new SampledCollisionShape : new NullCollisionShape, x, GenerateMass(rho, x), 1, GenerateTopo(x.size() / 3)), _k(100 * alpha_min), _num_points(x.size() / 3) {
     _alpha.resize(_num_points - 1);
     if (_num_points > 2) {
         const double delta_alpha = (alpha_min - alpha_max) / (_num_points - 3);
@@ -257,4 +257,12 @@ void Curve::GetPotentialHessian(const Ref<const VectorXd> &x, COO &coo, int x_of
             }
         }
     }
+}
+
+MatrixXi Curve::GenerateTopo(int n) {
+	MatrixXi edge_topo(n - 1, 2);
+	for (int i = 0; i < n - 1; i++) {
+		edge_topo.row(i) << i, i + 1;
+	}
+	return edge_topo;
 }

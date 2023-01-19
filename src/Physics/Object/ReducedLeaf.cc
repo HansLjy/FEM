@@ -5,7 +5,7 @@
 #include "ReducedLeaf.h"
 #include "Cloth.h"
 #include "ReducedBezierSurface.h"
-#include "RenderShape/ClothShape/ClothShape.h"
+#include "RenderShape/RenderShape.h"
 #include "Collision/CollisionShape/ReducedLeafCollisionShape.h"
 #include "JsonUtil.h"
 

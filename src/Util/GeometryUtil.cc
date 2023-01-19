@@ -1,5 +1,9 @@
 #include "GeometryUtil.h"
 
+MatrixXi GetFaceTopo(const MatrixXi& tet_topo) {
+	// TODO:
+}
+
 MatrixXi GetEdgeTopo(const MatrixXi& face_topo) {
 	assert(face_topo.cols() == 3);
 	const int num_faces = face_topo.rows();
@@ -25,4 +29,13 @@ MatrixXi GetEdgeTopo(const MatrixXi& face_topo) {
 		edge_topo_mat.row(i) << edge_topo[i].first, edge_topo[i].second;
 	}
 	return edge_topo_mat;
+}
+
+void GenerateSurfaceTopo3D(const MatrixXi& tet_topo, MatrixXi& face_topo, MatrixXi& edge_topo) {
+	face_topo = GetFaceTopo(tet_topo);
+	edge_topo = GetEdgeTopo(face_topo);
+}
+
+void GenerateSurfaceTopo2D(const MatrixXi& face_topo, MatrixXi& edge_topo) {
+	edge_topo = GetEdgeTopo(face_topo);
 }

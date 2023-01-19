@@ -78,7 +78,7 @@ TEST(ClothTest, ClothInitializationTest) {
     topo << 0, 1, 2,
             1, 3, 2;
 
-    EXPECT_EQ(cloth._topo, topo);
+    EXPECT_EQ(cloth._face_topo, topo);
 
     Matrix2d M1, M2;
     M1 << 2, 2, 0, 2;

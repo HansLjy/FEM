@@ -6,6 +6,8 @@
 #include "JsonUtil.h"
 #include "RenderShape/RenderShape.h"
 #include "Collision/CollisionShape/CollisionShape.h"
+#include "spdlog/spdlog.h"
+#include "GeometryUtil.h"
 
 Object::Object(RenderShape* render_shape, CollisionShape* collision_shape) : _render_shape(render_shape), _collision_shape(collision_shape) {}
 
@@ -75,12 +77,27 @@ ConcreteObject::~ConcreteObject() {
 
 // Sampled Object
 
-SampledObject::SampledObject(RenderShape* render_shape, CollisionShape* collision_shape, const VectorXd& x, const VectorXd& mass) 
-	: ConcreteObject(render_shape, collision_shape, x), _mass(mass) {}
+SampledObject::SampledObject(RenderShape* render_shape, CollisionShape* collision_shape, const VectorXd& x, const VectorXd& mass, int dimension, const MatrixXi& topo)
+	: SampledObject(render_shape, collision_shape, x, VectorXd::Zero(x.size()), mass, dimension, topo) {}
 
-SampledObject::SampledObject(RenderShape* render_shape, CollisionShape* collision_shape, const VectorXd& x, const VectorXd& v, const VectorXd& mass)
-	: ConcreteObject(render_shape, collision_shape, x, v), _mass(mass) {}
-	
+SampledObject::SampledObject(RenderShape* render_shape, CollisionShape* collision_shape, const VectorXd& x, const VectorXd& v, const VectorXd& mass, int dimension, const MatrixXi& topo)
+	: ConcreteObject(render_shape, collision_shape, x, v), _mass(mass) {
+	switch (dimension) {
+		case 3:
+			_tet_topo = topo;
+			GenerateSurfaceTopo3D(topo, _face_topo, _edge_topo);
+			break;
+		case 2:
+			_face_topo = topo;
+			GenerateSurfaceTopo2D(topo, _edge_topo);
+			break;
+		case 1:
+			_edge_topo = topo;
+			break;
+		default:
+			spdlog::error("Unsupported dimension!");
+	}
+}
 
 void SampledObject::GetMass(COO &coo, int x_offset, int y_offset) const {
 	const int num_points = GetDOF() / 3;
