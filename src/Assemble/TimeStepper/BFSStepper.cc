@@ -24,7 +24,7 @@ void BFSStepper::Bind(System &system) {
 void BFSStepper::Step(double h) const {
 	for (int i = 0; i < _system->_level_bar[1]; i++) {
 		if (_system->_all_objs[i]->IsDecomposed()) {
-			auto root = dynamic_cast<RigidDecomposedObject*>(_system->_all_objs[i]);
+			auto root = dynamic_cast<DecomposedObject*>(_system->_all_objs[i]);
 			root->Aggregate();
 		}
 	}
@@ -41,7 +41,7 @@ void BFSStepper::Step(double h) const {
         for (int j = _system->_level_bar[i]; j < _system->_level_bar[i + 1]; j++) {
 			auto obj = _system->_all_objs[j];
 			if (_system->_all_objs[j]->IsDecomposed()) {
-				auto decomposed_obj = dynamic_cast<RigidDecomposedObject*>(obj);
+				auto decomposed_obj = dynamic_cast<DecomposedObject*>(obj);
 				decomposed_obj->CalculateChildrenFrame(a.segment(cur_row, decomposed_obj->GetDOF()));
 			}
             cur_row += obj->GetDOF();

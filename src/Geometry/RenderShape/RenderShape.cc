@@ -21,7 +21,7 @@ void ReducedRenderShape::GetSurface(MatrixXd &vertices, MatrixXi &topos) const {
 }
 
 void DecomposedRenderShape::Bind(const Object &obj) {
-	auto decomposed_obj = dynamic_cast<const RigidDecomposedObject*>(&obj);
+	auto decomposed_obj = dynamic_cast<const DecomposedObject*>(&obj);
 	_proxy_render_shape = decomposed_obj->_proxy->_render_shape;
 }
 

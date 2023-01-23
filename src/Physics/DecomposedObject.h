@@ -4,7 +4,64 @@
 
 class DecomposedRenderShape;
 
-class RigidDecomposedObject : public Object {
+class DecomposedObject : public Object {
+public:
+	DecomposedObject(RenderShape* render_shape, CollisionShape* collision_shape, Object* proxy, bool is_root);
+
+	void Initialize() override;
+
+	int GetDOF() const override = 0;
+	void GetCoordinate(Ref<VectorXd> x) const override = 0;
+	void GetVelocity(Ref<VectorXd> v) const override = 0;
+	void SetCoordinate(const Ref<const VectorXd> &x) override = 0;
+	void SetVelocity(const Ref<const VectorXd> &v) override = 0;
+
+	double GetMaxVelocity(const Ref<const VectorXd> &v) const override = 0;
+	
+	void GetMass(COO &coo, int x_offset, int y_offset) const override = 0;
+	double GetTotalMass() const override = 0;
+
+	double GetPotential(const Ref<const VectorXd> &x) const override = 0;
+	VectorXd GetPotentialGradient(const Ref<const VectorXd> &x) const override = 0;
+	void GetPotentialHessian(const Ref<const VectorXd> &x, COO &coo, int x_offset, int y_offset) const override = 0;
+
+	void AddExternalForce(ExternalForce *force) override;
+	VectorXd GetExternalForce() const override = 0;
+	Vector3d GetTotalExternalForce() const override = 0;
+
+	VectorXd GetInertialForce(const Vector3d &v, const Vector3d &a, const Vector3d &omega, const Vector3d &alpha, const Matrix3d &rotation) const override;
+
+	Vector3d GetFrameX() const override = 0;
+	Matrix3d GetFrameRotation() const override = 0;
+
+	bool IsDecomposed() const override {return true;}
+	
+	/**
+	 * @brief Aggregate infomation from bottom to top
+	 * @note This is a recursive function
+	 */
+	virtual void Aggregate() = 0;
+
+	/**
+	 * @warning This is VERY slow, use it carefully
+	 */
+	virtual std::vector<DecomposedObject*> GetChildren() = 0;
+
+	/**
+	 * @warning This is non-recursive
+	 */
+	virtual void CalculateChildrenFrame(const Ref<const VectorXd>& a) = 0;
+
+	~DecomposedObject() override;
+
+	friend class DecomposedRenderShape;
+
+protected:
+	Object* _proxy;
+	bool _is_root;
+};
+
+class RigidDecomposedObject : public DecomposedObject {
 public:
 	explicit RigidDecomposedObject(Object* proxy, const json& config);
 
@@ -34,16 +91,10 @@ public:
 	Matrix3d GetFrameRotation() const override;
 
 	/* Domain relevant */
-	/**
-	 * @brief Calculate frame of the children
-	 * @note This is a non-recursive function
-	 */
-	virtual void CalculateChildrenFrame(const Ref<const VectorXd>& a) = 0;
-	/**
-	 * @brief Aggregate infomation from bottom to top
-	 * @note This is a recursive function
-	 */
-	void Aggregate();
+	void CalculateChildrenFrame(const Ref<const VectorXd>& a) override = 0;
+	
+	void Aggregate() override;
+	std::vector<DecomposedObject *> GetChildren() override;
 	void AddChild(RigidDecomposedObject& child, const json& position);
 
 	bool IsDecomposed() const override {return true;}
@@ -54,13 +105,8 @@ public:
 
 	friend class System;
 	friend class DecomposedTreeTrunk;
-	friend class DecomposedRenderShape;
 
 protected:
-	Object* _proxy;
-
-	bool _is_root;
-
 	std::vector<RigidDecomposedObject*> _children;
 	std::vector<Matrix3d> _children_rest_rotations;
 	std::vector<SparseMatrixXd> _children_projections; // this will be set by derived class during initialization

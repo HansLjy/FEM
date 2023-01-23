@@ -83,8 +83,9 @@ void System::Initialize(const json &config) {
 		}
 		const auto obj = _all_objs[head++];
 		if (obj->IsDecomposed()) {
-			const auto& decomposed_object = dynamic_cast<RigidDecomposedObject*>(obj);
-			for (const auto& child : decomposed_object->_children) {
+			const auto& decomposed_object = dynamic_cast<DecomposedObject*>(obj);
+			const auto& children = decomposed_object->GetChildren();
+			for (const auto& child : children) {
 				_all_objs.push_back(child);
 				tail++;
 			}

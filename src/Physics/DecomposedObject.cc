@@ -3,8 +3,27 @@
 #include "RenderShape/RenderShape.h"
 #include "Collision/CollisionShape/CollisionShape.h"
 
+DecomposedObject::DecomposedObject(RenderShape* render_shape, CollisionShape* collision_shape, Object* proxy, bool is_root) : Object(render_shape, collision_shape), _proxy(proxy), _is_root(is_root) {}
+
+void DecomposedObject::Initialize() {
+	Object::Initialize();
+	_proxy->Initialize();
+}
+
+void DecomposedObject::AddExternalForce(ExternalForce *force) {
+	_proxy->AddExternalForce(force);
+}
+
+VectorXd DecomposedObject::GetInertialForce(const Vector3d &v, const Vector3d &a, const Vector3d &omega, const Vector3d &alpha, const Matrix3d &rotation) const {
+	return _proxy->GetInertialForce(v, a, omega, alpha, rotation);
+}
+
+DecomposedObject::~DecomposedObject() {
+	delete _proxy;
+}
+
 RigidDecomposedObject::RigidDecomposedObject(Object* proxy, const json& config)
-	: Object(new DecomposedRenderShape, new NullCollisionShape), _proxy(proxy), _is_root(config["is-root"]){
+	: DecomposedObject(new DecomposedRenderShape, new NullCollisionShape, proxy, config["is-root"]) {
 	if (config["is-root"]) {
         _frame_x = Json2Vec(config["x"]);
         _frame_v = Vector3d::Zero();
@@ -23,14 +42,13 @@ RigidDecomposedObject::RigidDecomposedObject(Object* proxy, const json& config)
 }
 
 RigidDecomposedObject::~RigidDecomposedObject() {
-	delete _proxy;
 	for (const auto& child : _children) {
 		delete child;
 	}
 }
 
 void RigidDecomposedObject::AddExternalForce(ExternalForce* force) {
-	_proxy->AddExternalForce(force);
+	DecomposedObject::AddExternalForce(force);
 	for (auto& child : _children) {
 		child->AddExternalForce(force->Clone());
 	}
@@ -61,7 +79,6 @@ VectorXd RigidDecomposedObject::GetExternalForce() const {
 void RigidDecomposedObject::Aggregate() {
 	_total_mass = GetTotalMass();
 	_total_external_force = GetTotalExternalForce();
-
 
 	for (auto& child : _children) {
 		child->Aggregate();
@@ -95,10 +112,16 @@ void RigidDecomposedObject::Aggregate() {
     }
 }
 
-void RigidDecomposedObject::Initialize() {
-	Object::Initialize();
-	_proxy->Initialize();
+std::vector<DecomposedObject *> RigidDecomposedObject::GetChildren() {
+	std::vector<DecomposedObject *> result;
+	for (auto child : _children) {
+		result.push_back(child);
+	}
+	return result;
+}
 
+void RigidDecomposedObject::Initialize() {
+	DecomposedObject::Initialize();
 	for (const auto child : _children) {
 		child->Initialize();
 	}
