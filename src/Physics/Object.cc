@@ -81,7 +81,7 @@ SampledObject::SampledObject(RenderShape* render_shape, CollisionShape* collisio
 	: SampledObject(render_shape, collision_shape, x, VectorXd::Zero(x.size()), mass, dimension, topo) {}
 
 SampledObject::SampledObject(RenderShape* render_shape, CollisionShape* collision_shape, const VectorXd& x, const VectorXd& v, const VectorXd& mass, int dimension, const MatrixXi& topo)
-	: ConcreteObject(render_shape, collision_shape, x, v), _mass(mass) {
+	: ConcreteObject(render_shape, collision_shape, x, v), _mass(mass), _num_points(mass.size()) {
 	switch (dimension) {
 		case 3:
 			_tet_topo = topo;
@@ -121,11 +121,26 @@ double SampledObject::GetMaxVelocity(const Ref<const VectorXd> &v) const {
 	return max_velocity;
 }
 
+Vector3d SampledObject::GetUnnormalizedMassCenter() const {
+	Vector3d mass_center = Vector3d::Zero();
+	for (int i = 0, i3 = 0; i < _num_points; i++, i3 += 3) {
+		mass_center += _mass(i) * _x.segment<3>(i3);
+	}
+	return mass_center;
+}
+
+Matrix3d SampledObject::GetInertialTensor() const {
+	Matrix3d inertial_tensor = Matrix3d::Zero();
+	for (int i = 0, i3 = 0; i < _num_points; i++, i3 += 3) {
+		inertial_tensor += _mass(i) * _x.segment<3>(i3) * _x.segment<3>(i3).transpose();
+	}
+	return inertial_tensor;
+}
+
 VectorXd SampledObject::GetInertialForce(const Vector3d &v, const Vector3d &a, const Vector3d &omega, const Vector3d &alpha, const Matrix3d &rotation) const {
 	VectorXd inertial_force(_dof);
-	const int num_points = _dof / 3;
 
-	for (int i = 0, j = 0; i < num_points; i++, j += 3) {
+	for (int i = 0, j = 0; i < _num_points; i++, j += 3) {
 		Vector3d x_object = rotation * _x.segment<3>(j);
         Vector3d v_object = rotation * _v.segment<3>(j);
         inertial_force.segment<3>(j) = -_mass(i) * rotation.transpose() * (
@@ -134,6 +149,18 @@ VectorXd SampledObject::GetInertialForce(const Vector3d &v, const Vector3d &a, c
             + 2 * omega.cross(v_object)
             + a
         );
+	}
+	return inertial_force;
+}
+VectorXd SampledObject::GetInertialForce(const Vector3d &v, const Vector3d &a, const Matrix3d &affine, const Matrix3d &affine_velocity, const Matrix3d &affine_acceleration) const {
+	VectorXd inertial_force(_dof);
+	for (int i = 0, i3 = 0; i < _num_points; i++, i3 += 3) {
+		Vector3d x = _x.segment<3>(i3), v = _v.segment<3>(i3);
+		inertial_force.segment<3>(i3) = - _mass(i) * affine.inverse() * (
+			affine_acceleration * x
+			+ 2 * affine_velocity * v
+			+ a
+		);
 	}
 	return inertial_force;
 }
@@ -167,7 +194,6 @@ void ReducedObject::GetMass(COO &coo, int x_offset, int y_offset) const {
     SparseMatrixXd mass_reduced = _base.transpose() * mass * _base;
 	SparseToCOO(mass_reduced, coo, x_offset, y_offset);
 }
-
 
 // Fixed Object
 

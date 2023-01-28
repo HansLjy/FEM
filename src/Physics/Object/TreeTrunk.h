@@ -19,7 +19,6 @@ public:
     friend class TreeTrunkShape;
 
 protected:
-    const int _num_points;            // number of sampled points (end points included)
     const Vector3d _root;
     VectorXd _stiffness;
     VectorXd _alpha;

@@ -8,6 +8,7 @@
 #include "Object.h"
 
 class DecomposedTreeTrunk;
+class AffineDecomposedTreeTrunk;
 
 class ReducedTreeTrunk : public ReducedObject {
 public:
@@ -16,6 +17,7 @@ public:
                      const Vector3d &root, const VectorXd &control_points);
 
     friend class DecomposedTreeTrunk;
+	friend class AffineDecomposedTreeTrunk;
 
 protected:
     const Vector3d _x_root;

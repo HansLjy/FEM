@@ -18,6 +18,11 @@ VectorXd DecomposedObject::GetInertialForce(const Vector3d &v, const Vector3d &a
 	return _proxy->GetInertialForce(v, a, omega, alpha, rotation);
 }
 
+void DecomposedObject::AddChild(DecomposedObject &child, const json &position) {
+	_num_children++;
+	_abstract_children.push_back(&child);
+}
+
 DecomposedObject::~DecomposedObject() {
 	delete _proxy;
 }
@@ -54,8 +59,9 @@ void RigidDecomposedObject::AddExternalForce(ExternalForce* force) {
 	}
 }
 
-void RigidDecomposedObject::AddChild(RigidDecomposedObject &child, const json &position) {
-	_children.push_back(&child);
+void RigidDecomposedObject::AddChild(DecomposedObject &child, const json &position) {
+	DecomposedObject::AddChild(child, position);
+	_children.push_back(dynamic_cast<RigidDecomposedObject*>(&child));
 	_children_rest_rotations.push_back(Matrix3d(AngleAxisd(double(position["angle"]) / 180.0 * EIGEN_PI, Json2Vec(position["axis"]))));
 }
 
@@ -73,6 +79,7 @@ void RigidDecomposedObject::GetMass(COO &coo, int x_offset, int y_offset) const 
 }
 
 VectorXd RigidDecomposedObject::GetExternalForce() const {
+	// FIXME: This is definitely a bug, external force is unaware of current frame
 	return _proxy->GetExternalForce() + _interface_force + GetInertialForce(_frame_v, _frame_a, _frame_angular_velocity, _frame_angular_acceleration, _frame_rotation);
 }
 
@@ -82,15 +89,13 @@ void RigidDecomposedObject::Aggregate() {
 
 	for (auto& child : _children) {
 		child->Aggregate();
-		_total_mass += child->GetTotalMass();
-		_total_external_force += child->GetTotalExternalForce();
+		_total_mass += child->_total_mass;
+		_total_external_force += child->_total_external_force;
 	}
-	
-	int num_children = _children.size();
-	
+
 	/* Lumped Mass */
 	_lumped_mass.setZero();
-	for (int i = 0; i < num_children; i++) {
+	for (int i = 0; i < _num_children; i++) {
 		_lumped_mass += _children[i]->_total_mass * _children_projections[i].transpose() * _children_projections[i];
 	}
 
@@ -101,7 +106,7 @@ void RigidDecomposedObject::Aggregate() {
     Matrix3d omega2 = omega * frame_angular_velocity;
     Matrix3d alpha = _frame_rotation.transpose() * HatMatrix(_frame_angular_acceleration);
 
-    for (int i = 0; i < num_children; i++) {
+    for (int i = 0; i < _num_children; i++) {
         Vector3d v_rel = _children[i]->_frame_v - _frame_v;
         Vector3d x_rel = _children[i]->_frame_x - _frame_x;
         _interface_force += _children_projections[i].transpose()
@@ -110,14 +115,6 @@ void RigidDecomposedObject::Aggregate() {
         _interface_force -= _children_projections[i].transpose()
                           * _children[i]->_total_mass * (_frame_a + 2 * omega * v_rel + alpha * x_rel + omega2 * x_rel);
     }
-}
-
-std::vector<DecomposedObject *> RigidDecomposedObject::GetChildren() {
-	std::vector<DecomposedObject *> result;
-	for (auto child : _children) {
-		result.push_back(child);
-	}
-	return result;
 }
 
 void RigidDecomposedObject::Initialize() {
@@ -129,6 +126,267 @@ void RigidDecomposedObject::Initialize() {
 	if (_is_root) {
 		VectorXd a = VectorXd::Zero(_proxy->GetDOF());
 		CalculateChildrenFrame(a);
+	}
+}
+
+int AffineDecomposedObject::GetDOF() const {
+	return _total_dof;
+}
+
+void AffineDecomposedObject::GetCoordinate(Ref<VectorXd> x) const {
+	_proxy->GetCoordinate(x.head(_proxy->GetDOF()));
+	int current_offset = _proxy->GetDOF();
+	for (const auto& child_affine : _children_A) {
+		for (int i = 0, ii = 0; i < 3; i++, ii += 3) {
+			x.segment<3>(current_offset + ii) = child_affine.col(i);
+		}
+		current_offset += 9;
+	}
+}
+
+void AffineDecomposedObject::GetVelocity(Ref<VectorXd> v) const {
+	_proxy->GetVelocity(v.head(_proxy->GetDOF()));
+	int current_offset = _proxy->GetDOF();
+	for (const auto& child_affine_velocity : _children_A_velocity) {
+		for (int i = 0, ii = 0; i < 3; i++, ii += 3) {
+			v.segment<3>(current_offset + ii) = child_affine_velocity.col(i);
+		}
+		current_offset += 9;
+	}
+}
+
+void AffineDecomposedObject::SetCoordinate(const Ref<const VectorXd> &x) {
+	VectorXd x_proxy = x.head(_proxy->GetDOF());
+	_proxy->SetCoordinate(x_proxy);
+	int current_offset = _proxy->GetDOF();
+	for (auto& child_A : _children_A) {
+		for (int i = 0, ii = 0; i < 3; i++, ii += 3) {
+			child_A.col(i) = x.segment<3>(current_offset + ii);
+		}
+		current_offset += 9;
+	}
+
+	for (int i = 0; i < _num_children; i++) {
+		_children_b[i] = _children_projections[i] * x_proxy;
+	}
+}
+
+void AffineDecomposedObject::SetVelocity(const Ref<const VectorXd> &v) {
+	_proxy->SetVelocity(v.head(_proxy->GetDOF()));
+	int current_offset = _proxy->GetDOF();
+	for (auto& child_A_velocity : _children_A_velocity) {
+		for (int i = 0, ii = 0; i < 3; i++, ii += 3) {
+			child_A_velocity.col(i) = v.segment<3>(current_offset + ii);
+		}
+		current_offset += 9;
+	}
+}
+
+double AffineDecomposedObject::GetMaxVelocity(const Ref<const VectorXd> &v) const {
+	// TODO: I think this function is not supposed to be called
+}
+
+void AffineDecomposedObject::GetMass(COO &coo, int x_offset, int y_offset) const {
+	_proxy->GetMass(coo, x_offset, y_offset);
+	SparseToCOO(_lumped_mass, coo, x_offset, y_offset);
+}
+
+double AffineDecomposedObject::GetPotential(const Ref<const VectorXd> &x) const {
+	std::vector<Matrix3d> children_rotations;
+	std::vector<MatrixXd> null1, null2;
+	CalculateRigidRotationInfos(CalculateLevel::kValue, x.head(_proxy->GetDOF()), children_rotations, null1, null2); 
+
+	double potential = _proxy->GetPotential(x.head(_proxy->GetDOF()));
+	const int num_child = _children_A.size();
+	for (int i = 0; i < num_child; i++) {
+		potential += (children_rotations[i] - _children_A[i]).squaredNorm();
+		// TODO: is this really F-norm
+	}
+	return potential;
+}
+
+VectorXd AffineDecomposedObject::GetPotentialGradient(const Ref<const VectorXd> &x) const {
+	const int proxy_dof = _proxy->GetDOF();
+	std::vector<Matrix3d> children_rotations;
+	std::vector<MatrixXd> children_rotations_gradient, null;
+	CalculateRigidRotationInfos(CalculateLevel::kGradient, x.head(proxy_dof), children_rotations, children_rotations_gradient, null);
+
+	VectorXd gradient(_total_dof);
+	gradient.head(_proxy->GetDOF()) = _proxy->GetPotentialGradient(x.head(proxy_dof));
+
+	for (int i = 0, cur_offset = proxy_dof; i < _num_children; i++, cur_offset += 9) {
+		Vector9d tmp; // 2 * vec(Ai - Ri)
+		for (int j = 0, jj = 0; j < 3; j++, jj += 3) {
+			tmp.segment<3>(jj) = 2 * (x.segment<3>(cur_offset + jj) - children_rotations[i].col(j));
+		}
+		gradient.segment<9>(cur_offset) = tmp;
+		gradient.head(proxy_dof) -= children_rotations_gradient[i] * tmp;
+	}
+	return gradient;
+}
+
+void AffineDecomposedObject::GetPotentialHessian(const Ref<const VectorXd> &x, COO &coo, int x_offset, int y_offset) const {
+	const int proxy_dof = _proxy->GetDOF();
+	std::vector<Matrix3d> children_rotations;
+	std::vector<MatrixXd> children_rotations_gradient, children_rotations_hessian;
+	CalculateRigidRotationInfos(CalculateLevel::kHessian, x.head(proxy_dof), children_rotations, children_rotations_gradient, children_rotations_hessian);
+
+	for (int i = proxy_dof; i < _total_dof; i++)	{
+		coo.push_back(Tripletd(x_offset + i, y_offset + i, 2));
+	}
+
+	MatrixXd top_left_hession = MatrixXd::Zero(proxy_dof, proxy_dof);
+
+	for (int i = 0, cur_offset = proxy_dof; i < _num_children; i++, cur_offset += 9) {
+		const auto& child_rotation = children_rotations[i];
+		const auto& child_rotation_gradient = children_rotations_gradient[i];
+		const auto& child_rotation_hessian = children_rotations_hessian[i];
+		for (int j = 0; j < child_rotation_gradient.rows(); j++) {
+			for (int k = 0; k < child_rotation_gradient.cols(); k++) {
+				coo.push_back(Tripletd(x_offset + j + cur_offset, y_offset + k, -2 * child_rotation_gradient(j, k)));
+				coo.push_back(Tripletd(y_offset + k, x_offset + j + cur_offset, -2 * child_rotation_gradient(j, k)));
+			}
+		}
+		top_left_hession += 2 * child_rotation_gradient * child_rotation_gradient.transpose();
+		Vector9d pfpR = -2 * x.segment<9>(cur_offset);
+		for (int j = 0, j3 = 0; j < 3; j++, j3 += 3) {
+			pfpR.segment<3>(j3) += 2 * child_rotation.col(j);
+		}
+		for (int j = 0, j_proxy = 0; j < 9; j++, j_proxy += proxy_dof) {
+			top_left_hession += pfpR(j) * child_rotation_hessian.middleCols(j_proxy, proxy_dof);
+		}
+	}
+	for (int i = 0; i < proxy_dof; i++) {
+		for (int j = 0; j < proxy_dof; j++) {
+			coo.push_back(Tripletd(x_offset + i, x_offset + j, top_left_hession(i, j)));
+		}
+	}
+}
+
+void AffineDecomposedObject::AddExternalForce(ExternalForce *force) {
+	DecomposedObject::AddExternalForce(force);
+	for (auto child : _children) {
+		child->AddExternalForce(force->Clone());
+	}
+}
+
+VectorXd AffineDecomposedObject::GetExternalForce() const {
+	VectorXd ext_force(_total_dof);
+	ext_force.head(_proxy->GetDOF()) = _proxy->GetExternalForce() + _interface_force
+									   + _proxy->GetInertialForce(_frame_v, _frame_a, _frame_affine, _frame_affine_velocity, _frame_affine_acceleration);
+	ext_force.tail(_total_dof - _proxy->GetDOF()).setZero();
+	return ext_force;
+}
+
+Vector3d AffineDecomposedObject::GetTotalExternalForce() const {
+	return _proxy->GetTotalExternalForce();
+}
+
+VectorXd AffineDecomposedObject::GetInertialForce(const Vector3d &v, const Vector3d &a, const Vector3d &omega, const Vector3d &alpha, const Matrix3d &rotation) const {
+	VectorXd result(_total_dof);
+	result.head(_proxy->GetDOF()) = _proxy->GetInertialForce(v, a, omega, alpha, rotation);
+	result.tail(_total_dof - _proxy->GetDOF()).setZero();
+	return result;
+}
+
+Vector3d AffineDecomposedObject::GetFrameX() const {
+	return _frame_x;
+}
+
+Matrix3d AffineDecomposedObject::GetFrameRotation() const {
+	return _frame_affine;
+}
+
+#include "unsupported/Eigen/KroneckerProduct"
+
+void AffineDecomposedObject::Aggregate() {
+	_total_mass = _proxy->GetTotalMass();
+	_total_external_force = _proxy->GetTotalExternalForce();
+	_unnormalized_mass_center = _proxy->GetUnnormalizedMassCenter();
+	_inertial_tensor = _proxy->GetInertialTensor();
+
+	for (int i = 0; i < _num_children; i++) {
+		auto& child = _children[i];
+		const auto& A = _children_A[i];
+		const auto& b = _children_b[i];
+		child->Aggregate();
+		_total_mass += child->_total_mass;
+		_total_external_force += A * child->_total_external_force;
+		_unnormalized_mass_center += A * child->_unnormalized_mass_center + child->_total_mass * b;
+		_inertial_tensor += A * child->_inertial_tensor * A.transpose() + child->_total_mass * b * b.transpose() + A * child->_unnormalized_mass_center * b.transpose() + b * child->_unnormalized_mass_center.transpose() * A.transpose();
+	}
+
+	// TODO: calculate lumped mass and interface force
+	COO coo;
+	const int proxy_dof = _proxy->GetDOF();
+	MatrixXd proxy_lumped_mass = MatrixXd::Zero(proxy_dof, proxy_dof);
+	for (int i = 0, cur_offset = proxy_dof; i < _num_children; i++, cur_offset += 9) {
+		proxy_lumped_mass += _children[i]->_total_mass * _children_projections[i] * _children_projections[i].transpose();
+
+		MatrixXd proxy_affine_projection = Eigen::KroneckerProduct<Vector3d, Matrix3d>(_children[i]->_unnormalized_mass_center, Matrix3d::Identity()) * _children_projections[i].transpose();
+
+		DenseToCOO(
+			proxy_affine_projection,
+			coo, cur_offset, 0
+		);
+
+		DenseToCOO(
+			proxy_affine_projection.transpose(),
+			coo, 0, cur_offset
+		);
+
+		const auto& child_inertial_tensor = _children[i]->_inertial_tensor;
+
+		for (int j = 0, j3 = 0; j < 3; j++, j3 += 3) {
+			for (int k = 0, k3 = 0; k < 3; k++, k3 += 3) {
+				for (int l = 0; l < 3; l++) {
+					coo.push_back(Tripletd(cur_offset + j3 + l, cur_offset + k3 + l, child_inertial_tensor(j, k)));
+				}
+			}
+		}
+	}
+
+	DenseToCOO(proxy_lumped_mass, coo, 0, 0);
+
+	_lumped_mass.setZero();
+	_lumped_mass.setFromTriplets(coo.begin(), coo.end());
+
+	_interface_force.setZero();
+	for (int i = 0; i < _num_children; i++) {
+		_interface_force += _children_projections[i] * _children[i]->_total_external_force;
+	}
+}
+
+void AffineDecomposedObject::AddChild(DecomposedObject &child, const json &position) {
+	DecomposedObject::AddChild(child, position);
+	// TODO:
+}
+
+void AffineDecomposedObject::CalculateChildrenFrame(const Ref<const VectorXd> &a) {
+	for (int i = 0, cur_offset = _proxy->GetDOF(); i < _num_children; i++, cur_offset += 9) {
+		_children[i]->_frame_x = _frame_x + _children_b[i];
+		_children[i]->_frame_v = _frame_affine_velocity * _children_b[i] + _frame_affine * _children_v[i] + _frame_v;
+		_children[i]->_frame_a = _frame_affine_acceleration * _children_b[i]
+							   + 2 * _frame_affine_velocity * _children_v[i]
+							   + _frame_affine[i] * _children_projections[i].transpose() * a.head(_proxy->GetDOF())
+							   + _frame_a;
+		
+		_children[i]->_frame_affine = _frame_affine * _children_A[i];
+		_children[i]->_frame_affine_velocity = _frame_affine_velocity * _children_A[i] + _frame_affine * _children_A_velocity[i];
+
+		Matrix3d children_affine_acceleration;
+		for (int i = 0, i3 = 0; i < 3; i++, i3 += 3) {
+			children_affine_acceleration.col(i) = a.segment<3>(cur_offset + i3);
+		}
+		_children[i]->_frame_affine_acceleration = _frame_affine_acceleration * _children_A[i]
+												 + 2 * _frame_affine_velocity * _children_A_velocity[i]
+												 + _frame_affine * children_affine_acceleration;
+	}
+}
+
+AffineDecomposedObject::~AffineDecomposedObject() {
+	for (auto child : _children) {
+		delete child;
 	}
 }
 

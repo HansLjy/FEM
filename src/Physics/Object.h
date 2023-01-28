@@ -36,6 +36,9 @@ public:
     virtual void GetMass(COO& coo, int x_offset, int y_offset) const = 0;
     virtual double GetTotalMass() const = 0;
 
+	virtual Vector3d GetUnnormalizedMassCenter() const = 0;
+	virtual Matrix3d GetInertialTensor() const = 0;
+
     virtual double GetPotential(const Ref<const VectorXd>& x) const = 0;
     virtual VectorXd GetPotentialGradient(const Ref<const VectorXd>& x) const = 0;
     virtual void GetPotentialHessian(const Ref<const VectorXd>& x, COO& coo, int x_offset, int y_offset) const = 0;
@@ -45,6 +48,8 @@ public:
     virtual Vector3d GetTotalExternalForce() const = 0;
 
 	virtual VectorXd GetInertialForce(const Vector3d &v, const Vector3d &a, const Vector3d &omega, const Vector3d &alpha, const Matrix3d &rotation) const = 0;
+	// The inertial force in **local coordinate**
+	virtual VectorXd GetInertialForce(const Vector3d &v, const Vector3d &a, const Matrix3d &affine, const Matrix3d& affine_velocity, const Matrix3d& affine_acceleration) const = 0;
 
 	/* Frame relevant */
 	virtual Vector3d GetFrameX() const = 0;
@@ -73,6 +78,9 @@ public:
 
 	double GetMaxVelocity(const Ref<const VectorXd> &v) const override = 0;
 
+	Vector3d GetUnnormalizedMassCenter() const override = 0;
+	Matrix3d GetInertialTensor() const override = 0;
+
     /* Physics relevant */
 	void GetMass(COO &coo, int x_offset, int y_offset) const override = 0;
 	double GetTotalMass() const override = 0;
@@ -86,6 +94,7 @@ public:
 	Vector3d GetTotalExternalForce() const override = 0;
 
 	VectorXd GetInertialForce(const Vector3d &v, const Vector3d &a, const Vector3d &omega, const Vector3d &alpha, const Matrix3d &rotation) const override = 0;
+	VectorXd GetInertialForce(const Vector3d &v, const Vector3d &a, const Matrix3d &affine, const Matrix3d &affine_velocity, const Matrix3d &affine_acceleration) const override = 0;
 
 	/* Frame relevant */
 	Vector3d GetFrameX() const override;
@@ -116,18 +125,23 @@ public:
 	
 	double GetMaxVelocity(const Ref<const VectorXd> &v) const override;
 
+	Vector3d GetUnnormalizedMassCenter() const override;
+	Matrix3d GetInertialTensor() const override;
+
 	void GetMass(COO &coo, int x_offset, int y_offset) const override;
 	double GetTotalMass() const override;
 
 	Vector3d GetTotalExternalForce() const override;
 
 	VectorXd GetInertialForce(const Vector3d &v, const Vector3d &a, const Vector3d &omega, const Vector3d &alpha, const Matrix3d &rotation) const override;
+	VectorXd GetInertialForce(const Vector3d &v, const Vector3d &a, const Matrix3d &affine, const Matrix3d &affine_velocity, const Matrix3d &affine_acceleration) const override;
 
 	friend class SampledRenderShape;
 	friend class SampledCollisionShape;
 	friend class SampledObjectGravity;
 
 protected:
+	int _num_points;
 	VectorXd _mass;
 	MatrixXi _edge_topo;
 	MatrixXi _face_topo;
@@ -157,6 +171,14 @@ public:
 
 	double GetMaxVelocity(const Ref<const VectorXd> &v) const override {return _proxy->GetMaxVelocity(_base * v);}
 
+	Vector3d GetUnnormalizedMassCenter() const override {
+		return _proxy->GetUnnormalizedMassCenter();
+	}
+
+	Matrix3d GetInertialTensor() const override {
+		return _proxy->GetInertialTensor();
+	}
+
 	void GetMass(COO &coo, int x_offset, int y_offset) const override;
 	double GetTotalMass() const override {return _proxy->GetTotalMass();}
 
@@ -169,6 +191,9 @@ public:
 	Vector3d GetTotalExternalForce() const override {return _proxy->GetTotalExternalForce();}
 
 	VectorXd GetInertialForce(const Vector3d &v, const Vector3d &a, const Vector3d &omega, const Vector3d &alpha, const Matrix3d &rotation) const override {return _base.transpose() * _proxy->GetInertialForce(v, a, omega, alpha, rotation);}
+	VectorXd GetInertialForce(const Vector3d &v, const Vector3d &a, const Matrix3d &affine, const Matrix3d &affine_velocity, const Matrix3d &affine_acceleration) const override {
+		return _base.transpose() * _proxy->GetInertialForce(v, a, affine, affine_velocity, affine_acceleration);
+	}
 
 	friend class ReducedRenderShape;
 
