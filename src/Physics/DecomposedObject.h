@@ -6,7 +6,7 @@ class DecomposedRenderShape;
 
 class DecomposedObject : public Object {
 public:
-	DecomposedObject(RenderShape* render_shape, CollisionShape* collision_shape, Object* proxy, bool is_root);
+	DecomposedObject(ProxyObject* proxy, bool is_root);
 
 	void Initialize() override;
 
@@ -19,7 +19,6 @@ public:
 	double GetMaxVelocity(const Ref<const VectorXd> &v) const override = 0;
 	
 	void GetMass(COO &coo, int x_offset, int y_offset) const override = 0;
-	double GetTotalMass() const override = 0;
 
 	double GetPotential(const Ref<const VectorXd> &x) const override = 0;
 	VectorXd GetPotentialGradient(const Ref<const VectorXd> &x) const override = 0;
@@ -27,9 +26,6 @@ public:
 
 	void AddExternalForce(ExternalForce *force) override;
 	VectorXd GetExternalForce() const override = 0;
-	Vector3d GetTotalExternalForce() const override = 0;
-
-	VectorXd GetInertialForce(const Vector3d &v, const Vector3d &a, const Vector3d &omega, const Vector3d &alpha, const Matrix3d &rotation) const override;
 
 	Vector3d GetFrameX() const override = 0;
 	Matrix3d GetFrameRotation() const override = 0;
@@ -58,7 +54,7 @@ public:
 	friend class DecomposedRenderShape;
 
 protected:
-	Object* _proxy;
+	ProxyObject* _proxy;
 	bool _is_root;
 
 	int _num_children = 0;
@@ -67,7 +63,7 @@ protected:
 
 class RigidDecomposedObject : public DecomposedObject {
 public:
-	explicit RigidDecomposedObject(Object* proxy, const json& config);
+	explicit RigidDecomposedObject(ProxyObject* proxy, const json& config);
 
 	int GetDOF() const override {return _proxy->GetDOF();};
 	void GetCoordinate(Ref<VectorXd> x) const override {_proxy->GetCoordinate(x);}
@@ -78,7 +74,6 @@ public:
 	double GetMaxVelocity(const Ref<const VectorXd> &v) const override {return _proxy->GetMaxVelocity(v);}
 
 	void GetMass(COO &coo, int x_offset, int y_offset) const override;
-	double GetTotalMass() const override {return _proxy->GetTotalMass();}
 
 	double GetPotential(const Ref<const VectorXd> &x) const override {return _proxy->GetPotential(x);}
 	VectorXd GetPotentialGradient(const Ref<const VectorXd> &x) const override {return _proxy->GetPotentialGradient(x);}
@@ -86,9 +81,6 @@ public:
 
 	void AddExternalForce(ExternalForce *force) override;
 	VectorXd GetExternalForce() const override;
-	Vector3d GetTotalExternalForce() const override {return _proxy->GetTotalExternalForce();}
-
-	VectorXd GetInertialForce(const Vector3d &v, const Vector3d &a, const Vector3d &omega, const Vector3d &alpha, const Matrix3d &rotation) const override {return _proxy->GetInertialForce(v, a, omega, alpha, rotation);}
 
 	/* Frame relevant */
 	Vector3d GetFrameX() const override;
@@ -129,7 +121,7 @@ protected:
 
 class AffineDecomposedObject : public DecomposedObject {
 public:
-	AffineDecomposedObject(Object* proxy, const json& config);
+	AffineDecomposedObject(ProxyObject* proxy, const json& config);
 
 	void Initialize() override;
 	int GetDOF() const override;
@@ -147,9 +139,6 @@ public:
 
 	void AddExternalForce(ExternalForce *force) override;
 	VectorXd GetExternalForce() const override;
-	Vector3d GetTotalExternalForce() const override;
-
-	VectorXd GetInertialForce(const Vector3d &v, const Vector3d &a, const Vector3d &omega, const Vector3d &alpha, const Matrix3d &rotation) const override;
 
 	Vector3d GetFrameX() const override;
 	Matrix3d GetFrameRotation() const override;

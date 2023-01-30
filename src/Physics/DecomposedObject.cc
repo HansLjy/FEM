@@ -3,7 +3,7 @@
 #include "RenderShape/RenderShape.h"
 #include "Collision/CollisionShape/CollisionShape.h"
 
-DecomposedObject::DecomposedObject(RenderShape* render_shape, CollisionShape* collision_shape, Object* proxy, bool is_root) : Object(render_shape, collision_shape), _proxy(proxy), _is_root(is_root) {}
+DecomposedObject::DecomposedObject(ProxyObject* proxy, bool is_root) : Object(new DecomposedRenderShape, new DecomposedCollisionShape), _proxy(proxy), _is_root(is_root) {}
 
 void DecomposedObject::Initialize() {
 	Object::Initialize();
@@ -12,10 +12,6 @@ void DecomposedObject::Initialize() {
 
 void DecomposedObject::AddExternalForce(ExternalForce *force) {
 	_proxy->AddExternalForce(force);
-}
-
-VectorXd DecomposedObject::GetInertialForce(const Vector3d &v, const Vector3d &a, const Vector3d &omega, const Vector3d &alpha, const Matrix3d &rotation) const {
-	return _proxy->GetInertialForce(v, a, omega, alpha, rotation);
 }
 
 void DecomposedObject::AddChild(DecomposedObject &child, const json &position) {
@@ -27,8 +23,8 @@ DecomposedObject::~DecomposedObject() {
 	delete _proxy;
 }
 
-RigidDecomposedObject::RigidDecomposedObject(Object* proxy, const json& config)
-	: DecomposedObject(new DecomposedRenderShape, new NullCollisionShape, proxy, config["is-root"]) {
+RigidDecomposedObject::RigidDecomposedObject(ProxyObject* proxy, const json& config)
+	: DecomposedObject(proxy, config["is-root"]) {
 	if (config["is-root"]) {
         _frame_x = Json2Vec(config["x"]);
         _frame_v = Vector3d::Zero();
@@ -80,12 +76,12 @@ void RigidDecomposedObject::GetMass(COO &coo, int x_offset, int y_offset) const 
 
 VectorXd RigidDecomposedObject::GetExternalForce() const {
 	// FIXME: This is definitely a bug, external force is unaware of current frame
-	return _proxy->GetExternalForce() + _interface_force + GetInertialForce(_frame_v, _frame_a, _frame_angular_velocity, _frame_angular_acceleration, _frame_rotation);
+	return _proxy->GetExternalForce() + _interface_force + _proxy->GetInertialForce(_frame_v, _frame_a, _frame_angular_velocity, _frame_angular_acceleration, _frame_rotation);
 }
 
 void RigidDecomposedObject::Aggregate() {
-	_total_mass = GetTotalMass();
-	_total_external_force = GetTotalExternalForce();
+	_total_mass = _proxy->GetTotalMass();
+	_total_external_force = _proxy->GetTotalExternalForce();
 
 	for (auto& child : _children) {
 		child->Aggregate();
@@ -127,6 +123,13 @@ void RigidDecomposedObject::Initialize() {
 		VectorXd a = VectorXd::Zero(_proxy->GetDOF());
 		CalculateChildrenFrame(a);
 	}
+}
+
+AffineDecomposedObject::AffineDecomposedObject(ProxyObject* proxy, const json& config)
+	: DecomposedObject(proxy, config["is-root"]) {}
+
+void AffineDecomposedObject::Initialize() {
+	DecomposedObject::Initialize();
 }
 
 int AffineDecomposedObject::GetDOF() const {
@@ -278,17 +281,6 @@ VectorXd AffineDecomposedObject::GetExternalForce() const {
 	return ext_force;
 }
 
-Vector3d AffineDecomposedObject::GetTotalExternalForce() const {
-	return _proxy->GetTotalExternalForce();
-}
-
-VectorXd AffineDecomposedObject::GetInertialForce(const Vector3d &v, const Vector3d &a, const Vector3d &omega, const Vector3d &alpha, const Matrix3d &rotation) const {
-	VectorXd result(_total_dof);
-	result.head(_proxy->GetDOF()) = _proxy->GetInertialForce(v, a, omega, alpha, rotation);
-	result.tail(_total_dof - _proxy->GetDOF()).setZero();
-	return result;
-}
-
 Vector3d AffineDecomposedObject::GetFrameX() const {
 	return _frame_x;
 }
@@ -368,7 +360,7 @@ void AffineDecomposedObject::CalculateChildrenFrame(const Ref<const VectorXd> &a
 		_children[i]->_frame_v = _frame_affine_velocity * _children_b[i] + _frame_affine * _children_v[i] + _frame_v;
 		_children[i]->_frame_a = _frame_affine_acceleration * _children_b[i]
 							   + 2 * _frame_affine_velocity * _children_v[i]
-							   + _frame_affine[i] * _children_projections[i].transpose() * a.head(_proxy->GetDOF())
+							   + _frame_affine * _children_projections[i].transpose() * a.head(_proxy->GetDOF())
 							   + _frame_a;
 		
 		_children[i]->_frame_affine = _frame_affine * _children_A[i];

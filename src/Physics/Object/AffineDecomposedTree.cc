@@ -1,52 +1,6 @@
 #include "AffineDecomposedTree.h"
 #include "unsupported/Eigen/KroneckerProduct"
 
-// Function Definitions
-static double rt_powd_snf(double u0, double u1)
-{
-  double y;
-  if (std::isnan(u0) || std::isnan(u1)) {
-    y = rtNaN;
-  } else {
-    double d;
-    double d1;
-    d = std::abs(u0);
-    d1 = std::abs(u1);
-    if (std::isinf(u1)) {
-      if (d == 1.0) {
-        y = 1.0;
-      } else if (d > 1.0) {
-        if (u1 > 0.0) {
-          y = rtInf;
-        } else {
-          y = 0.0;
-        }
-      } else if (u1 > 0.0) {
-        y = 0.0;
-      } else {
-        y = rtInf;
-      }
-    } else if (d1 == 0.0) {
-      y = 1.0;
-    } else if (d1 == 1.0) {
-      if (u1 > 0.0) {
-        y = u0;
-      } else {
-        y = 1.0 / u0;
-      }
-    } else if (u1 == 2.0) {
-      y = u0 * u0;
-    } else if ((u1 == 0.5) && (u0 >= 0.0)) {
-      y = std::sqrt(u0);
-    } else if ((u0 < 0.0) && (u1 > std::floor(u1))) {
-      y = rtNaN;
-    } else {
-      y = std::pow(u0, u1);
-    }
-  }
-  return y;
-}
-
 void PTCGradient(const double in1[3], const double in2[3], double gradient[6]) {
   double b_gradient_tmp;
   double gradient_tmp;
@@ -162,12 +116,12 @@ void PTCHessian(const double in1[3], const double in2[3], double hessian[36]) {
   t24 = b_t24_tmp * in1[2];
   t146 = in2[1] * in2[2];
   t28 = t146 * in1[1] * in1[2];
-  t14 = in2[0] * rt_powd_snf(in1[0], 3.0);
-  t15 = in1[0] * rt_powd_snf(in2[0], 3.0);
-  t16 = in2[1] * rt_powd_snf(in1[1], 3.0);
-  t17 = in1[1] * rt_powd_snf(in2[1], 3.0);
-  t18 = in2[2] * rt_powd_snf(in1[2], 3.0);
-  t19 = in1[2] * rt_powd_snf(in2[2], 3.0);
+  t14 = in2[0] * in1[0] * in1[0] * in1[0];
+  t15 = in1[0] * in2[0] * in2[0] * in2[0];
+  t16 = in2[1] * in1[1] * in1[1] * in1[1];
+  t17 = in1[1] * in2[1] * in2[1] * in2[1];
+  t18 = in2[2] * in1[2] * in1[2] * in1[2];
+  t19 = in1[2] * in2[2] * in2[2] * in2[2];
   t32 = t20_tmp * t12;
   t33 = t24_tmp * t10;
   t34 = t146 * t8;
@@ -186,7 +140,7 @@ void PTCHessian(const double in1[3], const double in2[3], double hessian[36]) {
   t97 = 1.0 / std::sqrt(t81);
   t96 = t94 * t94 * t94 * t94 * t94;
   t99 = t97 * t97 * t97 * t97 * t97;;
-  t127_tmp = rt_powd_snf(t94, 3.0) * rt_powd_snf(t97, 3.0);
+  t127_tmp = t94 * t94 * t94 * t97 * t97 * t97;
   t127 = t127_tmp * ((((t20_tmp * t8 + t32) + t43_tmp * t4) + t43) -
                      t24_tmp * in1[1] * in1[2]);
   t128_tmp = t146 * in1[0];
@@ -368,8 +322,8 @@ void PTSGradient(const double in1[3], const double in2[3], double gradient[18]) 
   t25 = t6 - t7;
   t28 = 1.0 / std::sqrt((t8 + t9) + t10);
   t10 = 1.0 / std::sqrt((t11 + t12) + t13);
-  t11 = rt_powd_snf(t28, 3.0);
-  t12 = rt_powd_snf(t10, 3.0);
+  t11 = t28 * t28 * t28;
+  t12 = t10 * t10 * t10;
   gradient[0] = in1[0] * t25 * t28 * t12;
   t13 = t28 * t12;
   gradient[1] = t13 * ((t21 + in1[0] * t5) + in1[1] * t6);
@@ -595,10 +549,10 @@ void PTSHessian(const double in1[3], const double in2[3], double hessian[108]) {
   t159 = t271 * t153;
   t172 = 1.0 / std::sqrt(t152);
   t175 = 1.0 / std::sqrt(t153);
-  t153 = rt_powd_snf(t172, 3.0);
-  t174 = rt_powd_snf(t172, 5.0);
-  t176 = rt_powd_snf(t175, 3.0);
-  t177 = rt_powd_snf(t175, 5.0);
+  t153 = t172 * t172 * t172;
+  t174 = t153 * t172 * t172;
+  t176 = t175 * t175 * t175;
+  t177 = t176 * t175 * t175;
   t152 = -(t271 * t152);
   t206 = t272 * t151 * t153 * t176;
   t207 = t246 * t150 * t153 * t176;
@@ -843,7 +797,7 @@ void AffineDecomposedTreeTrunk::CalculateRigidRotationInfos(const CalculateLevel
 		Matrix<double, 6, 18> p2Spe2;
 		PTCHessian(e_prev.data(), e_next.data(), p2Cpe2.data());
 		PTSHessian(e_prev.data(), e_next.data(), p2Spe2.data());
-		Matrix9d p2Cpq2 = pepq.transpose() * p2Cpe2 * pepq;
+		Matrix9d p2Cpq2 = pepq * p2Cpe2 * pepq.transpose();
 		Matrix<double, 9, 27> p2Spq2 = pepq * p2Spe2 * Eigen::kroneckerProduct(Matrix3d::Identity(), pepq.transpose());
 		
 		Vector9d pRpq[3][3];

@@ -25,7 +25,7 @@ ConcreteObject::ConcreteObject(RenderShape* render_shape, CollisionShape* collis
 	: ConcreteObject(render_shape, collision_shape, x, VectorXd::Zero(x.size())) {}
 
 ConcreteObject::ConcreteObject(RenderShape* render_shape, CollisionShape* collision_shape, const VectorXd& x, const VectorXd& v)
-	: Object(render_shape, collision_shape), _x(x), _v(v), _dof(x.size()) {}
+	: ProxyObject(render_shape, collision_shape), _x(x), _v(v), _dof(x.size()) {}
 
 int ConcreteObject::GetDOF() const {
     return _dof;

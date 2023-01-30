@@ -60,6 +60,23 @@ public:
 	Vector3d GetCollisionVertexVelocity(const Ref<const VectorXd> &v, int idx) const override;
 };
 
+class DecomposedCollisionShape : public CollisionShape {
+public:
+	void Bind(const Object &obj) override {
+		// TODO:
+	}
+	void ComputeCollisionShape(const Ref<const VectorXd> &x) override {
+		// TODO:
+	}
+	CollisionAssemblerType GetCollisionAssemblerType() const override {
+		return CollisionAssemblerType::kIndex;
+	}
+
+	Vector3d GetCollisionVertexVelocity(const Ref<const VectorXd> &v, int idx) const override {
+		// TODO:
+	}
+};
+
 class NullCollisionShape : public CollisionShape {
 public:
 	void Bind(const Object &obj) override {}

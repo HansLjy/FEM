@@ -34,10 +34,6 @@ public:
 
 	/* Physics relevant */
     virtual void GetMass(COO& coo, int x_offset, int y_offset) const = 0;
-    virtual double GetTotalMass() const = 0;
-
-	virtual Vector3d GetUnnormalizedMassCenter() const = 0;
-	virtual Matrix3d GetInertialTensor() const = 0;
 
     virtual double GetPotential(const Ref<const VectorXd>& x) const = 0;
     virtual VectorXd GetPotentialGradient(const Ref<const VectorXd>& x) const = 0;
@@ -45,11 +41,6 @@ public:
 
     virtual void AddExternalForce(ExternalForce* force) = 0;
     virtual VectorXd GetExternalForce() const = 0;
-    virtual Vector3d GetTotalExternalForce() const = 0;
-
-	virtual VectorXd GetInertialForce(const Vector3d &v, const Vector3d &a, const Vector3d &omega, const Vector3d &alpha, const Matrix3d &rotation) const = 0;
-	// The inertial force in **local coordinate**
-	virtual VectorXd GetInertialForce(const Vector3d &v, const Vector3d &a, const Matrix3d &affine, const Matrix3d& affine_velocity, const Matrix3d& affine_acceleration) const = 0;
 
 	/* Frame relevant */
 	virtual Vector3d GetFrameX() const = 0;
@@ -65,7 +56,21 @@ public:
     CollisionShape* _collision_shape;
 };
 
-class ConcreteObject : public Object {
+class ProxyObject : public Object {
+public:
+	ProxyObject(RenderShape* render_shape, CollisionShape* collision_shape) : Object(render_shape, collision_shape) {}
+
+    virtual double GetTotalMass() const = 0;
+	virtual Vector3d GetUnnormalizedMassCenter() const = 0;
+	virtual Matrix3d GetInertialTensor() const = 0;
+
+    virtual Vector3d GetTotalExternalForce() const = 0;
+	virtual VectorXd GetInertialForce(const Vector3d &v, const Vector3d &a, const Vector3d &omega, const Vector3d &alpha, const Matrix3d &rotation) const = 0;
+	// The inertial force in **local coordinate**
+	virtual VectorXd GetInertialForce(const Vector3d &v, const Vector3d &a, const Matrix3d &affine, const Matrix3d& affine_velocity, const Matrix3d& affine_acceleration) const = 0;
+};
+
+class ConcreteObject : public ProxyObject {
 public:
     ConcreteObject(RenderShape* render_shape, CollisionShape* collision_shape, const VectorXd& x);
     ConcreteObject(RenderShape* render_shape, CollisionShape* collision_shape, const VectorXd& x, const VectorXd& v);
@@ -152,7 +157,7 @@ class ReducedRenderShape;
 
 class ReducedObject : public ConcreteObject {
 public:
-	ReducedObject(RenderShape* render_shape, CollisionShape* collision_shape, const VectorXd& x, Object* proxy, const SparseMatrixXd& base, const VectorXd& shift)
+	ReducedObject(RenderShape* render_shape, CollisionShape* collision_shape, const VectorXd& x, ProxyObject* proxy, const SparseMatrixXd& base, const VectorXd& shift)
 		: ConcreteObject(render_shape, collision_shape, x), _proxy(proxy), _base(base), _shift(shift) {}
 
 	void Initialize() override {
@@ -198,7 +203,7 @@ public:
 	friend class ReducedRenderShape;
 
 protected:
-	Object* _proxy;
+	ProxyObject* _proxy;
 	const SparseMatrixXd _base;
 	const VectorXd _shift;
 };
@@ -211,7 +216,10 @@ public:
 	
 	double GetMaxVelocity(const Ref<const VectorXd> &v) const override {return 0;}
 	void GetMass(COO &coo, int x_offset, int y_offset) const override {}
+	
 	double GetTotalMass() const override {return 0;}
+	Vector3d GetUnnormalizedMassCenter() const override {return Vector3d::Zero();}
+	Matrix3d GetInertialTensor() const override {return Matrix3d::Zero();}
 
 	double GetPotential(const Ref<const VectorXd> &x) const override {return 0;}
 	VectorXd GetPotentialGradient(const Ref<const VectorXd> &x) const override {return VectorXd(0);}
@@ -220,6 +228,7 @@ public:
 	Vector3d GetTotalExternalForce() const override {return Vector3d::Zero();}
 
 	VectorXd GetInertialForce(const Vector3d &v, const Vector3d &a, const Vector3d &omega, const Vector3d &alpha, const Matrix3d &rotation) const override {return VectorXd(0);}
+	VectorXd GetInertialForce(const Vector3d &v, const Vector3d &a, const Matrix3d &affine, const Matrix3d &affine_velocity, const Matrix3d &affine_acceleration) const override {return VectorXd(0);}
 };
 
 DECLARE_XXX_FACTORY(Object)
