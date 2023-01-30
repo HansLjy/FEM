@@ -41,3 +41,13 @@ SparseMatrixXd ReducedTreeTrunk::GenerateBase(int num_segments) {
 VectorXd ReducedTreeTrunk::GenerateShift(int num_segments, const Eigen::Vector3d &first_control_point) {
     return ReducedBezierCurve::GenerateBase(num_segments).block(0, 0, 3 * (num_segments + 1), 3) * first_control_point;
 }
+
+MatrixXd ReducedTreeTrunk::GetChildProjection(double distance) const {
+	const int num_segments = _proxy->GetDOF() / 3 - 1;
+    const double delta_t = 1.0 / num_segments;
+    const int segment_id = floor(distance / delta_t);
+    const double coef = (distance - delta_t * segment_id) / delta_t;
+    const auto& project_prev = _base.block(3 * segment_id, 0, 3, 9);
+    const auto& project_next = _base.block(3 * (segment_id + 1), 0, 3, 9);
+    return project_prev * (1 - coef) + project_next * coef;
+}

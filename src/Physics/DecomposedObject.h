@@ -6,7 +6,7 @@ class DecomposedRenderShape;
 
 class DecomposedObject : public Object {
 public:
-	DecomposedObject(ProxyObject* proxy, bool is_root);
+	DecomposedObject(ProxyObject* proxy, const json& config);
 
 	void Initialize() override;
 
@@ -42,7 +42,7 @@ public:
 		return _abstract_children;
 	}
 
-	virtual void AddChild(DecomposedObject& child, const json& position);
+	void AddChild(DecomposedObject& child, const json& position);
 
 	/**
 	 * @warning This is non-recursive
@@ -90,7 +90,7 @@ public:
 	void CalculateChildrenFrame(const Ref<const VectorXd>& a) override = 0;
 	
 	void Aggregate() override;
-	void AddChild(DecomposedObject& child, const json& position) override;
+	void AddChild(DecomposedObject& child, const json& position);
 
 	bool IsDecomposed() const override {return true;}
 	void Initialize() override;
@@ -145,27 +145,27 @@ public:
 
 	void Aggregate() override;
 	void CalculateChildrenFrame(const Ref<const VectorXd> &a) override;
-	void AddChild(DecomposedObject &child, const json &position) override;
+	void AddChild(DecomposedObject &child, const json &position);
 
 	~AffineDecomposedObject() override;
 
-protected:
 	enum class CalculateLevel {
 		kValue,
 		kGradient,
 		kHessian
 	};
 
+protected:
 	virtual void CalculateRigidRotationInfos(const CalculateLevel& level, const Ref<const VectorXd>& x, std::vector<Matrix3d>& rotations, std::vector<MatrixXd>& rotation_gradient, std::vector<MatrixXd>& rotation_hessian) const = 0;
 
 	int _total_dof;
 	std::vector<AffineDecomposedObject*> _children;
 
 	// The following quantities are w.r.t. local coordinate system
-	std::vector<Matrix3d> _children_A;
-	std::vector<Matrix3d> _children_A_velocity;
-	std::vector<Vector3d> _children_b;
-	std::vector<Vector3d> _children_v;
+	std::vector<Matrix3d> _children_A;				// part of dof
+	std::vector<Matrix3d> _children_A_velocity;		// part of dof
+	std::vector<Vector3d> _children_b;				// redundant variable, must be synced with dof of proxy
+	std::vector<Vector3d> _children_v;				// redundant variable, must be synced with dof of proxy
 
 	std::vector<MatrixXd> _children_projections; // partial b_i / partial q
 

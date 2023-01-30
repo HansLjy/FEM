@@ -1,0 +1,51 @@
+{
+	"proxy": {
+		"collision-enabled": false,
+		"segments": 2,
+		"density": 0,
+		"youngs-module": 0,
+		"radius-max": 1,
+		"radius-min": 1,
+		"root": [0, 0, -1],
+		"control-points": [
+			0, 0, 0,
+			0, 0, 1,
+			0, 0, 2,
+			0, 0, 3
+		]
+	},
+	"is-root": true,
+	"x": [0, 0, 0],
+	"affine": [
+		1, 0, 0,
+		0, 1, 0,
+		0, 0, 1
+	],
+	"children": [
+		{
+			"type": "affine-decomposed-treetrunk",
+			"proxy": {
+				"collision-enabled": false,
+				"segments": 2,
+				"density": 0,
+				"youngs-module": 0,
+				"radius-max": 1,
+				"radius-min": 1,
+				"root": [0, 0, -1],
+				"control-points": [
+					0, 0, 0,
+					0, 0, 1,
+					0, 0, 2,
+					0, 0, 3
+				]
+			},
+			"position": {
+				"distance-to-root": 0.7,
+				"angle": 0,
+				"axis": [0, 0, 1]
+			},
+			"is-root": false,
+			"children": []
+		}
+	]
+}

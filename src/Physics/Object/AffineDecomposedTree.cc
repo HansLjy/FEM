@@ -759,6 +759,15 @@ void PTSHessian(const double in1[3], const double in2[3], double hessian[108]) {
 
 AffineDecomposedTreeTrunk::AffineDecomposedTreeTrunk(const json& config) : AffineDecomposedObject(new ReducedTreeTrunk(config["proxy"]), config) {
 	_tree_trunk = dynamic_cast<ReducedTreeTrunk*>(_proxy);
+	const auto& children_config = config["children"];
+	for (const auto& child_config : children_config) {
+		double distance = child_config["position"]["distance-to-root"];
+		MatrixXd projection = _tree_trunk->GetChildProjection(distance);
+		_children_position.push_back(distance);
+		_children_projections.push_back(projection);
+		_children_b.push_back(projection * _tree_trunk->_x);
+		_children_v.push_back(projection * _tree_trunk->_v);
+	}
 }
 
 void AffineDecomposedTreeTrunk::CalculateRigidRotationInfos(const CalculateLevel& level, const Ref<const VectorXd>& x, std::vector<Matrix3d>& rotations, std::vector<MatrixXd>& rotation_gradient, std::vector<MatrixXd>& rotation_hessian) const {
@@ -831,8 +840,6 @@ void AffineDecomposedTreeTrunk::CalculateRigidRotationInfos(const CalculateLevel
 			}
 		}
 
-		// TODO: add skew matrix part
-
 		pRpq[0][1] -= pSpq.col(2);
 		pRpq[1][0] += pSpq.col(2);
 		pRpq[0][2] += pSpq.col(1);
@@ -846,6 +853,8 @@ void AffineDecomposedTreeTrunk::CalculateRigidRotationInfos(const CalculateLevel
 		p2Rpq2[2][0] -= p2Spq2.middleCols(9, 9);
 		p2Rpq2[1][2] -= p2Spq2.middleCols(0, 9);
 		p2Rpq2[2][1] += p2Spq2.middleCols(0, 9);
+
+		// TODO: consider rest A
 
 		// induction
 		
@@ -861,7 +870,7 @@ void AffineDecomposedTreeTrunk::CalculateRigidRotationInfos(const CalculateLevel
 
 		for (int j = 0; j < 3; j++) {
 			for (int k = 0; k < 3; k++) {
-				Ref<MatrixXd> pjkpq = next_rotation_gradient.col(getIndex(j, k));
+				Ref<VectorXd> pjkpq = next_rotation_gradient.col(getIndex(j, k));
 				pjkpq.setZero();
 				for (int l = 0; l < 3; l++) {
 					pjkpq += pRpq[j][l] * cur_rotation(l, k) + R(j, l) * cur_rotation_gradient.col(getIndex(l, k));
@@ -875,7 +884,8 @@ void AffineDecomposedTreeTrunk::CalculateRigidRotationInfos(const CalculateLevel
 				p2jkpq2.setZero();
 				for (int l = 0; l < 3; l++) {
 					p2jkpq2 += p2Rpq2[j][l] * cur_rotation(l, k)
-							 + 2 * pRpq[j][l] * cur_rotation_gradient.col(getIndex(l, k)).transpose()
+							 + pRpq[j][l] * cur_rotation_gradient.col(getIndex(l, k)).transpose()
+							 + cur_rotation_gradient.col(getIndex(l, k)) * pRpq[j][l].transpose()
 							 + R(j, l) * cur_rotation_hessian.middleCols(9 * getIndex(l, k), 9);
 				}
 			}
@@ -897,12 +907,15 @@ void AffineDecomposedTreeTrunk::CalculateRigidRotationInfos(const CalculateLevel
 			num_children_processed++;
 		}
 
-		e_prev = e_next;
-		t_prev = t_next;
-		e_next = x_tree_trunk.segment<3>(i3 + 6) - x_tree_trunk.segment<3>(i3 + 3);
-		t_next = e_next.normalized();
+		if (i < num_points - 2) {
+			e_prev = e_next;
+			t_prev = t_next;
+			e_next = x_tree_trunk.segment<3>(i3 + 6) - x_tree_trunk.segment<3>(i3 + 3);
+			t_next = e_next.normalized();
 
-		pepq.leftCols(3) = pepq.rightCols(3);
-		pepq.rightCols(3) = (_tree_trunk->_base.middleRows(i3 + 6, 3) - _tree_trunk->_base.middleRows(i3 + 3, 3)).transpose();
+			pepq.leftCols(3) = pepq.rightCols(3);
+			pepq.rightCols(3) = (_tree_trunk->_base.middleRows(i3 + 6, 3) - _tree_trunk->_base.middleRows(i3 + 3, 3)).transpose();
+		}
+
 	}
 }

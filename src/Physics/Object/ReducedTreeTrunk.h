@@ -24,6 +24,7 @@ protected:
     static VectorXd GenerateX(int num_segments, const VectorXd &control_points);
     static SparseMatrixXd GenerateBase(int num_segments);
     static VectorXd GenerateShift(int num_segments, const Vector3d& first_control_point);
+	MatrixXd GetChildProjection(double distance) const;
 };
 
 #endif //FEM_REDUCEDTREETRUNK_H

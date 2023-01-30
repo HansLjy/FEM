@@ -2,8 +2,9 @@
 #include "JsonUtil.h"
 #include "RenderShape/RenderShape.h"
 #include "Collision/CollisionShape/CollisionShape.h"
+#include "unsupported/Eigen/KroneckerProduct"
 
-DecomposedObject::DecomposedObject(ProxyObject* proxy, bool is_root) : Object(new DecomposedRenderShape, new DecomposedCollisionShape), _proxy(proxy), _is_root(is_root) {}
+DecomposedObject::DecomposedObject(ProxyObject* proxy, const json& config) : Object(new DecomposedRenderShape, new DecomposedCollisionShape), _proxy(proxy), _is_root(config["is-root"]) {}
 
 void DecomposedObject::Initialize() {
 	Object::Initialize();
@@ -24,7 +25,7 @@ DecomposedObject::~DecomposedObject() {
 }
 
 RigidDecomposedObject::RigidDecomposedObject(ProxyObject* proxy, const json& config)
-	: DecomposedObject(proxy, config["is-root"]) {
+	: DecomposedObject(proxy, config) {
 	if (config["is-root"]) {
         _frame_x = Json2Vec(config["x"]);
         _frame_v = Vector3d::Zero();
@@ -115,21 +116,43 @@ void RigidDecomposedObject::Aggregate() {
 
 void RigidDecomposedObject::Initialize() {
 	DecomposedObject::Initialize();
+	VectorXd a = VectorXd::Zero(_proxy->GetDOF());
+	CalculateChildrenFrame(a);
+
 	for (const auto child : _children) {
 		child->Initialize();
-	}
-
-	if (_is_root) {
-		VectorXd a = VectorXd::Zero(_proxy->GetDOF());
-		CalculateChildrenFrame(a);
 	}
 }
 
 AffineDecomposedObject::AffineDecomposedObject(ProxyObject* proxy, const json& config)
-	: DecomposedObject(proxy, config["is-root"]) {}
+	: DecomposedObject(proxy, config) {
+	if (config["is-root"]) {
+		_frame_x = Json2Vec(config["x"]);
+		_frame_v = Vector3d::Zero();
+		_frame_a = Vector3d::Zero();
+		_frame_affine = Json2Matrix3d(config["affine"]);
+		_frame_affine_velocity = Matrix3d::Zero();
+		_frame_affine_acceleration = Matrix3d::Zero();
+	}
+
+	const auto& children_config = config["children"];
+	for (const auto& child_config : children_config) {
+		AddChild(*AffineDecomposedObjectFactory::GetAffineDecomposedObject(child_config["type"], child_config), child_config["position"]);
+	}
+	_total_dof = _proxy->GetDOF() + 9 * _num_children;
+	_interface_force.resize(_proxy->GetDOF());
+	_lumped_mass.resize(_total_dof, _total_dof);
+}
 
 void AffineDecomposedObject::Initialize() {
 	DecomposedObject::Initialize();
+
+	VectorXd a = VectorXd::Zero(_total_dof);
+	CalculateChildrenFrame(a);
+
+	for (auto& child : _children) {
+		child->Initialize();
+	}
 }
 
 int AffineDecomposedObject::GetDOF() const {
@@ -289,8 +312,6 @@ Matrix3d AffineDecomposedObject::GetFrameRotation() const {
 	return _frame_affine;
 }
 
-#include "unsupported/Eigen/KroneckerProduct"
-
 void AffineDecomposedObject::Aggregate() {
 	_total_mass = _proxy->GetTotalMass();
 	_total_external_force = _proxy->GetTotalExternalForce();
@@ -351,7 +372,9 @@ void AffineDecomposedObject::Aggregate() {
 
 void AffineDecomposedObject::AddChild(DecomposedObject &child, const json &position) {
 	DecomposedObject::AddChild(child, position);
-	// TODO:
+	_children.push_back(dynamic_cast<AffineDecomposedObject*>(&child));
+	_children_A.push_back(Matrix3d(AngleAxisd(double(position["angle"]) / 180.0 * EIGEN_PI, Json2Vec(position["axis"]))));
+	_children_A_velocity.push_back(Matrix3d::Zero());
 }
 
 void AffineDecomposedObject::CalculateChildrenFrame(const Ref<const VectorXd> &a) {
@@ -360,7 +383,7 @@ void AffineDecomposedObject::CalculateChildrenFrame(const Ref<const VectorXd> &a
 		_children[i]->_frame_v = _frame_affine_velocity * _children_b[i] + _frame_affine * _children_v[i] + _frame_v;
 		_children[i]->_frame_a = _frame_affine_acceleration * _children_b[i]
 							   + 2 * _frame_affine_velocity * _children_v[i]
-							   + _frame_affine * _children_projections[i].transpose() * a.head(_proxy->GetDOF())
+							   + _frame_affine * _children_projections[i] * a.head(_proxy->GetDOF())
 							   + _frame_a;
 		
 		_children[i]->_frame_affine = _frame_affine * _children_A[i];
@@ -387,4 +410,10 @@ AffineDecomposedObject::~AffineDecomposedObject() {
 BEGIN_DEFINE_XXX_FACTORY(RigidDecomposedObject)
 	ADD_PRODUCT("decomposed-treetrunk", DecomposedTreeTrunk)
 	ADD_PRODUCT("decomposed-leaf", DecomposedLeaf)
+END_DEFINE_XXX_FACTORY
+
+#include "Object/AffineDecomposedTree.h"
+
+BEGIN_DEFINE_XXX_FACTORY(AffineDecomposedObject)
+	ADD_PRODUCT("affine-decomposed-treetrunk", AffineDecomposedTreeTrunk)
 END_DEFINE_XXX_FACTORY
