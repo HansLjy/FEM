@@ -73,8 +73,8 @@ void SparseToCOO(const SparseMatrixXd& mat, COO& coo, int offset_x, int offset_y
 
 inline void DenseToCOO(const Ref<const MatrixXd>& mat, COO& coo, int offset_x, int offset_y) {
 	for (int i = 0; i < mat.cols(); i++) {
-		for (int j = 0; j < mat.rows(); i++) {
-			coo.push_back(Tripletd(offset_x + j, offset_y + i, mat(i, j)));
+		for (int j = 0; j < mat.rows(); j++) {
+			coo.push_back(Tripletd(offset_x + i, offset_y + j, mat(i, j)));
 		}
 	}
 }

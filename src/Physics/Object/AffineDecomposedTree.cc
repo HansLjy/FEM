@@ -896,13 +896,39 @@ void AffineDecomposedTreeTrunk::CalculateRigidRotationInfos(const CalculateLevel
 		cur_rotation_hessian = next_rotation_hessian;
 		
 		while(num_children_processed < _num_children && _children_position[num_children_processed] <= t_current) {
+			const auto& rest_A = _children_rest_A[num_children_processed];
 			switch (level) {
-				case AffineDecomposedObject::CalculateLevel::kHessian:
-					rotation_hessian.push_back(cur_rotation_hessian);
-				case AffineDecomposedObject::CalculateLevel::kGradient:
-					rotation_gradient.push_back(cur_rotation_gradient);
-				case AffineDecomposedObject::CalculateLevel::kValue:
-					rotations.push_back(cur_rotation);
+				case AffineDecomposedObject::CalculateLevel::kHessian: {
+					MatrixXd child_rotation_hessian;
+					child_rotation_hessian.resizeLike(cur_rotation_hessian);
+					for (int j = 0; j < 3; j++) {
+						for (int k = 0; k < 3; k++) {
+							Ref<MatrixXd> p2jkpq2 = child_rotation_hessian.middleCols(getIndex(j, k) * 9, 9);
+							p2jkpq2.setZero();
+							for (int l = 0; l < 3; l++) {
+								p2jkpq2 += cur_rotation_hessian.middleCols(getIndex(j, l) * 9, 9) * rest_A(l, k);
+							}
+						}
+					}
+					rotation_hessian.push_back(child_rotation_hessian);
+				}
+				case AffineDecomposedObject::CalculateLevel::kGradient: {
+					MatrixXd child_rotation_gradient;
+					child_rotation_gradient.resizeLike(cur_rotation_gradient);
+					for (int j = 0; j < 3; j++) {
+						for (int k = 0; k < 3; k++) {
+							Ref<MatrixXd> pjkpq = child_rotation_gradient.col(getIndex(j, k));
+							pjkpq.setZero();
+							for (int l = 0; l < 3; l++) {
+								pjkpq += cur_rotation_gradient.col(getIndex(j, l)) * rest_A(l, k);
+							}
+						}
+					}
+					rotation_gradient.push_back(child_rotation_gradient);
+				}
+				case AffineDecomposedObject::CalculateLevel::kValue: {
+					rotations.push_back(cur_rotation * rest_A);
+				}
 			}
 			num_children_processed++;
 		}

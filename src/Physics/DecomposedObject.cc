@@ -334,9 +334,9 @@ void AffineDecomposedObject::Aggregate() {
 	const int proxy_dof = _proxy->GetDOF();
 	MatrixXd proxy_lumped_mass = MatrixXd::Zero(proxy_dof, proxy_dof);
 	for (int i = 0, cur_offset = proxy_dof; i < _num_children; i++, cur_offset += 9) {
-		proxy_lumped_mass += _children[i]->_total_mass * _children_projections[i] * _children_projections[i].transpose();
+		proxy_lumped_mass += _children[i]->_total_mass * _children_projections[i].transpose() * _children_projections[i];
 
-		MatrixXd proxy_affine_projection = Eigen::KroneckerProduct<Vector3d, Matrix3d>(_children[i]->_unnormalized_mass_center, Matrix3d::Identity()) * _children_projections[i].transpose();
+		MatrixXd proxy_affine_projection = Eigen::KroneckerProduct<Vector3d, Matrix3d>(_children[i]->_unnormalized_mass_center, Matrix3d::Identity()) * _children_projections[i];
 
 		DenseToCOO(
 			proxy_affine_projection,
@@ -366,14 +366,16 @@ void AffineDecomposedObject::Aggregate() {
 
 	_interface_force.setZero();
 	for (int i = 0; i < _num_children; i++) {
-		_interface_force += _children_projections[i] * _children[i]->_total_external_force;
+		_interface_force += _children_projections[i].transpose() * _children[i]->_total_external_force;
 	}
 }
 
 void AffineDecomposedObject::AddChild(DecomposedObject &child, const json &position) {
 	DecomposedObject::AddChild(child, position);
 	_children.push_back(dynamic_cast<AffineDecomposedObject*>(&child));
-	_children_A.push_back(Matrix3d(AngleAxisd(double(position["angle"]) / 180.0 * EIGEN_PI, Json2Vec(position["axis"]))));
+	Matrix3d rest_A = Matrix3d(AngleAxisd(double(position["angle"]) / 180.0 * EIGEN_PI, Json2Vec(position["axis"])));
+	_children_A.push_back(rest_A);
+	_children_rest_A.push_back(rest_A);
 	_children_A_velocity.push_back(Matrix3d::Zero());
 }
 

@@ -34,7 +34,7 @@
       }
     }
   },
-  "system-config": "/model/genTree.json",
+  "system-config": "/model/affine-twig.json",
   "renderer": {
     "camera":  {
       "position": [10, 0, 5],

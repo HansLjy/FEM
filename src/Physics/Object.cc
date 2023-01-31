@@ -208,6 +208,7 @@ FixedObject::FixedObject(const json& config)
 #include "Object/Curve.h"
 #include "Object/Cloth.h"
 #include "Object/DecomposedTree.h"
+#include "Object/AffineDecomposedTree.h"
 #include "Object/ReducedBezierCurve.h"
 #include "Object/ReducedBezierSurface.h"
 #include "Object/ReducedLeaf.h"
@@ -217,6 +218,7 @@ FixedObject::FixedObject(const json& config)
 BEGIN_DEFINE_XXX_FACTORY(Object)
     ADD_PRODUCT("cloth", Cloth)
     ADD_PRODUCT("curve", Curve)
+	ADD_PRODUCT("affine-decomposed-treetrunk", AffineDecomposedTreeTrunk)
 	ADD_PRODUCT("decomposed-treetrunk", DecomposedTreeTrunk)
 	ADD_PRODUCT("decomposed-leaf", DecomposedLeaf)
     ADD_PRODUCT("reduced-bezier-curve", ReducedBezierCurve)

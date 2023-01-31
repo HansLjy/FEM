@@ -1,0 +1,64 @@
+{
+	"objects": [
+		{
+			"type": "affine-decomposed-treetrunk",
+			"name": "twig",
+			"proxy": {
+				"collision-enabled": false,
+				"segments": 5,
+				"density": 506,
+				"youngs-module": 0.7e9,
+				"radius-max": 0.2,
+				"radius-min": 0.1,
+				"root": [0, 0, -1],
+				"control-points": [
+					0, 0, 0,
+					0, 0, 3,
+					0, 0, 6,
+					0, 0, 9
+				]
+			},
+			"is-root": true,
+			"x": [0, 0, 0],
+			"affine": [
+				1, 0, 0,
+				0, 1, 0,
+				0, 0, 1
+			],
+			"children": [
+				{
+					"type": "affine-decomposed-treetrunk",
+					"proxy": {
+						"collision-enabled": false,
+						"segments": 5,
+						"density": 506,
+						"youngs-module": 0.7e9,
+						"radius-max": 0.2,
+						"radius-min": 0.1,
+						"root": [0, 0, -1],
+						"control-points": [
+							0, 0, 0,
+							0, 0, 1,
+							0, 0, 2,
+							0, 0, 3
+						]
+					},
+					"position": {
+						"distance-to-root": 0.7,
+						"angle": 45,
+						"axis": [1, 0, 0]
+					},
+					"is-root": false,
+					"children": []
+				}
+			]
+		}
+	],
+	"external-forces": [
+		{
+			"type": "sampled-object-gravity",
+			"object-name": "twig",
+			"g": [0, 0, -9.8]
+		}
+	]
+}

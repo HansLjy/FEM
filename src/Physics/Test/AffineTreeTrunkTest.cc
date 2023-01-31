@@ -1,6 +1,7 @@
 #include "Object/AffineDecomposedTree.h"
 #include "gtest/gtest.h"
 #include "FiniteDifference.h"
+#include "DerivativeTest.h"
 
 #include <functional>
 #include <fstream>
@@ -69,4 +70,34 @@ TEST(AffineDecomposedObjectTest, BishopTest) {
 			EXPECT_NEAR((numeric_hessian - analytic_hessian).norm() / numeric_hessian.size(), 0, 1e-3);
 		}
 	}
+}
+
+TEST(AffineDecomposedObjectTest, EnergyTest) {
+	json config;
+	std::fstream config_file(PHYSICS_TEST_CONFIG_PATH "/AffineTreeTrunkConfig.json");
+	config_file >> config;
+
+	FriendlyAffineTreeTrunk treetrunk(config);
+
+	const auto func = [&treetrunk](const VectorXd& x) -> double {
+		return treetrunk.GetPotential(x);
+	};
+
+	VectorXd x = VectorXd::Random(18);
+
+	auto numeric_gradient = FiniteDifferential(func, x, 1e-8);
+	auto analytic_gradient = treetrunk.GetPotentialGradient(x);
+	
+	EXPECT_NEAR((numeric_gradient - analytic_gradient).norm() / numeric_gradient.size(), 0, 1e-5);
+
+	PrintGradient()
+
+	auto numeric_hessian = FiniteDifferential2(func, x, 1e-4);
+	COO coo;
+	treetrunk.GetPotentialHessian(x, coo, 0, 0);
+	SparseMatrixXd analytic_hessian(18, 18);
+	analytic_hessian.setFromTriplets(coo.begin(), coo.end());
+	EXPECT_NEAR((numeric_hessian - analytic_hessian).norm() / numeric_hessian.size(), 0, 1e-3);
+
+	PrintHessian()
 }

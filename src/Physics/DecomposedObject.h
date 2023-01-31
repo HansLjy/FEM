@@ -160,6 +160,7 @@ protected:
 
 	int _total_dof;
 	std::vector<AffineDecomposedObject*> _children;
+	std::vector<Matrix3d> _children_rest_A;
 
 	// The following quantities are w.r.t. local coordinate system
 	std::vector<Matrix3d> _children_A;				// part of dof
