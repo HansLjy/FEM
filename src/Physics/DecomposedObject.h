@@ -158,6 +158,8 @@ public:
 protected:
 	virtual void CalculateRigidRotationInfos(const CalculateLevel& level, const Ref<const VectorXd>& x, std::vector<Matrix3d>& rotations, std::vector<MatrixXd>& rotation_gradient, std::vector<MatrixXd>& rotation_hessian) const = 0;
 
+	double _affine_stiffness;
+
 	int _total_dof;
 	std::vector<AffineDecomposedObject*> _children;
 	std::vector<Matrix3d> _children_rest_A;

@@ -90,7 +90,7 @@ TEST(AffineDecomposedObjectTest, EnergyTest) {
 	
 	EXPECT_NEAR((numeric_gradient - analytic_gradient).norm() / numeric_gradient.size(), 0, 1e-5);
 
-	PrintGradient()
+	// PrintGradient()
 
 	auto numeric_hessian = FiniteDifferential2(func, x, 1e-4);
 	COO coo;
@@ -99,5 +99,5 @@ TEST(AffineDecomposedObjectTest, EnergyTest) {
 	analytic_hessian.setFromTriplets(coo.begin(), coo.end());
 	EXPECT_NEAR((numeric_hessian - analytic_hessian).norm() / numeric_hessian.size(), 0, 1e-3);
 
-	PrintHessian()
+	// PrintHessian()
 }

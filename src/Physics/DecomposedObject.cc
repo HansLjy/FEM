@@ -125,7 +125,7 @@ void RigidDecomposedObject::Initialize() {
 }
 
 AffineDecomposedObject::AffineDecomposedObject(ProxyObject* proxy, const json& config)
-	: DecomposedObject(proxy, config) {
+	: DecomposedObject(proxy, config), _affine_stiffness(config["affine-stiffness"]) {
 	if (config["is-root"]) {
 		_frame_x = Json2Vec(config["x"]);
 		_frame_v = Vector3d::Zero();
@@ -198,13 +198,18 @@ void AffineDecomposedObject::SetCoordinate(const Ref<const VectorXd> &x) {
 }
 
 void AffineDecomposedObject::SetVelocity(const Ref<const VectorXd> &v) {
-	_proxy->SetVelocity(v.head(_proxy->GetDOF()));
+	VectorXd v_proxy = v.head(_proxy->GetDOF());
+	_proxy->SetVelocity(v_proxy);
 	int current_offset = _proxy->GetDOF();
 	for (auto& child_A_velocity : _children_A_velocity) {
 		for (int i = 0, ii = 0; i < 3; i++, ii += 3) {
 			child_A_velocity.col(i) = v.segment<3>(current_offset + ii);
 		}
 		current_offset += 9;
+	}
+	
+	for (int i = 0; i < _num_children; i++) {
+		_children_v[i] = _children_projections[i] * v_proxy;
 	}
 }
 
@@ -223,10 +228,10 @@ double AffineDecomposedObject::GetPotential(const Ref<const VectorXd> &x) const 
 	CalculateRigidRotationInfos(CalculateLevel::kValue, x.head(_proxy->GetDOF()), children_rotations, null1, null2); 
 
 	double potential = _proxy->GetPotential(x.head(_proxy->GetDOF()));
-	const int num_child = _children_A.size();
-	for (int i = 0; i < num_child; i++) {
-		potential += (children_rotations[i] - _children_A[i]).squaredNorm();
-		// TODO: is this really F-norm
+	for (int i = 0, cur_offset = _proxy->GetDOF(); i < _num_children; i++, cur_offset += 9) {
+		for (int j = 0, j3 = 0; j < 3; j++, j3 += 3) {
+			potential += _affine_stiffness * (children_rotations[i].col(j) - x.segment<3>(cur_offset + j3)).squaredNorm();
+		}
 	}
 	return potential;
 }
@@ -245,8 +250,8 @@ VectorXd AffineDecomposedObject::GetPotentialGradient(const Ref<const VectorXd> 
 		for (int j = 0, jj = 0; j < 3; j++, jj += 3) {
 			tmp.segment<3>(jj) = 2 * (x.segment<3>(cur_offset + jj) - children_rotations[i].col(j));
 		}
-		gradient.segment<9>(cur_offset) = tmp;
-		gradient.head(proxy_dof) -= children_rotations_gradient[i] * tmp;
+		gradient.segment<9>(cur_offset) = _affine_stiffness * tmp;
+		gradient.head(proxy_dof) -= _affine_stiffness * children_rotations_gradient[i] * tmp;
 	}
 	return gradient;
 }
@@ -257,8 +262,12 @@ void AffineDecomposedObject::GetPotentialHessian(const Ref<const VectorXd> &x, C
 	std::vector<MatrixXd> children_rotations_gradient, children_rotations_hessian;
 	CalculateRigidRotationInfos(CalculateLevel::kHessian, x.head(proxy_dof), children_rotations, children_rotations_gradient, children_rotations_hessian);
 
+	// if (_num_children != 0) {
+	// 	std::cerr << "Rotation:\n" << children_rotations[0] << std::endl;
+	// }
+
 	for (int i = proxy_dof; i < _total_dof; i++)	{
-		coo.push_back(Tripletd(x_offset + i, y_offset + i, 2));
+		coo.push_back(Tripletd(x_offset + i, y_offset + i, 2 * _affine_stiffness));
 	}
 
 	MatrixXd top_left_hession = MatrixXd::Zero(proxy_dof, proxy_dof);
@@ -269,17 +278,17 @@ void AffineDecomposedObject::GetPotentialHessian(const Ref<const VectorXd> &x, C
 		const auto& child_rotation_hessian = children_rotations_hessian[i];
 		for (int j = 0; j < child_rotation_gradient.rows(); j++) {
 			for (int k = 0; k < child_rotation_gradient.cols(); k++) {
-				coo.push_back(Tripletd(x_offset + j + cur_offset, y_offset + k, -2 * child_rotation_gradient(j, k)));
-				coo.push_back(Tripletd(y_offset + k, x_offset + j + cur_offset, -2 * child_rotation_gradient(j, k)));
+				coo.push_back(Tripletd(x_offset + j + cur_offset, y_offset + k, -2 * child_rotation_gradient(k, j) * _affine_stiffness));
+				coo.push_back(Tripletd(y_offset + k, x_offset + j + cur_offset, -2 * child_rotation_gradient(k, j) * _affine_stiffness));
 			}
 		}
-		top_left_hession += 2 * child_rotation_gradient * child_rotation_gradient.transpose();
+		top_left_hession += 2 * child_rotation_gradient * child_rotation_gradient.transpose() * _affine_stiffness;
 		Vector9d pfpR = -2 * x.segment<9>(cur_offset);
 		for (int j = 0, j3 = 0; j < 3; j++, j3 += 3) {
 			pfpR.segment<3>(j3) += 2 * child_rotation.col(j);
 		}
 		for (int j = 0, j_proxy = 0; j < 9; j++, j_proxy += proxy_dof) {
-			top_left_hession += pfpR(j) * child_rotation_hessian.middleCols(j_proxy, proxy_dof);
+			top_left_hession += pfpR(j) * child_rotation_hessian.middleCols(j_proxy, proxy_dof) * _affine_stiffness;
 		}
 	}
 	for (int i = 0; i < proxy_dof; i++) {
@@ -329,7 +338,6 @@ void AffineDecomposedObject::Aggregate() {
 		_inertial_tensor += A * child->_inertial_tensor * A.transpose() + child->_total_mass * b * b.transpose() + A * child->_unnormalized_mass_center * b.transpose() + b * child->_unnormalized_mass_center.transpose() * A.transpose();
 	}
 
-	// TODO: calculate lumped mass and interface force
 	COO coo;
 	const int proxy_dof = _proxy->GetDOF();
 	MatrixXd proxy_lumped_mass = MatrixXd::Zero(proxy_dof, proxy_dof);

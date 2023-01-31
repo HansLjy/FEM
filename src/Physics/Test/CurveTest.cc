@@ -106,7 +106,7 @@ TEST(CurveTest, CurveEnergyTest) {
 TEST(CurveTest, CurveGradientTest) {
     CurveForTest curve(start, end, num_segments, rho, alpha);
 
-    GenerateDerivatives(curve, Potential, Randomize, 1e-8, 1e-4)
+    GenerateDerivatives(curve, Potential, Randomize, 1e-8, 1e-5)
 
     std::cout << "Analytic gradient: \n" << analytic_gradient.transpose() << std::endl;
     std::cout << "Numeric gradient: \n" << numeric_gradient.transpose() << std::endl;
