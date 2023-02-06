@@ -18,7 +18,7 @@
 					0, 0, 9
 				]
 			},
-			"affine-stiffness": 100,
+			"affine-stiffness": 1e5,
 			"is-root": true,
 			"x": [0, 0, 0],
 			"affine": [
@@ -49,7 +49,7 @@
 						"angle": -45,
 						"axis": [1, 0, 0]
 					},
-					"affine-stiffness": 1e9,
+					"affine-stiffness": 0,
 					"is-root": false,
 					"children": []
 				}
@@ -59,7 +59,7 @@
 	"external-forces": [
 		{
 			"type": "sampled-object-gravity",
-			"g": [0, -98, 0],
+			"g": [0, -9.8, 0],
 			"object-name": "twig"
 		}
 	]

@@ -1,7 +1,7 @@
 {
   "simulation-config": {
     "duration": 1,
-    "time-step": 0.01
+    "time-step": 0.001
   },
   "time-stepper": {
     "type": "bfs-stepper",
@@ -16,10 +16,10 @@
       "ccd": {
         "type": "simple-ccd",
         "epsilon": 1e-10,
-		"cubic-solver": {
-			"type": "bisection-solver",
-			"tolerance": 1e-10
-		}
+        "cubic-solver": {
+          "type": "bisection-solver",
+          "tolerance": 1e-10
+        }
       }
     },
     "integrator": {

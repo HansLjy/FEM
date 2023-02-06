@@ -63,8 +63,10 @@ public:
     virtual double GetTotalMass() const = 0;
 	virtual Vector3d GetUnnormalizedMassCenter() const = 0;
 	virtual Matrix3d GetInertialTensor() const = 0;
+	virtual VectorXd GetExternalForceWithFrame(const Matrix3d& rotation, const Vector3d& position) const = 0;
 
-    virtual Vector3d GetTotalExternalForce() const = 0;
+    virtual Vector3d GetTotalExternalForce(const Matrix3d& rotation, const Vector3d& position) const = 0;
+	virtual Matrix3d GetTotalExternalForceTorque(const Matrix3d& rotation, const Vector3d& position) const = 0;
 	virtual VectorXd GetInertialForce(const Vector3d &v, const Vector3d &a, const Vector3d &omega, const Vector3d &alpha, const Matrix3d &rotation) const = 0;
 	// The inertial force in **local coordinate**
 	virtual VectorXd GetInertialForce(const Vector3d &v, const Vector3d &a, const Matrix3d &affine, const Matrix3d& affine_velocity, const Matrix3d& affine_acceleration) const = 0;
@@ -96,7 +98,9 @@ public:
 
 	void AddExternalForce(ExternalForce *force) override;
 	VectorXd GetExternalForce() const override;
-	Vector3d GetTotalExternalForce() const override = 0;
+	VectorXd GetExternalForceWithFrame(const Matrix3d &rotation, const Vector3d &position) const override;
+	Vector3d GetTotalExternalForce(const Matrix3d &rotation, const Vector3d &position) const override;
+	Matrix3d GetTotalExternalForceTorque(const Matrix3d &rotation, const Vector3d &position) const override;
 
 	VectorXd GetInertialForce(const Vector3d &v, const Vector3d &a, const Vector3d &omega, const Vector3d &alpha, const Matrix3d &rotation) const override = 0;
 	VectorXd GetInertialForce(const Vector3d &v, const Vector3d &a, const Matrix3d &affine, const Matrix3d &affine_velocity, const Matrix3d &affine_acceleration) const override = 0;
@@ -136,8 +140,6 @@ public:
 	void GetMass(COO &coo, int x_offset, int y_offset) const override;
 	double GetTotalMass() const override;
 
-	Vector3d GetTotalExternalForce() const override;
-
 	VectorXd GetInertialForce(const Vector3d &v, const Vector3d &a, const Vector3d &omega, const Vector3d &alpha, const Matrix3d &rotation) const override;
 	VectorXd GetInertialForce(const Vector3d &v, const Vector3d &a, const Matrix3d &affine, const Matrix3d &affine_velocity, const Matrix3d &affine_acceleration) const override;
 
@@ -147,6 +149,7 @@ public:
 
 protected:
 	int _num_points;
+	double _total_mass;
 	VectorXd _mass;
 	MatrixXi _edge_topo;
 	MatrixXi _face_topo;
@@ -193,7 +196,9 @@ public:
 
 	void AddExternalForce(ExternalForce*force) override {_proxy->AddExternalForce(force);}
 	VectorXd GetExternalForce() const override {return _base.transpose() * _proxy->GetExternalForce();}
-	Vector3d GetTotalExternalForce() const override {return _proxy->GetTotalExternalForce();}
+	VectorXd GetExternalForceWithFrame(const Matrix3d &rotation, const Vector3d &position) const override {return _base.transpose() * _proxy->GetExternalForceWithFrame(rotation, position);}
+	Vector3d GetTotalExternalForce(const Matrix3d &rotation, const Vector3d &position) const override {return _proxy->GetTotalExternalForce(rotation, position);};
+	Matrix3d GetTotalExternalForceTorque(const Matrix3d &rotation, const Vector3d &position) const override {return _proxy->GetTotalExternalForceTorque(rotation, position);}
 
 	VectorXd GetInertialForce(const Vector3d &v, const Vector3d &a, const Vector3d &omega, const Vector3d &alpha, const Matrix3d &rotation) const override {return _base.transpose() * _proxy->GetInertialForce(v, a, omega, alpha, rotation);}
 	VectorXd GetInertialForce(const Vector3d &v, const Vector3d &a, const Matrix3d &affine, const Matrix3d &affine_velocity, const Matrix3d &affine_acceleration) const override {
@@ -225,7 +230,8 @@ public:
 	VectorXd GetPotentialGradient(const Ref<const VectorXd> &x) const override {return VectorXd(0);}
 	void GetPotentialHessian(const Ref<const VectorXd> &x, COO &coo, int x_offset, int y_offset) const override {}
 
-	Vector3d GetTotalExternalForce() const override {return Vector3d::Zero();}
+	Vector3d GetTotalExternalForce(const Matrix3d &rotation, const Vector3d &position) const override {return Vector3d::Zero();}
+	Matrix3d GetTotalExternalForceTorque(const Matrix3d &rotation, const Vector3d &position) const override {return Matrix3d::Zero();}
 
 	VectorXd GetInertialForce(const Vector3d &v, const Vector3d &a, const Vector3d &omega, const Vector3d &alpha, const Matrix3d &rotation) const override {return VectorXd(0);}
 	VectorXd GetInertialForce(const Vector3d &v, const Vector3d &a, const Matrix3d &affine, const Matrix3d &affine_velocity, const Matrix3d &affine_acceleration) const override {return VectorXd(0);}

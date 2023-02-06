@@ -12,10 +12,9 @@ public:
     SampledObjectGravity(const json& config);
     SampledObjectGravity(const Vector3d& g);
 
-    double Energy(const Object &obj, const Eigen::VectorXd &x, const Eigen::Matrix3d &rotation, const Eigen::Vector3d &position) const override;
-    VectorXd EnergyGradient(const Object &obj, const Matrix3d &rotation, const Vector3d &position) const override;
-    void EnergyHessian(const Object &obj, const Matrix3d &rotation, const Vector3d &position, COO &coo, int x_offset,
-                       int y_offset) const override;
+    VectorXd GetExternalForce(const Object &obj, const Matrix3d &rotation, const Vector3d &position) const override;
+    Vector3d GetTotalForce(const Object &obj, const Matrix3d &rotation, const Vector3d &position) const override;
+    Matrix3d GetTotalForceAffineTorque(const Object &obj, const Matrix3d &rotation, const Vector3d &position) const override;
 
     DERIVED_DECLARE_CLONE(ExternalForce)
 protected:

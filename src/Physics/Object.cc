@@ -52,14 +52,39 @@ void ConcreteObject::AddExternalForce(ExternalForce* force) {
 }
 
 VectorXd ConcreteObject::GetExternalForce() const {
-	VectorXd ext_force(GetDOF());
-	ext_force.setZero();
+	VectorXd ext_force = VectorXd::Zero(_dof);
 
 	for (const auto& external_force: _external_forces) {
-		ext_force -= external_force->EnergyGradient(*this, GetFrameRotation(), GetFrameX());
+		ext_force += external_force->GetExternalForce(*this, GetFrameRotation(), GetFrameX());
 	}
 	return ext_force;
 }
+
+VectorXd ConcreteObject::GetExternalForceWithFrame(const Matrix3d &rotation, const Vector3d &position) const {
+	VectorXd ext_force = VectorXd::Zero(_dof);
+
+	for (const auto& external_force : _external_forces) {
+		ext_force += external_force->GetExternalForce(*this, rotation, position);
+	}
+	return ext_force;
+}
+
+Vector3d ConcreteObject::GetTotalExternalForce(const Matrix3d &rotation, const Vector3d &position) const {
+	Vector3d total_external_force = Vector3d::Zero();
+	for (const auto& external_force : _external_forces) {
+		total_external_force += external_force->GetTotalForce(*this, rotation, position);
+	}
+	return total_external_force;
+}
+
+Matrix3d ConcreteObject::GetTotalExternalForceTorque(const Matrix3d &rotation, const Vector3d &position) const {
+	Matrix3d total_external_force_torque = Matrix3d::Zero();
+	for (const auto& external_force : _external_forces) {
+		total_external_force_torque += external_force->GetTotalForceAffineTorque(*this, rotation, position);
+	}
+	return total_external_force_torque;
+}
+
 
 Vector3d ConcreteObject::GetFrameX() const {
 	return Vector3d::Zero();
@@ -81,7 +106,7 @@ SampledObject::SampledObject(RenderShape* render_shape, CollisionShape* collisio
 	: SampledObject(render_shape, collision_shape, x, VectorXd::Zero(x.size()), mass, dimension, topo) {}
 
 SampledObject::SampledObject(RenderShape* render_shape, CollisionShape* collision_shape, const VectorXd& x, const VectorXd& v, const VectorXd& mass, int dimension, const MatrixXi& topo)
-	: ConcreteObject(render_shape, collision_shape, x, v), _mass(mass), _num_points(mass.size()) {
+	: ConcreteObject(render_shape, collision_shape, x, v), _total_mass(mass.sum()), _mass(mass), _num_points(mass.size()) {
 	switch (dimension) {
 		case 3:
 			_tet_topo = topo;
@@ -109,7 +134,7 @@ void SampledObject::GetMass(COO &coo, int x_offset, int y_offset) const {
 }
 
 double SampledObject::GetTotalMass() const {
-	return _mass.sum();
+	return _total_mass;
 }
 
 double SampledObject::GetMaxVelocity(const Ref<const VectorXd> &v) const {
@@ -163,16 +188,6 @@ VectorXd SampledObject::GetInertialForce(const Vector3d &v, const Vector3d &a, c
 		);
 	}
 	return inertial_force;
-}
-
-Vector3d SampledObject::GetTotalExternalForce() const {
-	VectorXd external_force = GetExternalForce();
-	int num_points = external_force.size() / 3;
-	Vector3d total_external_force = Vector3d::Zero();
-	for (int i = 0, j = 0; i < num_points; i++, j += 3) {
-		total_external_force += external_force.segment<3>(j);
-	}
-	return total_external_force;
 }
 
 // Reduced Object

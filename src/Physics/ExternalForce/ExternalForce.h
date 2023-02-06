@@ -11,16 +11,22 @@
 
 class Object;
 
-/**
- * Can only handle conservative force
- */
 class ExternalForce {
 public:
-    virtual double Energy(const Object &obj, const VectorXd& x, const Matrix3d &rotation, const Vector3d &position) const = 0;
-    virtual VectorXd EnergyGradient(const Object &obj, const Matrix3d &rotation, const Vector3d &position) const = 0;
-    virtual void
-    EnergyHessian(const Object &obj, const Matrix3d &rotation, const Vector3d &position, COO &coo, int x_offset,
-                  int y_offset) const = 0;
+    /**
+     * @return The external force in **local** coordinate system
+     */
+    virtual VectorXd GetExternalForce(const Object& obj, const Matrix3d& rotation, const Vector3d& position) const = 0;
+    
+    /**
+     * @return Vector3d The sum / integration of current force in **local** coordinate system
+     */
+    virtual Vector3d GetTotalForce(const Object& obj, const Matrix3d& rotation, const Vector3d& position) const = 0;
+
+    /**
+     * @return Matrix3d The sum / integration of f * x^T in **local** coordinate system
+     */
+    virtual Matrix3d GetTotalForceAffineTorque(const Object& obj, const Matrix3d& rotation, const Vector3d& position) const = 0;
 
     virtual ~ExternalForce() = default;
 

@@ -172,8 +172,8 @@ protected:
 
 	std::vector<MatrixXd> _children_projections; // partial b_i / partial q
 
-	VectorXd _interface_force;		// only for the dof of proxy
-	SparseMatrixXd _lumped_mass;	// for whole dof
+	VectorXd _interface_force;
+	SparseMatrixXd _lumped_mass;
 
 	// The following quantities are w.r.t. global coordinate system
 	Vector3d _frame_x;
@@ -187,7 +187,8 @@ protected:
 	double _total_mass;
 	Vector3d _total_external_force;
 	Vector3d _unnormalized_mass_center;
-	Matrix3d _inertial_tensor;
+	Matrix3d _inertial_tensor;					// sum m * x * x^T
+	Matrix3d _total_external_force_torque;		// sum f * x^T
 };
 
 DECLARE_XXX_FACTORY(AffineDecomposedObject)

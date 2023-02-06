@@ -76,13 +76,12 @@ void RigidDecomposedObject::GetMass(COO &coo, int x_offset, int y_offset) const 
 }
 
 VectorXd RigidDecomposedObject::GetExternalForce() const {
-	// FIXME: This is definitely a bug, external force is unaware of current frame
-	return _proxy->GetExternalForce() + _interface_force + _proxy->GetInertialForce(_frame_v, _frame_a, _frame_angular_velocity, _frame_angular_acceleration, _frame_rotation);
+	return _proxy->GetExternalForceWithFrame(_frame_rotation, _frame_x) + _interface_force + _proxy->GetInertialForce(_frame_v, _frame_a, _frame_angular_velocity, _frame_angular_acceleration, _frame_rotation);
 }
 
 void RigidDecomposedObject::Aggregate() {
 	_total_mass = _proxy->GetTotalMass();
-	_total_external_force = _proxy->GetTotalExternalForce();
+	_total_external_force = _proxy->GetTotalExternalForce(_frame_rotation, _frame_x);
 
 	for (auto& child : _children) {
 		child->Aggregate();
@@ -140,7 +139,7 @@ AffineDecomposedObject::AffineDecomposedObject(ProxyObject* proxy, const json& c
 		AddChild(*AffineDecomposedObjectFactory::GetAffineDecomposedObject(child_config["type"], child_config), child_config["position"]);
 	}
 	_total_dof = _proxy->GetDOF() + 9 * _num_children;
-	_interface_force.resize(_proxy->GetDOF());
+	_interface_force.resize(_total_dof);
 	_lumped_mass.resize(_total_dof, _total_dof);
 }
 
@@ -306,10 +305,8 @@ void AffineDecomposedObject::AddExternalForce(ExternalForce *force) {
 }
 
 VectorXd AffineDecomposedObject::GetExternalForce() const {
-	VectorXd ext_force(_total_dof);
-	ext_force.head(_proxy->GetDOF()) = _proxy->GetExternalForce() + _interface_force
-									   + _proxy->GetInertialForce(_frame_v, _frame_a, _frame_affine, _frame_affine_velocity, _frame_affine_acceleration);
-	ext_force.tail(_total_dof - _proxy->GetDOF()).setZero();
+	VectorXd ext_force = _interface_force;
+	ext_force.head(_proxy->GetDOF()) += _proxy->GetExternalForceWithFrame(_frame_affine, _frame_x) + _proxy->GetInertialForce(_frame_v, _frame_a, _frame_affine, _frame_affine_velocity, _frame_affine_acceleration);
 	return ext_force;
 }
 
@@ -323,9 +320,10 @@ Matrix3d AffineDecomposedObject::GetFrameRotation() const {
 
 void AffineDecomposedObject::Aggregate() {
 	_total_mass = _proxy->GetTotalMass();
-	_total_external_force = _proxy->GetTotalExternalForce();
+	_total_external_force = _proxy->GetTotalExternalForce(_frame_affine, _frame_x);
 	_unnormalized_mass_center = _proxy->GetUnnormalizedMassCenter();
 	_inertial_tensor = _proxy->GetInertialTensor();
+	_total_external_force_torque = _proxy->GetTotalExternalForceTorque(_frame_affine, _frame_x);
 
 	for (int i = 0; i < _num_children; i++) {
 		auto& child = _children[i];
@@ -336,6 +334,7 @@ void AffineDecomposedObject::Aggregate() {
 		_total_external_force += A * child->_total_external_force;
 		_unnormalized_mass_center += A * child->_unnormalized_mass_center + child->_total_mass * b;
 		_inertial_tensor += A * child->_inertial_tensor * A.transpose() + child->_total_mass * b * b.transpose() + A * child->_unnormalized_mass_center * b.transpose() + b * child->_unnormalized_mass_center.transpose() * A.transpose();
+		_total_external_force_torque += A * child->_total_external_force * b.transpose() + A * child->_total_external_force_torque * A.transpose();
 	}
 
 	COO coo;
@@ -358,10 +357,10 @@ void AffineDecomposedObject::Aggregate() {
 
 		const auto& child_inertial_tensor = _children[i]->_inertial_tensor;
 
-		for (int j = 0, j3 = 0; j < 3; j++, j3 += 3) {
-			for (int k = 0, k3 = 0; k < 3; k++, k3 += 3) {
+		for (int j = 0, j3 = cur_offset; j < 3; j++, j3 += 3) {
+			for (int k = 0, k3 = cur_offset; k < 3; k++, k3 += 3) {
 				for (int l = 0; l < 3; l++) {
-					coo.push_back(Tripletd(cur_offset + j3 + l, cur_offset + k3 + l, child_inertial_tensor(j, k)));
+					coo.push_back(Tripletd(j3 + l, k3 + l, child_inertial_tensor(j, k)));
 				}
 			}
 		}
@@ -373,8 +372,12 @@ void AffineDecomposedObject::Aggregate() {
 	_lumped_mass.setFromTriplets(coo.begin(), coo.end());
 
 	_interface_force.setZero();
-	for (int i = 0; i < _num_children; i++) {
-		_interface_force += _children_projections[i].transpose() * _children[i]->_total_external_force;
+	for (int i = 0, cur_offset = proxy_dof; i < _num_children; i++, cur_offset += 9) {
+		_interface_force.head(proxy_dof) += _children_projections[i].transpose() * _children[i]->_total_external_force;
+		Matrix3d tmp = _children_A[i] * _children[i]->_total_external_force_torque;
+		for (int j = 0, j3 = cur_offset; j < 3; j++, j3 += 3) {
+			_interface_force.segment<3>(j3) = tmp.col(j);
+		}
 	}
 }
 

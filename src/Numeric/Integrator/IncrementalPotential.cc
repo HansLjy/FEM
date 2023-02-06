@@ -31,6 +31,16 @@ void IPIntegrator::Step(Target &target, double h) const {
 	Eigen::SparseQR<SparseMatrixXd, Eigen::COLAMDOrdering<int>> SparseQR_solver;
 	SparseQR_solver.compute(mass);
     // Eigen::SimplicialLDLT<SparseMatrixXd> LDLT_solver(mass);
+
+    // Eigen::SelfAdjointEigenSolver<SparseMatrixXd> eigen_solver(mass);
+    // std::cerr << eigen_solver.eigenvalues().transpose() << std::endl;
+
+    // if (LDLT_solver.info() == Eigen::NumericalIssue) {
+    //     std::cerr << "Mass matrix not SPD" << std::endl;
+    //     exit(-1);
+    // }
+
+    // VectorXd a = LDLT_solver.solve(force);
 	VectorXd a = SparseQR_solver.solve(force);
 	// std::cerr << "a: " << a.transpose() << std::endl;
 
