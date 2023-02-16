@@ -295,6 +295,8 @@ void AffineDecomposedObject::GetPotentialHessian(const Ref<const VectorXd> &x, C
 			coo.push_back(Tripletd(x_offset + i, x_offset + j, top_left_hession(i, j)));
 		}
 	}
+
+	_proxy->GetPotentialHessian(x.head(proxy_dof), coo, x_offset, y_offset);
 }
 
 void AffineDecomposedObject::AddExternalForce(ExternalForce *force) {
