@@ -29,6 +29,7 @@ add_subdirectory(src/Physics)
 add_subdirectory(src/Render)
 add_subdirectory(src/Simulator)
 add_subdirectory(src/Assemble)
+add_subdirectory(src/Matrix)
 
 add_executable(fem src/main.cc)
 target_link_libraries(fem FEMUtility)
