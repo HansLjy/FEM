@@ -27,8 +27,8 @@ void IPC::Step(Target &target, double h) const {
     SparseMatrixXd hessian;
     VectorXd gradient(dof), x_prev(x);
 	static int fuck_itr = 0;
+    fuck_itr++;
     while(step++ < _max_iter) {
-		fuck_itr++;
         ipc_target.ComputeConstraintSet(x);
         target.GetPotentialEnergyHessian(x, hessian);
         target.GetPotentialEnergyGradient(x, gradient);
@@ -37,26 +37,31 @@ void IPC::Step(Target &target, double h) const {
         LDLT_solver.compute(mass + h * h * hessian);
         VectorXd p = - LDLT_solver.solve(mass * (x - x_hat) + h * h * gradient);
 
-        if ((residue = p.norm() / p.size()) < _tolerance * h) {
+        if ((residue = p.lpNorm<Eigen::Infinity>()) < _tolerance * h) {
             break;
         }
 
         /* contact aware line search */
         double alpha = ipc_target.GetMaxStep(p);
+        // spdlog::info("Max step: {}", alpha);
         VectorXd x_next;
         while (true) {
             x_next = x + alpha * p;
             ipc_target.ComputeConstraintSet(x_next);
-            if (h * h * target.GetPotentialEnergy(x_next) + 0.5 * (x_next - x_hat).transpose() * mass * (x_next - x_hat) <= prev_energy) {
+            auto current_energy = h * h * target.GetPotentialEnergy(x_next) + 0.5 * (x_next - x_hat).transpose() * mass * (x_next - x_hat);
+            // spdlog::info("Current energy: {}, Previous energy: {}", current_energy, prev_energy);
+            if (current_energy <= prev_energy) {
                 break;
             }
             alpha *= 0.5;
         }
-		// std::cerr << fuck_itr << std::endl;
+        // spdlog::info("alpha = {}", alpha);
         x = x_next;
     }
+    // spdlog::info("Itr: {}", fuck_itr);
     if (step >= _max_iter) {
         spdlog::warn("Barrier-aware Newton not converge, residue = {}", residue);
+        // exit(-1);
     } else {
         // spdlog::info("Barrier-aware Newton converge in {} steps", step);
     }

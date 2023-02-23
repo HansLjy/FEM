@@ -11,3 +11,7 @@ void ReducedBezierCurveCollisionShape::ComputeCollisionShape(const Ref<const Vec
 Vector3d ReducedBezierCurveCollisionShape::GetCollisionVertexVelocity(const Ref<const VectorXd> &v, int idx) const {
 	// TODO:
 }
+
+const BlockVector & ReducedBezierCurveCollisionShape::GetVertexDerivative(int idx) const {
+	// TODO:
+}

@@ -11,3 +11,7 @@ void ReducedLeafCollisionShape::ComputeCollisionShape(const Ref<const VectorXd> 
 Vector3d ReducedLeafCollisionShape::GetCollisionVertexVelocity(const Ref<const VectorXd> &v, int idx) const {
 	// TODO:
 }
+
+const BlockVector & ReducedLeafCollisionShape::GetVertexDerivative(int idx) const {
+	// TODO:
+}

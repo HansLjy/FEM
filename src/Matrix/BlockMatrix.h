@@ -37,8 +37,8 @@ public:
                 const Ref<const MatrixXd>& submatrix)
                 : _rows(rows), _num_row_blocks(num_row_blocks), _row_offsets(row_offsets), _row_segment_lengths(row_segment_lengths), _submatrix(submatrix) {}
 
-    void RightProductInPlace(const Ref<MatrixXd>& rhs);
-    void RightProduct(const Ref<VectorXd>& rhs, Ref<VectorXd> result);
+    BlockVector RightProduct(const Ref<MatrixXd>& rhs) const;
+    void RightProduct(const Ref<const VectorXd>& rhs, Ref<VectorXd> result) const;
 
     BlockMatrix RightTransposeProduct(const BlockVector& rhs);
 

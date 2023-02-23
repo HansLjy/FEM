@@ -4,9 +4,9 @@
     "time-step": 0.01
   },
   "time-stepper": {
-    "type": "bfs-stepper",
+    "type": "system-stepper",
     "target": {
-      "type": "basic",
+      "type": "collision-barriered",
       "d-hat": 1e-3,
       "kappa": 1e7,
       "hashing": {
@@ -23,7 +23,7 @@
       }
     },
     "integrator": {
-      "type": "incremental-potential",
+      "type": "ipc",
       "tolerance": 1e-4,
       "max-iteration": 10,
       "optimizer": {
@@ -34,10 +34,10 @@
       }
     }
   },
-  "system-config": "/model/affine-twig.json",
+  "system-config": "/model/cloth-cube.json",
   "renderer": {
     "camera":  {
-      "position": [10, 0, 5],
+      "position": [2, 0.5, 0.5],
       "look": [-1, 0, 0],
       "up": [0, 0, 1]
     },

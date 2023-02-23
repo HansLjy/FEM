@@ -9,6 +9,11 @@ void SampledCollisionShape::Bind(const Object &obj) {
 	const auto sampled_obj = dynamic_cast<const SampledObject*>(&obj);
 	_edge_topo = sampled_obj->_edge_topo;
 	_face_topo = sampled_obj->_face_topo;
+
+	const int dof = obj.GetDOF();
+	for (int i = 0, i3 = 0; i < sampled_obj->_num_points; i++, i3 += 3) {
+		_vertex_derivatives.push_back(BlockVector(dof, 1, {i3}, {3}, Matrix3d::Identity()));
+	}
 }
 
 void SampledCollisionShape::ComputeCollisionShape(const Ref<const VectorXd> &x) {
@@ -19,38 +24,6 @@ Vector3d SampledCollisionShape::GetCollisionVertexVelocity(const Ref<const Vecto
 	return v.segment<3>(3 * idx);
 }
 
-void AssembleCollisionHessian(
-	const Object& obj1, const Object& obj2,
-	const Ref<const Matrix3d>& local_hessian,
-	const CollisionAssemblerType& type1, const CollisionAssemblerType& type2,
-	const int offset1, const int offset2,
-	const int index1, const int index2,
-	COO& coo
-) {
-	if (type1 == CollisionAssemblerType::kNull || type2 == CollisionAssemblerType::kNull) {
-		return;
-	}
-	switch (type1) {
-		case CollisionAssemblerType::kIndex: {
-			switch (type2) {
-				case CollisionAssemblerType::kIndex: {
-					const int base_offset1 = offset1 + 3 * index1,
-							  base_offset2 = offset2 + 3 * index2;
-					for (int i = 0; i < 3; i++) {
-						for (int j = 0; j < 3; j++) {
-							coo.push_back(Tripletd(base_offset1 + i, base_offset2 + j, local_hessian(i, j)));
-						}
-					}
-					break;
-				}
-				default: {
-					throw std::logic_error("Unimplemented");
-				}
-			}
-			break;
-		}
-		default: {
-			throw std::logic_error("Unimplemented");
-		}
-	}
+const BlockVector& SampledCollisionShape::GetVertexDerivative(int idx) const {
+	return _vertex_derivatives[idx];
 }

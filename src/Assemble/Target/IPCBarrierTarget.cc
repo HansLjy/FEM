@@ -88,27 +88,23 @@ VectorXd IPCBarrierTarget::GetBarrierEnergyGradient() const {
     gradient.setZero();
 
     PROCESS_CONSTRAINT_PAIR (
-        const auto& projection1 = shape1->GetVertexProjectionMatrix();
-        const auto& projection2 = shape2->GetVertexProjectionMatrix();
+        const int dof1 = obj1->GetDOF();
+        const int dof2 = obj2->GetDOF();
         const int offset1 = _offsets[constraint_pair._obj_id1];
         const int offset2 = _offsets[constraint_pair._obj_id2];,
 
-        const auto single_gradient = GetVFBarrierEnergyGradient(vertex, face1, face2, face3);
-        gradient.segment(offset1, obj1->GetDOF())
-            += projection1.middleRows(vertex_index * 3, 3).transpose() * single_gradient.segment(0, 3);
-        gradient.segment(offset2, obj2->GetDOF())
-            += projection2.middleRows(face_index(0) * 3, 3).transpose() * single_gradient.segment(3, 3)
-             + projection2.middleRows(face_index(1) * 3, 3).transpose() * single_gradient.segment(6, 3)
-             + projection2.middleRows(face_index(2) * 3, 3).transpose() * single_gradient.segment(9, 3);
+        const Vector12d single_gradient = GetVFBarrierEnergyGradient(vertex, face1, face2, face3);
+        shape1->GetVertexDerivative(vertex_index).RightProduct(single_gradient.segment<3>(0), gradient.segment(offset1, dof1));
+        shape2->GetVertexDerivative(face_index(0)).RightProduct(single_gradient.segment<3>(3), gradient.segment(offset2, dof2));
+        shape2->GetVertexDerivative(face_index(1)).RightProduct(single_gradient.segment<3>(6), gradient.segment(offset2, dof2));
+        shape2->GetVertexDerivative(face_index(2)).RightProduct(single_gradient.segment<3>(9), gradient.segment(offset2, dof2));
         ,
 
-        const auto single_gradient = GetEEBarrierEnergyGradient(edge11, edge12, edge21, edge22);
-        gradient.segment(offset1, obj1->GetDOF())
-            += projection1.middleRows(edge_index1(0) * 3, 3).transpose() * single_gradient.segment(0, 3)
-             + projection1.middleRows(edge_index1(1) * 3, 3).transpose() * single_gradient.segment(3, 3);
-        gradient.segment(offset2, obj2->GetDOF())
-            += projection2.middleRows(edge_index2(0) * 3, 3).transpose() * single_gradient.segment(6, 3)
-             + projection2.middleRows(edge_index2(1) * 3, 3).transpose() * single_gradient.segment(9, 3);
+        const Vector12d single_gradient = GetEEBarrierEnergyGradient(edge11, edge12, edge21, edge22);
+        shape1->GetVertexDerivative(edge_index1(0)).RightProduct(single_gradient.segment<3>(0), gradient.segment(offset1, dof1));
+        shape1->GetVertexDerivative(edge_index1(1)).RightProduct(single_gradient.segment<3>(3), gradient.segment(offset1, dof1));
+        shape2->GetVertexDerivative(edge_index2(0)).RightProduct(single_gradient.segment<3>(6), gradient.segment(offset2, dof2));
+        shape2->GetVertexDerivative(edge_index2(1)).RightProduct(single_gradient.segment<3>(9), gradient.segment(offset2, dof2));
     )
 
     return gradient * _kappa;
@@ -122,14 +118,11 @@ void IPCBarrierTarget::GetBarrierEnergyHessian(COO &coo, int offset_x, int offse
 		const auto shape1 = obj1->_collision_shape;
 		const auto shape2 = obj2->_collision_shape;
 
-		CollisionAssemblerType ass_type1 = shape1->GetCollisionAssemblerType(),
-							   ass_type2 = shape2->GetCollisionAssemblerType();
-        
         const auto& vertices1 = shape1->GetCollisionVertices();
         const auto& vertices2 = shape2->GetCollisionVertices();
         
-        const int offset1 = _offsets[constraint_pair._obj_id1] + offset_x;
-        const int offset2 = _offsets[constraint_pair._obj_id2] + offset_y;
+        const int offset1 = _offsets[constraint_pair._obj_id1];
+        const int offset2 = _offsets[constraint_pair._obj_id2];
 
         switch (constraint_pair._type) {
             case CollisionType::kVertexFace: {
@@ -141,23 +134,18 @@ void IPCBarrierTarget::GetBarrierEnergyHessian(COO &coo, int offset_x, int offse
                     face2 = vertices2.row(face_index(1)),
                     face3 = vertices2.row(face_index(2));
                 
-                auto single_hessian = _kappa * GetVFBarrierEnergyHessian(vertex, face1, face2, face3);
+                Matrix12d single_hessian = _kappa * GetVFBarrierEnergyHessian(vertex, face1, face2, face3);
                 
                 const int offset[4] = {offset1, offset2, offset2, offset2};
 				const int index[4] = {vertex_index, face_index(0), face_index(1), face_index(2)};
-				const Object* object[4] = {obj1, obj2, obj2, obj2};
-				const CollisionAssemblerType type[4] = {ass_type1, ass_type2, ass_type2, ass_type2};
+                const CollisionShape* shape[4] = {shape1, shape2, shape2, shape2};
 
 				for (int i = 0, ii = 0; i < 4; i++, ii += 3) {
 					for (int j = 0, jj = 0; j < 4; j++, jj += 3) {
-						AssembleCollisionHessian(
-							*object[i], *object[j],
-							single_hessian.block<3, 3>(ii, jj),
-							type[i], type[j],
-							offset[i], offset[j],
-							index[i], index[j],
-							coo
-						);
+                        shape[i]->GetVertexDerivative(index[i])
+                        .RightProduct(single_hessian.block<3, 3>(ii, jj))
+                        .RightTransposeProduct(shape[j]->GetVertexDerivative(index[j]))
+                        .ToSparse(coo, offset[i] + offset_x, offset[j] + offset_y);
 					}
 				}
 
@@ -173,23 +161,18 @@ void IPCBarrierTarget::GetBarrierEnergyHessian(COO &coo, int offset_x, int offse
                     edge21 = vertices2.row(edge_index2(0)),
                     edge22 = vertices2.row(edge_index2(1));
                 
-                auto single_hessian = _kappa * GetEEBarrierEnergyHessian(edge11, edge12, edge21, edge22);
+                Matrix12d single_hessian = _kappa * GetEEBarrierEnergyHessian(edge11, edge12, edge21, edge22);
 
                 const int offset[4] = {offset1, offset1, offset2, offset2};
 				const int index[4] = {edge_index1(0), edge_index1(1), edge_index2(0), edge_index2(1)};
-				const Object* object[4] = {obj1, obj1, obj2, obj2};
-				const CollisionAssemblerType type[4] = {ass_type1, ass_type1, ass_type2, ass_type2};
+                const CollisionShape* shape[4] = {shape1, shape1, shape2, shape2};
 
 				for (int i = 0, ii = 0; i < 4; i++, ii += 3) {
 					for (int j = 0, jj = 0; j < 4; j++, jj += 3) {
-						AssembleCollisionHessian(
-							*object[i], *object[j],
-							single_hessian.block<3, 3>(ii, jj),
-							type[i], type[j],
-							offset[i], offset[j],
-							index[i], index[j],
-							coo
-						);
+                        shape[i]->GetVertexDerivative(index[i])
+                        .RightProduct(single_hessian.block<3, 3>(ii, jj))
+                        .RightTransposeProduct(shape[j]->GetVertexDerivative(index[j]))
+                        .ToSparse(coo, offset[i] + offset_x, offset[j] + offset_y);
 					}
 				}
                 break;
@@ -389,6 +372,10 @@ void IPCBarrierTarget::ComputeConstraintSet(const Eigen::VectorXd &x) {
         }
 		obj_id++;
     }
+
+    // if (!_constraint_set.empty()) {
+    //     spdlog::info("Constraint set size: {}", _constraint_set.size());
+    // }
 
 	// if (!_constraint_set.empty()) {
 	// 	for (const auto& constraint_pair : _constraint_set) {

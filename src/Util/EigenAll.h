@@ -72,8 +72,8 @@ Matrix<double, dim, dim> PositiveProject(const Eigen::Matrix<double, dim, dim>& 
 void SparseToCOO(const SparseMatrixXd& mat, COO& coo, int offset_x, int offset_y);
 
 inline void DenseToCOO(const Ref<const MatrixXd>& mat, COO& coo, int offset_x, int offset_y) {
-	for (int i = 0; i < mat.cols(); i++) {
-		for (int j = 0; j < mat.rows(); j++) {
+	for (int i = 0; i < mat.rows(); i++) {
+		for (int j = 0; j < mat.cols(); j++) {
 			coo.push_back(Tripletd(offset_x + i, offset_y + j, mat(i, j)));
 		}
 	}

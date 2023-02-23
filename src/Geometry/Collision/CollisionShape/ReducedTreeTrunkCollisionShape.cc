@@ -11,3 +11,7 @@ void ReducedTreeTrunkCollisionShape::ComputeCollisionShape(const Ref<const Vecto
 Vector3d ReducedTreeTrunkCollisionShape::GetCollisionVertexVelocity(const Ref<const VectorXd> &v, int idx) const {
 	// TODO:
 }
+
+const BlockVector& ReducedTreeTrunkCollisionShape::GetVertexDerivative(int idx) const {
+	// TODO:
+}

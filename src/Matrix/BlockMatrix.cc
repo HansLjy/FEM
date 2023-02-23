@@ -19,18 +19,17 @@ void BlockMatrix::ToSparse(COO& coo, int x_offset, int y_offset) {
     }
 }
 
-
-void BlockVector::RightProductInPlace(const Ref<MatrixXd>& rhs) {
-    _submatrix *= rhs;
+BlockVector BlockVector::RightProduct(const Ref<MatrixXd>& rhs) const {
+    return BlockVector(_rows, _num_row_blocks, _row_offsets, _row_segment_lengths, _submatrix * rhs);
 }
 
 
-void BlockVector::RightProduct(const Ref<VectorXd>& rhs, Ref<VectorXd> result) {
+void BlockVector::RightProduct(const Ref<const VectorXd>& rhs, Ref<VectorXd> result) const {
     int row_sub_offset = 0;
     for (int i = 0; i < _num_row_blocks; i++) {
         const int row_offset = _row_offsets[i];
         const int row_segment_length = _row_segment_lengths[i];
-        result.segment(row_offset, row_segment_length) = _submatrix.middleRows(row_sub_offset, row_segment_length) * rhs;
+        result.segment(row_offset, row_segment_length) += _submatrix.middleRows(row_sub_offset, row_segment_length) * rhs;
         row_sub_offset += _row_segment_lengths[i];
     }
 }
