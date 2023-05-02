@@ -20,17 +20,18 @@ public:
 	virtual const BlockVector& GetVertexDerivative(int idx) const = 0;
 
 	virtual Vector3d GetCollisionVertexVelocity(const Ref<const VectorXd>& v, int idx) const = 0;
-    const MatrixXd& GetCollisionVertices() const {return _vertices;}
+    virtual const MatrixXd& GetCollisionVertices() const {return _vertices;}
     const MatrixXi& GetCollisionEdgeTopo() const {return _edge_topo;}
     const MatrixXi& GetCollisionFaceTopo() const {return _face_topo;}
+	int GetCollisionVerticeNumber() const {return _num_points;}
 
 	virtual ~CollisionShape() = default;
 	CollisionShape() = default;
 	CollisionShape(const CollisionShape& rhs) = delete;
 
 protected:
+	int _num_points = 0;		// guaranteed to be valid after binding
     MatrixXd _vertices;
-	SparseMatrixXd _vertex_projections;
     MatrixXi _edge_topo;
     MatrixXi _face_topo;
 };
@@ -46,22 +47,22 @@ protected:
 	std::vector<BlockVector> _vertex_derivatives;
 };
 
-class DecomposedCollisionShape : public CollisionShape {
+class AffineDecomposedObject;
+
+class AffineDecomposedCollisionShape : public CollisionShape {
 public:
-	void Bind(const Object &obj) override {
-		// TODO:
-	}
-	void ComputeCollisionShape(const Ref<const VectorXd> &x) override {
-		// TODO:
-	}
+	void Bind(const Object &obj) override;
+	void ComputeCollisionShape(const Ref<const VectorXd> &x) override;
+	const MatrixXd & GetCollisionVertices() const override;
+	Vector3d GetCollisionVertexVelocity(const Ref<const VectorXd> &v, int idx) const override;
+	const BlockVector & GetVertexDerivative(int idx) const override;
 
-	Vector3d GetCollisionVertexVelocity(const Ref<const VectorXd> &v, int idx) const override {
-		// TODO:
-	}
+	void UpdateDerivative();
 
-	const BlockVector & GetVertexDerivative(int idx) const override {
-		// TODO:
-	}
+protected:
+	AffineDecomposedObject* _obj;
+	std::vector<BlockVector> _children_vertex_derivative;
+	std::vector<int> _children_vertices_offset;	// sum of #vertices for first N child
 };
 
 class NullCollisionShape : public CollisionShape {
@@ -79,9 +80,9 @@ class FixedCollisionShape : public CollisionShape {
 public:
 	FixedCollisionShape(const MatrixXd& vertices, const SparseMatrixXd& projections, const MatrixXi& edge_topo, const MatrixXi& face_topo) {
 		_vertices = vertices;
-		_vertex_projections = projections;
 		_edge_topo = edge_topo;
 		_face_topo = face_topo;
+		_num_points = vertices.rows();
 	}
 	Vector3d GetCollisionVertexVelocity(const Ref<const VectorXd> &p, int idx) const override {return Vector3d::Zero();}
 	void Bind(const Object &obj) override {}

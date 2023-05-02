@@ -260,7 +260,7 @@ void IPCBarrierTarget::ComputeConstraintSet(const Eigen::VectorXd &x) {
 		obj->_collision_shape->ComputeCollisionShape(x.segment(cur_offset, obj->GetDOF()));
 		cur_offset += obj->GetDOF();
 	}
-
+    
 	_time_stamp++;
 
 	cur_offset = 0;

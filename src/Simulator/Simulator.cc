@@ -45,6 +45,8 @@ void Simulator::LoadScene(const std::string &config) {
     _light_Kq = light_config_json["Kq"];
 
     _time_stepper->Bind(*_system);
+
+    spdlog::info("Scene loaded");
 }
 
 void Simulator::Simulate(const std::string& output_dir) {

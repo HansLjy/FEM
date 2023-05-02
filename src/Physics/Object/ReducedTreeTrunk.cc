@@ -27,7 +27,7 @@ ReducedTreeTrunk::ReducedTreeTrunk(bool collision_enabled, int num_segments, dou
                              GenerateX(num_segments, control_points), root),
                    GenerateBase(num_segments),
                    GenerateShift(num_segments, control_points.segment<3>(0))),
-     _x_root(root) {}
+     _x_root(root), _fixed_point(control_points.segment<3>(0)) {}
 
 
 VectorXd ReducedTreeTrunk::GenerateX(int num_segments, const VectorXd &control_points) {

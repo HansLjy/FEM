@@ -9,6 +9,7 @@
 
 class DecomposedTreeTrunk;
 class AffineDecomposedTreeTrunk;
+class ReducedTreeTrunkCollisionShape;
 
 class ReducedTreeTrunk : public ReducedObject {
 public:
@@ -18,8 +19,10 @@ public:
 
     friend class DecomposedTreeTrunk;
 	friend class AffineDecomposedTreeTrunk;
+    friend class ReducedTreeTrunkCollisionShape;
 
 protected:
+    const Vector3d _fixed_point;
     const Vector3d _x_root;
     static VectorXd GenerateX(int num_segments, const VectorXd &control_points);
     static SparseMatrixXd GenerateBase(int num_segments);

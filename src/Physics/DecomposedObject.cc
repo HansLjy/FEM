@@ -4,11 +4,12 @@
 #include "Collision/CollisionShape/CollisionShape.h"
 #include "unsupported/Eigen/KroneckerProduct"
 
-DecomposedObject::DecomposedObject(ProxyObject* proxy, const json& config) : Object(new DecomposedRenderShape, new DecomposedCollisionShape), _proxy(proxy), _is_root(config["is-root"]) {}
+DecomposedObject::DecomposedObject(ProxyObject* proxy, CollisionShape* collision_shape, const json& config)
+	: Object(new DecomposedRenderShape, collision_shape), _proxy(proxy), _is_root(config["is-root"]) {}
 
 void DecomposedObject::Initialize() {
-	Object::Initialize();
 	_proxy->Initialize();
+	Object::Initialize();
 }
 
 void DecomposedObject::AddExternalForce(ExternalForce *force) {
@@ -25,7 +26,7 @@ DecomposedObject::~DecomposedObject() {
 }
 
 RigidDecomposedObject::RigidDecomposedObject(ProxyObject* proxy, const json& config)
-	: DecomposedObject(proxy, config) {
+	: DecomposedObject(proxy, new NullCollisionShape, config) {
 	if (config["is-root"]) {
         _frame_x = Json2Vec(config["x"]);
         _frame_v = Vector3d::Zero();
@@ -124,7 +125,8 @@ void RigidDecomposedObject::Initialize() {
 }
 
 AffineDecomposedObject::AffineDecomposedObject(ProxyObject* proxy, const json& config)
-	: DecomposedObject(proxy, config), _affine_stiffness(config["affine-stiffness"]) {
+	: DecomposedObject(proxy, new AffineDecomposedCollisionShape, config), _affine_stiffness(config["affine-stiffness"]) {
+	_affine_collision_shape = dynamic_cast<AffineDecomposedCollisionShape*>(_collision_shape);
 	if (config["is-root"]) {
 		_frame_x = Json2Vec(config["x"]);
 		_frame_v = Vector3d::Zero();
@@ -144,14 +146,15 @@ AffineDecomposedObject::AffineDecomposedObject(ProxyObject* proxy, const json& c
 }
 
 void AffineDecomposedObject::Initialize() {
-	DecomposedObject::Initialize();
-
 	VectorXd a = VectorXd::Zero(_total_dof);
 	CalculateChildrenFrame(a);
 
 	for (auto& child : _children) {
 		child->Initialize();
 	}
+
+	DecomposedObject::Initialize();
+	_total_vertices.resize(_collision_shape->GetCollisionVerticeNumber(), 3);
 }
 
 int AffineDecomposedObject::GetDOF() const {
@@ -327,7 +330,14 @@ void AffineDecomposedObject::Aggregate() {
 	_inertial_tensor = _proxy->GetInertialTensor();
 	_total_external_force_torque = _proxy->GetTotalExternalForceTorque(_frame_affine, _frame_x);
 
-	for (int i = 0; i < _num_children; i++) {
+	VectorXd proxy_coordinate(_proxy->GetDOF());
+	_proxy->GetCoordinate(proxy_coordinate);
+	_proxy->_collision_shape->ComputeCollisionShape(proxy_coordinate);
+
+	const int proxy_vertices_number = _proxy->_collision_shape->GetCollisionVerticeNumber();
+	_total_vertices.topRows(proxy_vertices_number) = _proxy->_collision_shape->GetCollisionVertices();
+
+	for (int i = 0, cur_vertices_number = proxy_vertices_number; i < _num_children; i++) {
 		auto& child = _children[i];
 		const auto& A = _children_A[i];
 		const auto& b = _children_b[i];
@@ -337,7 +347,14 @@ void AffineDecomposedObject::Aggregate() {
 		_unnormalized_mass_center += A * child->_unnormalized_mass_center + child->_total_mass * b;
 		_inertial_tensor += A * child->_inertial_tensor * A.transpose() + child->_total_mass * b * b.transpose() + A * child->_unnormalized_mass_center * b.transpose() + b * child->_unnormalized_mass_center.transpose() * A.transpose();
 		_total_external_force_torque += A * child->_total_external_force * b.transpose() + A * child->_total_external_force_torque * A.transpose();
+		
+		const int children_vertices_number = child->_total_vertices.rows();
+		_total_vertices.middleRows(cur_vertices_number, children_vertices_number) = child->_total_vertices * A.transpose();
+		_total_vertices.middleRows(cur_vertices_number, children_vertices_number).rowwise() += b.transpose();
+		cur_vertices_number += children_vertices_number;
 	}
+
+	_affine_collision_shape->UpdateDerivative();
 
 	COO coo;
 	const int proxy_dof = _proxy->GetDOF();

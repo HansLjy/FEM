@@ -4,7 +4,7 @@
     "time-step": 0.01
   },
   "time-stepper": {
-    "type": "system-stepper",
+    "type": "bfs-stepper",
     "target": {
       "type": "collision-barriered",
       "d-hat": 1e-3,
@@ -34,7 +34,7 @@
       }
     }
   },
-  "system-config": "/model/cloth-cube.json",
+  "system-config": "/model/affine-twig.json",
   "renderer": {
     "camera":  {
       "position": [2, 0.5, 0.5],

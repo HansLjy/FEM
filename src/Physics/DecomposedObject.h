@@ -6,7 +6,7 @@ class DecomposedRenderShape;
 
 class DecomposedObject : public Object {
 public:
-	DecomposedObject(ProxyObject* proxy, const json& config);
+	DecomposedObject(ProxyObject* proxy, CollisionShape* collision_shape, const json& config);
 
 	void Initialize() override;
 
@@ -119,6 +119,8 @@ protected:
 	Vector3d _total_external_force;
 };
 
+class AffineDecomposedCollisionShape;
+
 class AffineDecomposedObject : public DecomposedObject {
 public:
 	AffineDecomposedObject(ProxyObject* proxy, const json& config);
@@ -155,7 +157,11 @@ public:
 		kHessian
 	};
 
+	friend class AffineDecomposedCollisionShape;
+
 protected:
+	AffineDecomposedCollisionShape* _affine_collision_shape;
+
 	virtual void CalculateRigidRotationInfos(const CalculateLevel& level, const Ref<const VectorXd>& x, std::vector<Matrix3d>& rotations, std::vector<MatrixXd>& rotation_gradient, std::vector<MatrixXd>& rotation_hessian) const = 0;
 
 	double _affine_stiffness;
@@ -170,7 +176,7 @@ protected:
 	std::vector<Vector3d> _children_b;				// redundant variable, must be synced with dof of proxy
 	std::vector<Vector3d> _children_v;				// redundant variable, must be synced with dof of proxy
 
-	std::vector<MatrixXd> _children_projections; // partial b_i / partial q
+	std::vector<MatrixXd> _children_projections; 	// transpose of partial b_i / partial q
 
 	VectorXd _interface_force;
 	SparseMatrixXd _lumped_mass;
@@ -189,6 +195,9 @@ protected:
 	Vector3d _unnormalized_mass_center;
 	Matrix3d _inertial_tensor;					// sum m * x * x^T
 	Matrix3d _total_external_force_torque;		// sum f * x^T
+
+	// Surface information
+	MatrixXd _total_vertices;					// total vertices of this subtree
 };
 
 DECLARE_XXX_FACTORY(AffineDecomposedObject)

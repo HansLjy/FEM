@@ -36,13 +36,12 @@ public:
                 const std::vector<int>& row_segment_lengths,
                 const Ref<const MatrixXd>& submatrix)
                 : _rows(rows), _num_row_blocks(num_row_blocks), _row_offsets(row_offsets), _row_segment_lengths(row_segment_lengths), _submatrix(submatrix) {}
-
+    
     BlockVector RightProduct(const Ref<MatrixXd>& rhs) const;
     void RightProduct(const Ref<const VectorXd>& rhs, Ref<VectorXd> result) const;
 
     BlockMatrix RightTransposeProduct(const BlockVector& rhs);
 
-protected:
     const int _rows;
     const int _num_row_blocks;
     const std::vector<int> _row_offsets;

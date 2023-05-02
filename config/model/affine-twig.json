@@ -4,7 +4,7 @@
 			"type": "affine-decomposed-treetrunk",
 			"name": "twig",
 			"proxy": {
-				"collision-enabled": false,
+				"collision-enabled": true,
 				"segments": 5,
 				"density": 506,
 				"youngs-module": 0.7e9,
@@ -30,7 +30,7 @@
 				{
 					"type": "affine-decomposed-treetrunk",
 					"proxy": {
-						"collision-enabled": false,
+						"collision-enabled": true,
 						"segments": 5,
 						"density": 506,
 						"youngs-module": 0.7e9,
