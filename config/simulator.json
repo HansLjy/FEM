@@ -6,7 +6,7 @@
   "time-stepper": {
     "type": "bfs-stepper",
     "target": {
-      "type": "collision-barriered",
+      "type": "basic",
       "d-hat": 1e-3,
       "kappa": 1e7,
       "hashing": {
@@ -23,7 +23,7 @@
       }
     },
     "integrator": {
-      "type": "ipc",
+      "type": "incremental-potential",
       "tolerance": 1e-4,
       "max-iteration": 10,
       "optimizer": {
@@ -34,10 +34,10 @@
       }
     }
   },
-  "system-config": "/model/affine-twig.json",
+  "system-config": "/model/gen-tree-model.json",
   "renderer": {
     "camera":  {
-      "position": [2, 0.5, 0.5],
+      "position": [10, 0, 10],
       "look": [-1, 0, 0],
       "up": [0, 0, 1]
     },
