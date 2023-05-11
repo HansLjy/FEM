@@ -22,4 +22,17 @@ protected:
     std::vector<Target*> _level_targets;
 };
 
+class ParallelBFSStepper : public TimeStepper {
+public:
+    explicit ParallelBFSStepper(const json& config);
+
+    void Bind(System &system) override;
+    void Step(double h) const override;
+
+    Integrator* _integrator;
+
+    int _levels;
+    std::vector<Target*> _targets;
+};
+
 #endif //FEM_DOMAINBFSSTEPPER_H

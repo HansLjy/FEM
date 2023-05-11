@@ -4,7 +4,7 @@
     "time-step": 0.01
   },
   "time-stepper": {
-    "type": "bfs-stepper",
+    "type": "parallel-bfs-stepper",
     "target": {
       "type": "basic",
       "d-hat": 1e-3,
