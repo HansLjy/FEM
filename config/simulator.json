@@ -37,7 +37,7 @@
   "system-config": "/model/gen-tree-model.json",
   "renderer": {
     "camera":  {
-      "position": [10, 0, 10],
+      "position": [7, 0, 5],
       "look": [-1, 0, 0],
       "up": [0, 0, 1]
     },

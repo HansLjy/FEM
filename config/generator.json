@@ -1,7 +1,6 @@
 {
-	"filename": "genTree.json",
+	"filename": "gen-tree-model.json",
 	"magic-number": 607,
-	"collision-enabled": false,
 	"max-level": 4,
 	"max-fan-out": 5,
 	"trunk-density": 506,

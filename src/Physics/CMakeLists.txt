@@ -4,7 +4,12 @@ file(GLOB_RECURSE PHYSICS_SOURCE_FILE
         ExternalForce/*.cc
 		Object/*.cc
         )
-list(APPEND PHYSICS_SOURCE_FILE Object.cc DecomposedObject.cc)
+list(APPEND PHYSICS_SOURCE_FILE
+    Object.cc
+    DecomposedObject.cc
+    ReducedObject.cc
+    SampledObject.cc
+)
 
 add_library(Physics ${PHYSICS_SOURCE_FILE})
 target_include_directories(Physics PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})

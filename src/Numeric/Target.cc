@@ -3,7 +3,7 @@
 //
 
 #include "Target.h"
-#include "Object.h"
+#include "Object.hpp"
 
 Target::Target(const std::vector<Object*> & objs, int begin, int end, const json& config) {
     _dof = 0;

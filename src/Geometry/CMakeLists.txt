@@ -1,8 +1,9 @@
 cmake_minimum_required(VERSION 3.22)
 
 file(GLOB_RECURSE GEOMETRY_SOURCE_FILE
-        RenderShape/*.cc
+        Render/*.cc
         Collision/*.cc
+        Shape/*.cc
     )
 
 if(BUILD_TEST)
@@ -12,6 +13,4 @@ endif()
 add_library(Geometry ${GEOMETRY_SOURCE_FILE})
 target_include_directories(Geometry PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(Geometry PRIVATE FEMUtility)
-target_link_libraries(Geometry PRIVATE Physics)
-target_link_libraries(Geometry PRIVATE Assemble)
 target_link_libraries(Geometry PUBLIC Matrix)

@@ -1,3 +1,4 @@
+#pragma once
 #include "EigenAll.h"
 #include <array>
 

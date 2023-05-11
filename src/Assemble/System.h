@@ -5,7 +5,7 @@
 #ifndef FEM_SYSTEM_H
 #define FEM_SYSTEM_H
 
-#include "Object.h"
+#include "Object.hpp"
 #include <string>
 #include <map>
 #include <vector>

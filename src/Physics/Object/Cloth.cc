@@ -3,31 +3,35 @@
 //
 
 
-#include "Cloth.h"
+#include "Cloth.hpp"
 #include "Collision/CollisionShape/CollisionShape.h"
-#include "RenderShape/RenderShape.h"
 #include "unsupported/Eigen/KroneckerProduct"
 #include "JsonUtil.h"
 
+namespace {
+    const bool cloth_registered = ObjectFactory::Instance()->Register("cloth", [](const json& config) {return new Cloth(config);});
+    const bool reduced_cloth_registered = ObjectFactory::Instance()->Register("reduced-cloth", [](const json& config) {return new ReducedCloth(config);});
+}
+
 Cloth::Cloth(const json &config)
-    : Cloth(config["collision-enabled"], config["density"], config["thickness"], config["k-stretch"], config["k-shear"], config["k-bend-max"], config["k-bend-min"],
+    : Cloth(config["density"], config["thickness"], config["k-stretch"], config["k-shear"], config["k-bend-max"], config["k-bend-min"],
             Json2Vec<2>(config["max-direction"]), Json2Vec(config["start"]), Json2Vec(config["u-end"]), Json2Vec(config["v-end"]),
             config["u-segments"], config["v-segments"], config["stretch-u"], config["stretch-v"]){}
 
-Cloth::Cloth(bool collision_enabled, double rho, double thickness, double k_stretch, double k_shear, double k_bend_max, double k_bend_min,
+Cloth::Cloth(double rho, double thickness, double k_stretch, double k_shear, double k_bend_max, double k_bend_min,
              const Eigen::Vector2d &max_bend_dir, const Eigen::Vector3d &start, const Eigen::Vector3d &u_end,
              const Eigen::Vector3d &v_end, int num_u_segments, int num_v_segments, double stretch_u, double stretch_v)
-             : Cloth(collision_enabled, rho, thickness, k_stretch, k_shear, k_bend_max, k_bend_min, max_bend_dir,
+             : Cloth(rho, thickness, k_stretch, k_shear, k_bend_max, k_bend_min, max_bend_dir,
                      GeneratePosition(start, u_end, v_end, num_u_segments, num_v_segments),
                      GenerateUVCoord(start, u_end, v_end, num_u_segments, num_v_segments),
                      GenerateTopo(num_u_segments, num_v_segments),
                      stretch_u, stretch_v) {}
 
-Cloth::Cloth(bool collision_enabled, double rho, double thickness, double k_stretch, double k_shear, double k_bend_max, double k_bend_min,
+Cloth::Cloth(double rho, double thickness, double k_stretch, double k_shear, double k_bend_max, double k_bend_min,
              const Eigen::Vector2d &max_bend_dir, const Eigen::VectorXd &x, const Eigen::VectorXd &uv_corrd,
              const Eigen::MatrixXi &topo, double stretch_u, double stretch_v)
-             : SampledObject(new SampledRenderShape, collision_enabled ? (CollisionShape*)(new SampledCollisionShape) : new NullCollisionShape, x, GenerateMass(rho, thickness, uv_corrd, topo), 2, topo),
-               _num_points(x.size() / 3),
+             : SampledObject(x, GenerateMass(rho, thickness, uv_corrd, topo), 2, topo),
+               _curve_num_points(x.size() / 3),
                _num_triangles(topo.rows()),
                _k_stretch(k_stretch), _k_shear(k_shear),
                _stretch_u(stretch_u), _stretch_v(stretch_v),
@@ -506,3 +510,28 @@ VectorXd Cloth::GenerateMass(double rho, double thickness, const VectorXd &uv_co
     }
     return mass;
 }
+
+#include "ReducedObjectUtils.hpp"
+
+ReducedCloth::ReducedCloth(const json &config)
+    : ReducedCloth (
+        Json2VecX(config["control-points"]),
+        config["density"], config["thickness"], config["k-stretch"], config["k-shear"], config["k-bend-max"], config["k-bend-min"], Json2Vec(config["max-dir"]),
+        config["u-segments"], config["v-segments"], config["stretch-u"], config["stretch-v"]
+      ) {}
+
+ReducedCloth::ReducedCloth(const Eigen::VectorXd &control_points, double rho, double thickness, double k_stretch,
+                           double k_shear, double k_bend_max, double k_bend_min,
+                           const Eigen::Vector3d &max_dir, int num_u_segments, int num_v_segments,
+                           double stretch_u, double stretch_v)
+    : ReducedObject(control_points,
+                    new Cloth(rho, thickness, k_stretch, k_shear, k_bend_max, k_bend_min,
+                          ReducedObjectUtils::BezierSurface::GenerateUVDir(control_points, max_dir),
+                          ReducedObjectUtils::BezierSurface::GenerateSamplePoints(control_points, num_u_segments, num_v_segments),
+                          ReducedObjectUtils::BezierSurface::GenerateUVCoord(control_points, num_u_segments, num_v_segments),
+                          Cloth::GenerateTopo(num_u_segments, num_v_segments),
+                          stretch_u, stretch_v
+                    ),
+                    ReducedObjectUtils::BezierSurface::GenerateBase(num_u_segments, num_v_segments),
+                    ReducedObjectUtils::BezierSurface::GenerateShift(num_u_segments, num_v_segments)
+    ) {}

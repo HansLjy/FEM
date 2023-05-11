@@ -3,9 +3,13 @@
 //
 
 #include "JsonUtil.h"
-#include "Curve.h"
-#include "RenderShape/CurveShape/CurveShape.h"
+#include "Curve.hpp"
 #include "Collision/CollisionShape/CollisionShape.h"
+
+namespace {
+    const bool curve_registered = ObjectFactory::Instance()->Register("curve", [](const json& config) {return new Curve(config);});
+    const bool reduced_registered = ObjectFactory::Instance()->Register("reduced-curve", [](const json& config) {return new ReducedCurve(config);});
+}
 
 VectorXd Curve::GetX(const Vector3d &start, const Vector3d &end, int num_segments){
     VectorXd x(3 * (num_segments + 1));
@@ -17,32 +21,33 @@ VectorXd Curve::GetX(const Vector3d &start, const Vector3d &end, int num_segment
     return x;
 }
 
+Curve::Curve(const json& config) : Curve(config["density"], config["alpha-max"], config["alpha-min"], Json2Vec(config["start"]), Json2Vec(config["end"]), config["segments"]) {}
 
-Curve::Curve(const json& config) : Curve(config["collision-enabled"], config["density"], config["alpha-max"], config["alpha-min"], Json2Vec(config["start"]), Json2Vec(config["end"]), config["segments"]) {}
-
-Curve::Curve(bool collision_enabled, double rho, double alpha_max, double alpha_min, const VectorXd &x)
-    : SampledObject(new CurveShape, collision_enabled ? (CollisionShape*) new SampledCollisionShape : new NullCollisionShape, x, GenerateMass(rho, x), 1, GenerateTopo(x.size() / 3)), _k(100 * alpha_min), _num_points(x.size() / 3) {
-    _alpha.resize(_num_points - 1);
-    if (_num_points > 2) {
-        const double delta_alpha = (alpha_min - alpha_max) / (_num_points - 3);
+Curve::Curve(double rho, double alpha_max, double alpha_min, const VectorXd &x)
+    : SampledObject(x, GenerateMass(rho, x), 1, GenerateTopo(x.size() / 3)),
+      CurveShape(0.5),
+      _k(100 * alpha_min), _curve_num_points(x.size() / 3) {
+    _alpha.resize(_curve_num_points - 1);
+    if (_curve_num_points > 2) {
+        const double delta_alpha = (alpha_min - alpha_max) / (_curve_num_points - 3);
         double current_alpha = alpha_max;
-        for (int i = 1; i < _num_points - 1; i++) {
+        for (int i = 1; i < _curve_num_points - 1; i++) {
             _alpha(i) = current_alpha;
             current_alpha += delta_alpha;
         }
     }
 
     _x_rest = x;
-    _rest_length.resize(_num_points - 1);
-    for (int i = 0, j = 0; i < _num_points - 1; i++, j += 3) {
+    _rest_length.resize(_curve_num_points - 1);
+    for (int i = 0, j = 0; i < _curve_num_points - 1; i++, j += 3) {
         _rest_length(i) = (_x_rest.block<3, 1>(j + 3, 0) - _x_rest.block<3, 1>(j, 0)).norm();
     }
-    _voronoi_length.resize(_num_points);
-    for (int i = 1; i < _num_points - 1; i++) {
+    _voronoi_length.resize(_curve_num_points);
+    for (int i = 1; i < _curve_num_points - 1; i++) {
         _voronoi_length(i) = (_rest_length(i - 1) + _rest_length(i)) / 2;
     }
     _voronoi_length(0) = _rest_length(0) / 2;
-    _voronoi_length(_num_points - 1) = _rest_length(_num_points - 2) / 2;
+    _voronoi_length(_curve_num_points - 1) = _rest_length(_curve_num_points - 2) / 2;
 }
 
 VectorXd Curve::GenerateMass(double rho, const Eigen::VectorXd &x) {
@@ -65,7 +70,7 @@ double Curve::GetPotential(const Ref<const VectorXd> &x) const {
     potential += 0.5 * _k * (e_prev.norm() - _rest_length(0)) * (e_prev.norm() - _rest_length(0));
 
     // (i - 1) -- e_prev --> (i, x_current) -- e_current --> (i + 1, x_next)
-    for (int i = 1; i < _num_points - 1; i++) {
+    for (int i = 1; i < _curve_num_points - 1; i++) {
         Vector3d x_next = x.segment<3>(3 * (i + 1));
         Vector3d e_current = x_next - x_current;
 
@@ -89,7 +94,7 @@ VectorXd Curve::GetPotentialGradient(const Ref<const VectorXd> &x) const {
     Vector3d e_prev = x_current - x.block<3, 1>(0, 0);
 
     // (i - 1) -- e_prev --> (i, x_current) -- e_current --> (i + 1, x_next)
-    for (int i = 1; i < _num_points - 1; i++) {
+    for (int i = 1; i < _curve_num_points - 1; i++) {
         Vector3d x_next = x.block<3, 1>(3 * (i + 1), 0);
         Vector3d e_current = x_next - x_current;
 
@@ -116,7 +121,7 @@ VectorXd Curve::GetPotentialGradient(const Ref<const VectorXd> &x) const {
         x_current = x_next;
 	}
 
-    for (int i = 0, j = 0; i < _num_points - 1; i++, j += 3) {
+    for (int i = 0, j = 0; i < _curve_num_points - 1; i++, j += 3) {
         Vector3d e = x.segment<3>(j + 3) - x.segment<3>(j);
         Vector3d contribution = _k * (e.norm() - _rest_length(i)) * e.normalized();
         gradient.segment<3>(j) -= contribution;
@@ -133,7 +138,7 @@ void Curve::GetPotentialHessian(const Ref<const VectorXd> &x, COO &coo, int x_of
     Vector3d e_prev = x_current - x.segment<3>(0);
 
     // (i - 1) -- e_prev --> (i, x_current) -- e_current --> (i + 1, x_next)
-    for (int i = 1, ii = 0; i < _num_points - 1; i++, ii += 3) {
+    for (int i = 1, ii = 0; i < _curve_num_points - 1; i++, ii += 3) {
         Vector3d x_next = x.block<3, 1>(3 * (i + 1), 0);
         Vector3d e_current = x_next - x_current;
 
@@ -237,7 +242,7 @@ void Curve::GetPotentialHessian(const Ref<const VectorXd> &x, COO &coo, int x_of
         x_current = x_next;
     }
 
-    for (int i = 0, ii = 0; i < _num_points - 1; i++, ii += 3) {
+    for (int i = 0, ii = 0; i < _curve_num_points - 1; i++, ii += 3) {
         Vector3d e = x.segment<3>(ii + 3) - x.segment<3>(ii);
         const double e_norm = e.norm();
         const Matrix3d I3 = Matrix3d::Identity();
@@ -266,3 +271,18 @@ MatrixXi Curve::GenerateTopo(int n) {
 	}
 	return edge_topo;
 }
+
+ReducedCurve::ReducedCurve(const nlohmann::json &config) :
+        ReducedCurve(
+			config["segments"], config["density"], config["alpha-max"], config["alpha-min"],
+			Json2VecX(config["control-points"])
+        ) {}
+
+#include "ReducedObjectUtils.hpp"
+
+ReducedCurve::ReducedCurve(int num_segments, double rho, double alpha_max, double alpha_min,
+                           const VectorXd &control_points)
+        : ReducedObject(control_points,
+                        new Curve(rho, alpha_max, alpha_min, ReducedObjectUtils::BezierCurve::GenerateSamplePoints(control_points, num_segments)),
+                        ReducedObjectUtils::BezierCurve::GenerateBase(num_segments),
+                        ReducedObjectUtils::BezierCurve::GenerateShift(num_segments)) {}

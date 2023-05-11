@@ -3,20 +3,20 @@
 //
 
 #include "System.h"
-#include "DecomposedObject.h"
+#include "DecomposedObject.hpp"
 #include "Constraint/Constraint.h"
 #include "spdlog/spdlog.h"
 
 System::System(const nlohmann::json &config) : _dof(0) {
     const auto& objects_config = config["objects"];
     for (const auto& object_config : objects_config) {
-        AddObject(ObjectFactory::GetObject(object_config["type"], object_config), object_config["name"]);
+        AddObject(ObjectFactory::Instance()->GetObject(object_config["type"], object_config), object_config["name"]);
     }
 
     const auto& external_forces_config = config["external-forces"];
     for (const auto& external_force_config : external_forces_config) {
         int idx = GetIndex(external_force_config["object-name"]);
-        GetObject(idx)->AddExternalForce(ExternalForceFactory::GetExternalForce(external_force_config["type"], external_force_config));
+        GetObject(idx)->AddExternalForce(external_force_config["type"], external_force_config);
     }
 }
 

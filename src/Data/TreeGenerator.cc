@@ -10,9 +10,9 @@
 using nlohmann::json;
 
 struct Trunk {
-    Trunk(bool collision_enabled, int segments, double length, double density, double youngs_module,
+    Trunk(int segments, double length, double density, double youngs_module,
           double radius_max, double radius_min)
-        : _collision_enabled(collision_enabled), _segments(segments), _density(density), _youngs_module(youngs_module), _radius_max(radius_max), _radius_min(radius_min) {
+        : _segments(segments), _density(density), _youngs_module(youngs_module), _radius_max(radius_max), _radius_min(radius_min) {
         _control_points = {
                 0, 0, 0,
                 0, 0, length / 3,
@@ -23,7 +23,6 @@ struct Trunk {
 
     operator json() const {
         json object;
-		object["collision-enabled"] = _collision_enabled;
         object["density"] = _density;
         object["youngs-module"] = _youngs_module;
         object["radius-max"] = _radius_max;
@@ -34,7 +33,6 @@ struct Trunk {
         return object;
     }
 
-	bool _collision_enabled;
     int _segments;
     double _density;
     double _youngs_module;
@@ -43,9 +41,9 @@ struct Trunk {
 };
 
 struct Leaf {
-    Leaf(bool collision_enabled, double density, double thickness, double k_stretch, double k_shear, double k_bend_max, double k_bend_min,
+    Leaf(double density, double thickness, double k_stretch, double k_shear, double k_bend_max, double k_bend_min,
          int u_segments, int v_segments, double long_axis, double short_axis)
-         : _collision_enabled(collision_enabled), _density(density), _thickness(thickness), _k_stretch(k_stretch), _k_shear(k_shear),
+         : _density(density), _thickness(thickness), _k_stretch(k_stretch), _k_shear(k_shear),
            _k_bend_max(k_bend_max), _k_bend_min(k_bend_min),
            _u_segments(u_segments), _v_segments(v_segments) {
         _control_points = {
@@ -63,7 +61,6 @@ struct Leaf {
 
     operator json() {
         json leaf;
-		leaf["collision-enabled"] = _collision_enabled;
         leaf["density"] = _density;
         leaf["k-stretch"] = _k_stretch;
         leaf["k-shear"] = _k_shear;
@@ -76,7 +73,6 @@ struct Leaf {
         return leaf;
     }
 
-	bool _collision_enabled;
     double _density, _thickness;
     double _k_stretch, _k_shear, _k_bend_max, _k_bend_min;
     int _u_segments, _v_segments;
@@ -98,7 +94,6 @@ struct Gravity {
     std::string _name;
 };
 
-bool collision_enabled;
 int max_level;
 double root_length;
 int max_fan_out;
@@ -120,11 +115,11 @@ json GenerateTreeObject(int level, double angle, double cur_length, double curre
 	json tree;
 	
 	if (level < max_level) {
-		tree["type"] = "decomposed-treetrunk";
-		tree["proxy"] = json(Trunk(collision_enabled, trunk_segments, cur_length, trunk_density, youngs_module, current_radius_max, current_radius_min));
+		tree["type"] = "rigid-decomposed-treetrunk";
+		tree["proxy"] = json(Trunk(trunk_segments, cur_length, trunk_density, youngs_module, current_radius_max, current_radius_min));
 	} else {
-		tree["type"] = "decomposed-leaf";
-		tree["proxy"] = json(Leaf(collision_enabled, leaf_density, leaf_thickness, k_stretch, k_shear, k_bend_max, k_bend_min, leaf_segments, leaf_segments, leaf_long_axis, leaf_short_axis));
+		tree["type"] = "rigid-decomposed-leaf";
+		tree["proxy"] = json(Leaf(leaf_density, leaf_thickness, k_stretch, k_shear, k_bend_max, k_bend_min, leaf_segments, leaf_segments, leaf_long_axis, leaf_short_axis));
 	}
 
 	if (level == 0) {
@@ -169,7 +164,6 @@ void GenerateTree(const std::string& config) {
 
     srand(generator_config["magic-number"]);
 
-	collision_enabled = generator_config["collision-enabled"];
     max_level = generator_config["max-level"];
     root_length = generator_config["root-length"];
     max_fan_out = generator_config["max-fan-out"];

@@ -1,0 +1,29 @@
+{
+	"objects": [
+		{
+			"type": "treetrunk",
+			"name": "treetrunk",
+			"control-points": [
+				0.0,	0.0,	0.0,
+				0.0,	0.0,	3.3333333333333335,
+				0.0,	0.0,	6.666666666666667,
+				0.0,	0.0,	10.0
+			],
+			"density": 506.0,
+			"radius-max": 0.2,
+			"radius-min": 0.1,
+			"root": [
+				0,	0,	-1
+			],
+			"segments": 5,
+			"youngs-module": 700000000.0
+		}
+	],
+	"external-forces": [
+		{
+			"type": "sampled-object-gravity",
+			"object-name": "treetrunk",
+			"g": [0, -98, 0]
+		}
+	]
+}

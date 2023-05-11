@@ -8,7 +8,7 @@
 #include "Collision/SpatialHashing/SpatialHashing.hpp"
 #include "Collision/CCD/CCD.h"
 #include "EigenAll.h"
-#include "Object.h"
+#include "Object.hpp"
 #include "Target.h"
 
 #include <vector>

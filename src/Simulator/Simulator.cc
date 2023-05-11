@@ -4,7 +4,6 @@
 
 #include "Simulator.h"
 #include "Integrator/Integrator.h"
-#include "RenderShape/RenderShape.h"
 #include "nlohmann/json.hpp"
 #include "JsonUtil.h"
 #include <string>
@@ -58,7 +57,7 @@ void Simulator::Simulate(const std::string& output_dir) {
 	for (const auto& obj : _system->_all_objs) {
         MatrixXi topo;
         MatrixXd vertices;
-		obj->_render_shape->GetSurface(vertices, topo);
+		obj->GetSurface(vertices, topo);
         write_binary(topo_file, topo);
 	}
 
@@ -72,7 +71,7 @@ void Simulator::Simulate(const std::string& output_dir) {
         for (const auto& obj : _system->_all_objs) {
             MatrixXi topo;
             MatrixXd vertices;
-			obj->_render_shape->GetSurface(vertices, topo);
+			obj->GetSurface(vertices, topo);
             write_binary(itr_file, vertices);
             write_binary(itr_file, obj->GetFrameRotation());
             write_binary(itr_file, obj->GetFrameX());
@@ -113,7 +112,7 @@ void Simulator::InitializeScene(Scene &scene) {
         MatrixXd vertices;
         MatrixXi topo;
 
-		obj->_render_shape->GetSurface(vertices, topo);
+		obj->GetSurface(vertices, topo);
 //        std::cerr << "Rotation " << id << ":\n" << itr->GetRotation() << std::endl;
 //        std::cerr << "Translation " << id << ":\n" << itr->GetTranslation().transpose() << std::endl;
         _obj_id2scene_id.push_back(scene.AddMesh(vertices, topo, obj->GetFrameRotation(), obj->GetFrameX()));
@@ -130,7 +129,7 @@ void Simulator::Processing(Scene &scene) {
     for (const auto& obj : _system->_all_objs) {
         MatrixXd vertices;
         MatrixXi topo;
-		obj->_render_shape->GetSurface(vertices, topo);
+		obj->GetSurface(vertices, topo);
         scene.SelectData(_obj_id2scene_id[id++]);
         scene.SetMesh(vertices, topo, obj->GetFrameRotation(), obj->GetFrameX());
     }

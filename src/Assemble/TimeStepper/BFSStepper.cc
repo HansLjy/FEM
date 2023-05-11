@@ -3,7 +3,7 @@
 //
 
 #include "BFSStepper.h"
-#include "DecomposedObject.h"
+#include "DecomposedObject.hpp"
 
 BFSStepper::BFSStepper(const nlohmann::json &config) : TimeStepper(config) {
     const auto& integrator_config = config["integrator"];
@@ -42,7 +42,7 @@ void BFSStepper::Step(double h) const {
 			auto obj = _system->_all_objs[j];
 			if (_system->_all_objs[j]->IsDecomposed()) {
 				auto decomposed_obj = dynamic_cast<DecomposedObject*>(obj);
-				decomposed_obj->CalculateChildrenFrame(a.segment(cur_row, decomposed_obj->GetDOF()));
+				decomposed_obj->Distribute(a.segment(cur_row, decomposed_obj->GetDOF()));
 			}
             cur_row += obj->GetDOF();
         }
