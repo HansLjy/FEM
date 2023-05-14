@@ -10,6 +10,7 @@
 using Eigen::Matrix;
 using Eigen::Vector;
 using Eigen::MatrixXd;
+using Eigen::MatrixXf;
 using Eigen::VectorXd;
 using Eigen::Vector2d;
 using Eigen::Matrix2d;

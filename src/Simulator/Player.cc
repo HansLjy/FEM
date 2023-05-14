@@ -62,6 +62,7 @@ void Player::InitializeScene(Scene &scene) {
         read_binary(topo_file, topo);
         _topos.push_back(topo);
         _obj_id2scene_id.push_back(scene.AddMesh());
+        scene.SetTopo(topo);
     }
 }
 
@@ -77,7 +78,9 @@ void Player::Processing(Scene &scene) {
         read_binary(itr_file, rotation);
         read_binary(itr_file, translation);
         scene.SelectData(_obj_id2scene_id[obj_id]);
-        scene.SetMesh(vertices, _topos[obj_id], rotation, translation);
+        // TODO:
+        // scene.SetMesh(vertices, _topos[obj_id], rotation, translation);
+        scene.SetMesh(vertices, rotation, translation);
     }
 	itr_file.close();
 

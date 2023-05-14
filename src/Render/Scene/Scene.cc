@@ -13,27 +13,38 @@ void Scene::SelectData(int idx) {
     _selected_data = idx;
 }
 
-void Scene::SetMesh(const Eigen::MatrixXd &vertices, const Eigen::MatrixXi &topo, const Eigen::Matrix3d &R,
-                    const Eigen::Vector3d &b) {
+void Scene::SetMesh(const Eigen::MatrixXd &vertices, const Eigen::Matrix3d &R, const Eigen::Vector3d &b) {
     if (_selected_data == -1) {
         spdlog::error("Try to access an invalid id");
         return;
     }
-    _meshes[_selected_data].SetMesh(vertices, topo, R, b);
+    _meshes[_selected_data].SetMesh(vertices, R, b);
+}
+
+void Scene::SetTexture(const std::string &texture_path, const MatrixXf &uv_coords) {
+    if (_selected_data == -1) {
+        throw std::logic_error("Try to access an invalid id");
+    }
+    _meshes[_selected_data].SetTexture(texture_path, uv_coords);
+}
+
+void Scene::SetTopo(const MatrixXi &topo) {
+    if (_selected_data == -1) {
+        throw std::logic_error("Try to access an invalid id");
+    }
+    _meshes[_selected_data].SetTopo(topo);
 }
 
 void Scene::Draw(Shader &shader) {
-    for (auto& mesh : _meshes) {
-        shader.SetFloat("rotation", mesh._rotation);
-        shader.SetFloat("shift", mesh._shift);
-        mesh.Bind();
-        mesh.Draw();
+    for (const auto& mesh : _meshes) {
+        mesh.Draw(shader);
     }
 }
 
 int Scene::AddMesh(const Eigen::MatrixXd &vertices, const Eigen::MatrixXi &topo, const Eigen::Matrix3d &R,
                    const Eigen::Vector3d &b) {
     int id = AddMesh();
-    SetMesh(vertices, topo, R, b);
+    SetTopo(topo);
+    SetMesh(vertices, R, b);
     return id;
 }

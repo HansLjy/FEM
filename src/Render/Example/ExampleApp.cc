@@ -1,6 +1,8 @@
 #include "ExampleApp.hpp"
 #include "EigenAll.h"
 
+#include <iostream>
+
 void ExampleApp::InitializeScene(Scene &scene) {
     SetCamera(
         glm::vec3(5.0f, 0.0f, 5.0f),
@@ -14,11 +16,6 @@ void ExampleApp::InitializeScene(Scene &scene) {
         glm::vec3(1.0f, 1.0f, 1.0f),
         1.0f, 0.35f, 0.44f
     );
-    id1 = scene.AddMesh();
-    id2 = scene.AddMesh();
-}
-
-void ExampleApp::Processing(Scene &scene) {
     MatrixXd vertices(8, 3);
     vertices << +0.5, +0.5, +0.5, 
                 -0.5, +0.5, +0.5,
@@ -28,7 +25,7 @@ void ExampleApp::Processing(Scene &scene) {
                 -0.5, +0.5, -0.5,
                 +0.5, -0.5, -0.5,
                 -0.5, -0.5, -0.5;
-
+    
     Eigen::MatrixXi topo(12, 3);
     topo << 0, 1, 3,
             0, 3, 2,
@@ -43,11 +40,28 @@ void ExampleApp::Processing(Scene &scene) {
             1, 5, 3,
             3, 5, 7;
 
+    MatrixXf uv_coords(8, 2);
+    uv_coords <<
+        0, 0,
+        1, 0,
+        2, 0,
+        3, 0,
+        0, 1,
+        1, 1,
+        2, 1,
+        3, 1;
+
+    auto id1 = scene.AddMesh();
     scene.SelectData(id1);
-    scene.SetMesh(vertices, topo, Matrix3d::Identity(), Vector3d::Zero());
+    scene.SetTopo(topo);
+    scene.SetTexture(RENDERER_TEXTURE_PATH "/treetrunk.jpeg", uv_coords);
+    scene.SetMesh(vertices, Matrix3d::Identity(), Vector3d::Zero());
 
     Matrix3d R = Matrix3d(AngleAxisd(EIGEN_PI / 12, Vector3d::UnitX()));
     Vector3d b = (Vector3d() << 1, 1, 1).finished();
-    scene.SelectData(id2);
-    scene.SetMesh(vertices, topo, R, b);
+    scene.AddMesh(vertices, topo, R, b);
+}
+
+void ExampleApp::Processing(Scene &scene) {
+    
 }

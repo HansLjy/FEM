@@ -15,9 +15,8 @@ public:
         int opengl_major_version = 3, int opengl_minor_version = 3);
 
     void SetCamera(const glm::vec3& eye, const glm::vec3& front, const glm::vec3& up);
-    void
-    SetLight(const glm::vec3 &position, const glm::vec3 &ambient, const glm::vec3 &diffuse, const glm::vec3 &specular,
-             float Kc, float Kl, float Kq);
+    void SetLight(const glm::vec3 &position, const glm::vec3 &ambient, const glm::vec3 &diffuse, const glm::vec3 &specular,
+                  float Kc, float Kl, float Kq);
 
     void MainLoop();
     virtual void Processing(Scene& scene) = 0;

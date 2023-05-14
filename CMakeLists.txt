@@ -18,9 +18,9 @@ mark_as_advanced(
 	CMAKE_CXX_FLAGS_PROFILE
 )
 
+add_definitions(-DTEXTURE_PATH="${PROJECT_SOURCE_DIR}/data/texture")
 add_definitions(-DOUTPUT_PATH="${PROJECT_SOURCE_DIR}/output")
 add_definitions(-DCONFIG_PATH="${PROJECT_SOURCE_DIR}/config")
-message("-- configuration path: ${PROJECT_SOURCE_DIR}/config")
 
 add_subdirectory(src/Util)
 add_subdirectory(src/Numeric)

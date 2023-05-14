@@ -28,6 +28,7 @@ public:
     PROXY_EXTERNAL_FORCES_TO_CONTAINER(Curve)
     PROXY_RENDER_SHAPE(CurveShape)
     PROXY_COLLISION_SHAPE(NullCollisionShape)
+    
 
     friend SampledObjectGravity<Curve>;
 
@@ -53,7 +54,7 @@ public:
     ReducedCurve(int num_segments, double rho, double alpha_max, double alpha_min,
                  const VectorXd &control_points);
 
-    PROXY_RENDER_SHAPE(RenderShape)
+    PROXY_RENDER_SHAPE(ProxyRenderShape)
     PROXY_COLLISION_SHAPE(NullCollisionShape)
 };
 

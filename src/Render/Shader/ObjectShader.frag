@@ -1,5 +1,6 @@
 #version 330 core
 
+in vec2 TextureCoord;
 in vec3 WorldCoord;
 in vec3 Normal;
 out vec4 FragColor;
@@ -26,19 +27,38 @@ struct Light {
 
 uniform Light light;
 
+uniform int useTexture;
+uniform sampler2D ourTexture;
+
 void main() {
-    
-    vec3 ambient = light.ambient * material.ambient;
-    
-    vec3 norm = normalize(Normal);
-    vec3 light_dir = normalize(light.source - WorldCoord);
-    vec3 eye_dir = normalize(eye - WorldCoord);
+    if (useTexture != 0) {
+        vec3 texture_color = texture(ourTexture, TextureCoord).xyz;
+        vec3 ambient = light.ambient * texture_color;
 
-    float diffuse_strength = max(dot(norm, light_dir), 0);
-    vec3 diffuse = diffuse_strength * material.diffuse * light.diffuse;
+        vec3 norm = normalize(Normal);
+        vec3 light_dir = normalize(light.source - WorldCoord);
+        vec3 eye_dir = normalize(eye - WorldCoord);
 
-    float specular_strength = max(dot(eye_dir, reflect(-light_dir, norm)), 0);
-    vec3 specular = specular_strength * material.specular * light.specular;
+        float diffuse_strength = max(dot(norm, light_dir), 0);
+        vec3 diffuse = diffuse_strength * texture_color * light.diffuse;
 
-    FragColor = vec4(diffuse + ambient + specular, 1.0);
+        float specular_strength = max(dot(eye_dir, reflect(-light_dir, norm)), 0);
+        vec3 specular = specular_strength * texture_color * light.specular;
+
+        FragColor = vec4(diffuse + ambient + specular, 1.0);
+    } else {
+        vec3 ambient = light.ambient * material.ambient;
+        
+        vec3 norm = normalize(Normal);
+        vec3 light_dir = normalize(light.source - WorldCoord);
+        vec3 eye_dir = normalize(eye - WorldCoord);
+
+        float diffuse_strength = max(dot(norm, light_dir), 0);
+        vec3 diffuse = diffuse_strength * material.diffuse * light.diffuse;
+
+        float specular_strength = max(dot(eye_dir, reflect(-light_dir, norm)), 0);
+        vec3 specular = specular_strength * material.specular * light.specular;
+
+        FragColor = vec4(diffuse + ambient + specular, 1.0);
+    }
 }

@@ -31,7 +31,10 @@ public:
      * @brief Set the Mesh for the seleted mesh
      * 
      */
-    void SetMesh(const MatrixXd& vertices, const MatrixXi& topo, const Matrix3d& R, const Vector3d& b);
+    void SetMesh(const MatrixXd& vertices, const Matrix3d& R, const Vector3d& b);
+    
+    void SetTexture(const std::string& texture_path, const MatrixXf& uv_coords);
+    void SetTopo(const MatrixXi& topo);
 
     int AddMesh(const MatrixXd& vertices, const MatrixXi& topo, const Matrix3d& R, const Vector3d& b);
 

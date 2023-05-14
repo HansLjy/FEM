@@ -3,20 +3,48 @@
 #include "spdlog/spdlog.h"
 #include <iostream>
 
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
+
 RendererObject::RendererObject() {
     glGenVertexArrays(1, &_VAO);
 }
 
-void RendererObject::SetMesh(const Eigen::MatrixXd &vertices, const Eigen::MatrixXi &topos, const Eigen::Matrix3d &R,
-                             const Eigen::Vector3d &b) {
-    // TODO: make this more efficient
-    if (_vertex_array_data.rows() != topos.size() || _vertex_array_data.cols() != 6) {
-        _vertex_array_data.resize(topos.size(), 6);
-    }
+void RendererObject::SetTopo(const MatrixXi &topo) {
+    _topo = topo;
+    _vertex_array_data.resize(_topo.size(), 8);
+}
 
-    int num_triangles = topos.rows();
+void RendererObject::SetTexture(const std::string &texture_path, const MatrixXf& uv_coords) {
+    _use_texture = true;
+    glGenTextures(1, &_texture_id);
+    glBindTexture(GL_TEXTURE_2D, _texture_id);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);	
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
+
+    int width, height, nrChannels;
+    unsigned char *data = stbi_load(texture_path.c_str(), &width, &height, &nrChannels, 0); 
+
+    if (data == nullptr) {
+        throw std::logic_error("texture not found");
+    }
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+    glGenerateMipmap(GL_TEXTURE_2D);
+
+    for (int i = 0, cnt_rows = 0; i < _topo.rows(); i++, cnt_rows += 3) {
+        Eigen::RowVector3i indices = _topo.row(i);
+        for (int j = 0; j < 3; j++) {
+            _vertex_array_data.block<1, 2>(cnt_rows + j, 6) = uv_coords.row(indices[j]);
+        }
+    }
+    stbi_image_free(data);
+}
+
+void RendererObject::SetMesh(const Eigen::MatrixXd &vertices, const Eigen::Matrix3d &R, const Eigen::Vector3d &b) {
+    // TODO: make this more efficient
+    int num_triangles = _topo.rows();
     for (int i = 0, cnt_rows = 0; i < num_triangles; i++, cnt_rows += 3) {
-        Eigen::RowVector3i indices = topos.row(i);
+        Eigen::RowVector3i indices = _topo.row(i);
         Eigen::RowVector3f vertex[3];
         for (int j = 0; j < 3; j++) {
             vertex[j] = vertices.row(indices[j]).cast<float>();
@@ -49,11 +77,14 @@ void RendererObject::BindVertexArray() {
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
     glBufferData(GL_ARRAY_BUFFER, _vertex_array_data.size() * sizeof(float), _vertex_array_data.data(), GL_DYNAMIC_DRAW);
 
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
 
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
     glEnableVertexAttribArray(1);
+
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+    glEnableVertexAttribArray(2);
 
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
@@ -61,11 +92,14 @@ void RendererObject::BindVertexArray() {
     glDeleteBuffers(1, &VBO);
 }
 
-void RendererObject::Bind() {
+void RendererObject::Draw(Shader& shader) const {
+    shader.SetFloat("rotation", _rotation);
+    shader.SetFloat("shift", _shift);
+    shader.SetInt("useTexture", _use_texture);
+    if (_use_texture) {
+        glBindTexture(GL_TEXTURE_2D, _texture_id);
+    }
     glBindVertexArray(_VAO);
-}
-
-void RendererObject::Draw() {
     glDrawArrays(GL_TRIANGLES, 0, _vertex_array_data.rows());
 }
 
@@ -75,7 +109,12 @@ RendererObject::~RendererObject() {
     }
 }
 
-RendererObject::RendererObject(const RendererObject& mesh) {
+RendererObject::RendererObject(const RendererObject& mesh)
+    : _rotation(mesh._rotation),
+      _shift(mesh._shift),
+      _use_texture(mesh._use_texture), 
+      _texture_id(mesh._texture_id), 
+      _topo(mesh._topo) {
     _vertex_array_data = mesh._vertex_array_data;
     glGenVertexArrays(1, &_VAO);
     BindVertexArray();

@@ -37,6 +37,9 @@ public:
 
 	/* Render shape */
     virtual void GetSurface(MatrixXd &vertices, MatrixXi &topos) const = 0;
+	virtual bool IsUsingTexture() const = 0;
+	virtual const std::string& GetTexturePath() const = 0;
+	virtual void GetUVCoords(MatrixXf& uv_coords) const = 0;
 
 	/* Collision Shape */
 	virtual double GetMaxVelocity(const Ref<const VectorXd>& v) const = 0;

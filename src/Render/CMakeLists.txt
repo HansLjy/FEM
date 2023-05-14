@@ -48,6 +48,15 @@ if(NOT glm_FOUND)
     message("-- glm download success")
 endif()
 
+message("-- downloading stb image...")
+CPMAddPackage (
+    NAME stb_image
+    URL https://github.com/nothings/stb/raw/master/stb_image.h
+    DOWNLOAD_NO_EXTRACT true
+)
+message("-- stb image download success")
+
+
 find_package(Eigen3 3.4.0 EXACT)
 if(NOT Eigen3_FOUND)
 	message("-- Eigen3 not found, download instead")
@@ -65,6 +74,7 @@ add_definitions(-DSHADER_PATH="${CMAKE_CURRENT_SOURCE_DIR}/Shader")
 
 add_library(Renderer Camera/Camera.cc GUI/GUI.cc RenderObject/RendererObject.cc Scene/Scene.cc Shader/Shader.cc)
 target_include_directories(Renderer PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(Renderer PRIVATE ${stb_image_SOURCE_DIR})
 target_link_libraries(Renderer PRIVATE OpenGL::GL)
 target_link_libraries(Renderer PRIVATE glm::glm)
 target_link_libraries(Renderer PUBLIC Eigen3::Eigen)
@@ -74,6 +84,7 @@ target_link_libraries(Renderer PRIVATE glad)
 target_link_libraries(Renderer PUBLIC Geometry)
 target_link_libraries(Renderer PUBLIC FEMUtility)
 
+
 if(BUILD_DEMO)
-	add_subdirectory(Example)
+    add_subdirectory(Example)
 endif()

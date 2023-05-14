@@ -9,7 +9,7 @@
 	"radius-root-max": 0.2,
 	"radius-root-min": 0.1,
 	"trunk-segments": 5,
-	"leaf-segments": 5,
+	"leaf-segments": 3,
 	"leaf-thickness": 0.0002,
 	"leaf-long-axis": 0.2,
 	"leaf-short-axis": 0.1,
