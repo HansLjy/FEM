@@ -12,19 +12,15 @@
 /* Render Shape Policy */
 class RenderShape {
 public:
-	RenderShape(const json& config) {
-		if (config["use-texture"]) {
-			_use_texture = true;
-			_texture_path = std::string(TEXTURE_PATH) + "/" + std::string(config["texture-path"]);
-		} else {
-			_use_texture = false;
+	RenderShape(const json& config) : RenderShape(config["use-texture"], config["texture-path"]) {}
+	
+	RenderShape(bool use_texture, const std::string& texture_path = "") : _use_texture(use_texture) {
+		if (use_texture) {
+			_texture_path = std::string(TEXTURE_PATH) + "/" + texture_path;
 		}
 	}
 
-	RenderShape() = default;
-
 	// <- precompute uv coords
-	template<class Object> void PreCompute(const Object* obj);
 	template<class Object> void GetSurface(const Object* obj, MatrixXd &vertices, MatrixXi &topos) const;
 	template<class Object> bool IsUsingTexture(const Object* obj) const {return _use_texture;}
 	template<class Object> const std::string& GetTexturePath(const Object* obj) const {return _texture_path;}
@@ -38,6 +34,8 @@ protected:
 
 class SampledRenderShape : public RenderShape {
 public:
+	SampledRenderShape(bool use_texture, const std::string& texture_path = "") : RenderShape(use_texture, texture_path) {}
+	SampledRenderShape() : RenderShape(false) {}
 	template<class Object> void GetSurface(const Object *obj, MatrixXd &vertices, MatrixXi &topos) const;
 };
 

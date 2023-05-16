@@ -6,6 +6,9 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
+// TODO: make this more elegant
+std::map<std::string, unsigned int> texture_pool;
+
 RendererObject::RendererObject() {
     glGenVertexArrays(1, &_VAO);
 }
@@ -17,19 +20,27 @@ void RendererObject::SetTopo(const MatrixXi &topo) {
 
 void RendererObject::SetTexture(const std::string &texture_path, const MatrixXf& uv_coords) {
     _use_texture = true;
-    glGenTextures(1, &_texture_id);
-    glBindTexture(GL_TEXTURE_2D, _texture_id);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);	
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
 
-    int width, height, nrChannels;
-    unsigned char *data = stbi_load(texture_path.c_str(), &width, &height, &nrChannels, 0); 
+    if (texture_pool.find(texture_path) == texture_pool.end()) {
+        // new texture
+        glGenTextures(1, &_texture_id);
+        glBindTexture(GL_TEXTURE_2D, _texture_id);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);	
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
+        int width, height, nrChannels;
+        unsigned char *data = stbi_load(texture_path.c_str(), &width, &height, &nrChannels, 0); 
 
-    if (data == nullptr) {
-        throw std::logic_error("texture not found");
+        if (data == nullptr) {
+            throw std::logic_error("texture not found");
+        }
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+        glGenerateMipmap(GL_TEXTURE_2D);
+        stbi_image_free(data);
+
+        texture_pool.insert(std::make_pair(texture_path, _texture_id));
+    } else {
+        _texture_id = texture_pool.find(texture_path)->second;
     }
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-    glGenerateMipmap(GL_TEXTURE_2D);
 
     for (int i = 0, cnt_rows = 0; i < _topo.rows(); i++, cnt_rows += 3) {
         Eigen::RowVector3i indices = _topo.row(i);
@@ -37,7 +48,6 @@ void RendererObject::SetTexture(const std::string &texture_path, const MatrixXf&
             _vertex_array_data.block<1, 2>(cnt_rows + j, 6) = uv_coords.row(indices[j]);
         }
     }
-    stbi_image_free(data);
 }
 
 void RendererObject::SetMesh(const Eigen::MatrixXd &vertices, const Eigen::Matrix3d &R, const Eigen::Vector3d &b) {

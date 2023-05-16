@@ -11,6 +11,7 @@ public:
     TreeTrunk(double rho, double youngs_module, double radius_max, double radius_min, const VectorXd &x, const Vector3d &root);
 
     void Initialize() override {
+        TreeTrunkShape::PreCompute(this);
         NullCollisionShape::Precompute(this);
     }
 
@@ -43,6 +44,7 @@ public:
     ReducedTreeTrunk(int num_segments, double rho, double youngs_module, double radius_max, double radius_min,
                      const Vector3d &root, const VectorXd &control_points);
     void Initialize() override {
+        ReducedObject::Initialize();
         NullCollisionShape::Precompute(this);
     }
 

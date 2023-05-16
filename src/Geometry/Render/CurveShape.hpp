@@ -8,7 +8,7 @@
 
 class CurveShape : public RenderShape {
 public:
-    CurveShape(double radius) : _radius(radius) {}
+    CurveShape(double radius) : RenderShape(false), _radius(radius) {}
     template<class Object> void GetSurface(const Object* obj, MatrixXd &vertices, MatrixXi &topos) const;
 
 public:

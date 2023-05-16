@@ -4,9 +4,23 @@
 
 #pragma once
 
+#include "Object/Cloth.hpp"
 #include "ReducedObject.hpp"
 #include "Render/RenderShape.hpp"
+#include "Render/LeafShape.hpp"
 #include "Collision/CollisionShape/CollisionShape.h"
+
+class Leaf : public Cloth, public LeafRenderShape, public NullCollisionShape {
+public:
+    using Cloth::Cloth;
+    void Initialize() override {
+        Cloth::Initialize();
+        LeafRenderShape::PreCompute(this);
+        NullCollisionShape::Precompute(this);
+    }
+    PROXY_COLLISION_SHAPE(NullCollisionShape);
+    PROXY_RENDER_SHAPE(LeafRenderShape)
+};
 
 class ReducedLeaf : public ReducedObject, public ProxyRenderShape, public NullCollisionShape {
 public:
@@ -15,6 +29,7 @@ public:
                 int num_u_segments, int num_v_segments, const VectorXd& control_points);
 
     void Initialize() override {
+        ReducedObject::Initialize();
         NullCollisionShape::Precompute(this);
     }
 

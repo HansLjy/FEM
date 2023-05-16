@@ -8,7 +8,9 @@
 
 class TreeTrunkShape : public RenderShape {
 public:
-    TreeTrunkShape(double radius_max, double radius_min) : _radius_max(radius_max), _radius_min(radius_min) {}
+    TreeTrunkShape(double radius_max, double radius_min) : RenderShape(true, "treetrunk.jpeg"), _radius_max(radius_max), _radius_min(radius_min) {}
+
+	template<class Object> void PreCompute(const Object* obj);
     template<class Object> void GetSurface(const Object* obj, Eigen::MatrixXd &vertices, Eigen::MatrixXi &topos) const;
 	
 protected:
@@ -17,42 +19,62 @@ protected:
 };
 
 template<class Object>
+void TreeTrunkShape::PreCompute(const Object *obj) {
+    const VectorXd& x_curve = obj->_x;
+    const int num_points = x_curve.size() / 3;
+    _uv_coords.resize(4 * num_points, 2);
+    float cur_length = 0;
+    float line_length = std::ceil((_radius_max * 4 * sqrt(2))) / 4;
+    for (int i = 0, i3 = 0, i4 = 0; i < num_points; i++, i3 += 3, i4 += 4) {
+        for (int j = 0; j < 4; j++) {
+            _uv_coords.row(i4 + j) << cur_length, line_length * j;
+        }
+        if (i < num_points - 1) {
+            cur_length += (x_curve.segment<3>(i3) - x_curve.segment<3>(i3 + 3)).norm();
+        }
+    }
+}
+
+template<class Object>
 void TreeTrunkShape::GetSurface(const Object* obj, Eigen::MatrixXd &vertices, Eigen::MatrixXi &topos) const {
     const VectorXd& x_curve = obj->_x;
 
     int num_points = x_curve.size() / 3;
-    vertices.resize(8 * (num_points - 1), 3);
-    topos.resize(12 * (num_points - 1), 3);
+    vertices.resize(4 * num_points, 3);
+    topos.resize(8 * (num_points - 1), 3);
 
-    Vector3d x_prev = x_curve.block<3, 1>(0, 0);
-    Vector3d x_current = x_curve.block<3, 1>(3, 0);
-    Vector3d t_current = (x_curve.block<3, 1>(3, 0) - x_prev).normalized();
+    Vector3d x_prev = x_curve.segment<3>(0);
+    Vector3d x_current = x_curve.segment<3>(3);
+    Vector3d t_current = (x_current - x_prev).normalized();
 
     Vector3d T, U[2];
     T = t_current;
     U[0] = FindPerpendicular(T);
     U[1] = T.cross(U[0]);
     const double delta_radius = (_radius_max - _radius_min) / (num_points - 1);
-    double radius [][2] = {
-            {_radius_max, -_radius_max},
-            {_radius_max - delta_radius, -_radius_max + delta_radius}
+    double radius[2] = {
+        _radius_max, -_radius_max
     };
 
-    Matrix<int, 12, 3> cube_triangulation;
+    Matrix<int, 8, 3> cube_triangulation;
     cube_triangulation <<
-            0, 2, 1, 0, 3, 2,
-            4, 5, 6, 4, 6, 7,
-            0, 5, 4, 0, 1, 5,
-            1, 6, 5, 1, 2, 6,
-            2, 7, 6, 2, 3, 7,
-            3, 4, 7, 3, 0, 4;
+        0, 5, 4, 0, 1, 5,
+        1, 6, 5, 1, 2, 6,
+        2, 7, 6, 2, 3, 7,
+        3, 4, 7, 3, 0, 4;
 
-    for (int i = 1, v_index = 0, f_index = 0; i < num_points; i++, v_index += 8, f_index += 12) {
-        for (int j = 0; j < 8; j++) {
-            vertices.row(v_index + j) = ((j & 4) ? x_current : x_prev) + radius[(j >> 2) & 1][(j >> 1) & 1] * U[j & 1];
+    for (int j = 0; j < 4; j++) {
+        vertices.row(j) = x_prev + radius[(j >> 1) & 1] * U[j & 1];
+    }
+
+    for (int i = 1, v_index = 4, f_index = 0; i < num_points; i++, v_index += 4, f_index += 8) {
+        radius[0] -= delta_radius;
+        radius[1] += delta_radius;
+        for (int j = 0; j < 4; j++) {
+            vertices.row(v_index + j) = x_current + radius[(j >> 1) & 1] * U[j & 1];
         }
-        topos.block<12, 3>(f_index, 0) = cube_triangulation;
-        cube_triangulation.array() += 8;
+        topos.block<8, 3>(f_index, 0) = cube_triangulation;
+        cube_triangulation.array() += 4;
 
         if (i < num_points - 1) {
             Vector3d x_next = x_curve.block<3, 1>(3 * (i + 1), 0);
@@ -73,9 +95,5 @@ void TreeTrunkShape::GetSurface(const Object* obj, Eigen::MatrixXd &vertices, Ei
             x_current = x_next;
             t_current = t_next;
         }
-        radius[0][0] -= delta_radius;
-        radius[0][1] += delta_radius;
-        radius[1][0] -= delta_radius;
-        radius[1][1] += delta_radius;
     }
 }

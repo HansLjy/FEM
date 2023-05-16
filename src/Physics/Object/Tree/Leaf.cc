@@ -22,7 +22,7 @@ ReducedLeaf::ReducedLeaf(double density, double thickness, double k_stretch, dou
                          int num_u_segments, int num_v_segments, const VectorXd& control_points)
                          : ReducedObject(
 								GenerateX(control_points),
-								new Cloth(density, thickness, k_stretch, k_shear, k_bend_max, k_bend_min,
+								new Leaf(density, thickness, k_stretch, k_shear, k_bend_max, k_bend_min,
 									GenerateMaxBendDir(control_points),
 									ReducedObjectUtils::BezierSurface::GenerateSamplePoints(control_points, num_u_segments, num_v_segments),
 									ReducedObjectUtils::BezierSurface::GenerateUVCoord(control_points, num_u_segments, num_v_segments),

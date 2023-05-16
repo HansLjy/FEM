@@ -117,6 +117,7 @@ void Simulator::InitializeScene(Scene &scene) {
 //        std::cerr << "Translation " << id << ":\n" << itr->GetTranslation().transpose() << std::endl;
         _obj_id2scene_id.push_back(scene.AddMesh(vertices, topo, obj->GetFrameRotation(), obj->GetFrameX()));
         if (obj->IsUsingTexture()) {
+            std::cerr << obj->GetTexturePath() << std::endl;
             MatrixXf uv_coords;
             obj->GetUVCoords(uv_coords);
             scene.SetTexture(obj->GetTexturePath(), uv_coords);
