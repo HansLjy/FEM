@@ -117,7 +117,6 @@ void Simulator::InitializeScene(Scene &scene) {
 //        std::cerr << "Translation " << id << ":\n" << itr->GetTranslation().transpose() << std::endl;
         _obj_id2scene_id.push_back(scene.AddMesh(vertices, topo, obj->GetFrameRotation(), obj->GetFrameX()));
         if (obj->IsUsingTexture()) {
-            std::cerr << obj->GetTexturePath() << std::endl;
             MatrixXf uv_coords;
             obj->GetUVCoords(uv_coords);
             scene.SetTexture(obj->GetTexturePath(), uv_coords);
@@ -126,9 +125,15 @@ void Simulator::InitializeScene(Scene &scene) {
 }
 
 #include "Timer.h"
+#include <chrono>
 
 void Simulator::Processing(Scene &scene) {
-    auto t = clock();
+    static int step_number = 0;
+    static std::chrono::time_point<std::chrono::steady_clock> start_time;
+    if (step_number == 0) {
+        start_time = std::chrono::steady_clock::now();
+    }
+    step_number++;
     _time_stepper->Step(_time_step);
     int id = 0;
 
@@ -139,6 +144,11 @@ void Simulator::Processing(Scene &scene) {
         scene.SelectData(_obj_id2scene_id[id++]);
         scene.SetMesh(vertices, obj->GetFrameRotation(), obj->GetFrameX());
     }
-    auto delta_t = clock() - t;
-    spdlog::info("fps = {}", (int)(CLOCKS_PER_SEC / delta_t));
+    if (step_number == 200) {
+        auto end_time = std::chrono::steady_clock::now();
+        std::chrono::duration<double> time_span = std::chrono::duration_cast<std::chrono::duration<double>>(end_time - start_time);
+        spdlog::info("fps = {}", 200.0 / time_span.count());
+        step_number = 0;
+    }
+
 }

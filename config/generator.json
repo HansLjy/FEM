@@ -1,23 +1,33 @@
 {
 	"filename": "gen-tree-model.json",
 	"magic-number": 607,
+
 	"max-level": 4,
 	"max-fan-out": 5,
+	"max-leaf-fan-out": 2,
+
 	"trunk-density": 506,
+	"youngs-module": 7e8,
+	"treetrunk-length": [5, 3, 2, 1, 0.5],
+	"radius-max": [0.2, 0.06, 0.03, 0.01, 0.005],
+	"radius-min": [0.1, 0.03, 0.015, 0.005, 0.002],
+	"trunk-segments": 10,
+	
 	"leaf-density": 1130,
-	"youngs-module": 0.7e9,
-	"radius-root-max": 0.2,
-	"radius-root-min": 0.1,
-	"trunk-segments": 5,
 	"leaf-segments": 3,
 	"leaf-thickness": 0.0002,
-	"leaf-long-axis": 0.2,
-	"leaf-short-axis": 0.1,
+	"leaf-long-axis": 0.4,
+	"leaf-short-axis": 0.2,
 	"k-stretch": 100000,
 	"k-shear": 10000,
 	"k-bend-max": 0.0001,
 	"k-bend-min": 0.0001,
-	"g": [0, -50, 0],
-	"root-length": 10,
-	"position-ratio": 0.6
+	
+	"g": [0, -100, 0],
+	
+	"children-level": 2,
+	"position-ratio": [0.6, 0.9],
+	"bending-angle": [45, 30],
+
+	"generate-leaf": true
 }
