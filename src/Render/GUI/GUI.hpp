@@ -11,7 +11,7 @@
 
 class GUI {
 public:
-    explicit GUI(const std::string& title = "Renderer", int width = 800, int height = 600,
+    explicit GUI(const std::string& title = "Renderer", int width = 1000, int height = 750,
         int opengl_major_version = 3, int opengl_minor_version = 3);
 
     void SetCamera(const glm::vec3& eye, const glm::vec3& front, const glm::vec3& up);
@@ -47,6 +47,7 @@ private:
     Light* _light = nullptr;
 
     unsigned int _floor_VAO = 0;
+    bool _stop = false;
 
     static GUI* theGUI;
 };

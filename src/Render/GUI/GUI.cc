@@ -70,7 +70,7 @@ void GUI::MainLoop() {
     glfwMakeContextCurrent(_window);
     glfwSetFramebufferSizeCallback(_window, GUI::ResizeCB);
     glfwSetScrollCallback(_window, GUI::ScrollCB);
-    glfwSetCursorPosCallback(_window, GUI::MouseMovementCB);
+    // glfwSetCursorPosCallback(_window, GUI::MouseMovementCB);
     glfwSetInputMode(_window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
@@ -142,7 +142,9 @@ void GUI::MainLoop() {
         object_shader.SetFloat("material.specular", material._specular);
         object_shader.SetFloat("material.shininess", material._shininess);
 
-        Processing(scene);
+        if (!_stop) {
+            Processing(scene);
+        }
 
         scene.Draw(object_shader);
 
@@ -189,6 +191,12 @@ void GUI::ProcessKeyboard(float duration) {
     }
     if (PRESS(E)) {
         _camera->CameraMovement(CameraMovementType::kDownward, duration);
+    }
+    if (PRESS(B)) {
+        _stop = true;
+    }
+    if (PRESS(C)) {
+        _stop = false;
     }
     if (glfwGetKey(_window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
         glfwSetWindowShouldClose(_window, true);

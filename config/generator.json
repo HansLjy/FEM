@@ -2,7 +2,7 @@
 	"filename": "gen-tree-model.json",
 	"magic-number": 607,
 
-	"max-level": 4,
+	"max-level": 5,
 	"max-fan-out": 5,
 	"max-leaf-fan-out": 2,
 

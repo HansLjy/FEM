@@ -135,20 +135,21 @@ void Simulator::Processing(Scene &scene) {
     }
     step_number++;
     _time_stepper->Step(_time_step);
-    int id = 0;
+    
+    if (step_number == 200) {
+        auto end_time = std::chrono::steady_clock::now();
+        std::chrono::duration<double> time_span = std::chrono::duration_cast<std::chrono::duration<double>>(end_time - start_time);
+        spdlog::info("fps = {}", 200.0 / time_span.count());
+        step_number = 0;
+    }
 
+    int id = 0;
     for (const auto& obj : _system->_all_objs) {
         MatrixXd vertices;
         MatrixXi topo;
 		obj->GetSurface(vertices, topo);
         scene.SelectData(_obj_id2scene_id[id++]);
         scene.SetMesh(vertices, obj->GetFrameRotation(), obj->GetFrameX());
-    }
-    if (step_number == 200) {
-        auto end_time = std::chrono::steady_clock::now();
-        std::chrono::duration<double> time_span = std::chrono::duration_cast<std::chrono::duration<double>>(end_time - start_time);
-        spdlog::info("fps = {}", 200.0 / time_span.count());
-        step_number = 0;
     }
 
 }
