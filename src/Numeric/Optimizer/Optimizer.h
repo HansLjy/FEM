@@ -31,7 +31,4 @@ protected:
     const double _tolerance;
     const int _max_iter;
 };
-
-DECLARE_XXX_FACTORY(Optimizer)
-
 #endif //FEM_OPTIMIZER_H

@@ -32,7 +32,6 @@ public:
     Object * GetObject(int idx);
     const Object* GetObject(int idx) const;
     void Initialize(const json &config);
-    int GetOffset(int idx) const;
     int GetIndex(const std::string& name) const;
 
     ~System();
@@ -49,8 +48,6 @@ public:
 protected:
     int _dof;
     std::vector<Object*> _objs;
-    std::vector<int> _offset;
-
     std::map<std::string, int> _index;
 
 };

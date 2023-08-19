@@ -19,7 +19,7 @@ void Simulator::LoadScene(const std::string &config) {
     _time_step = simulation_config["time-step"];
 
     const auto& time_stepper_config = config_json["time-stepper"];
-    _time_stepper = TimeStepperFactory::GetTimeStepper(time_stepper_config["type"], time_stepper_config);
+    _time_stepper = Factory<TimeStepper>::GetInstance()->GetProduct(time_stepper_config["type"], time_stepper_config);
 
     const std::string system_config_file_path = config_json["system-config"];
     std::ifstream system_config_file(CONFIG_PATH + system_config_file_path);
@@ -57,7 +57,8 @@ void Simulator::Simulate(const std::string& output_dir) {
 	for (const auto& obj : _system->_all_objs) {
         MatrixXi topo;
         MatrixXd vertices;
-		obj->GetSurface(vertices, topo);
+		obj->GetRenderTopos(topo);
+		obj->GetRenderVertices(vertices);
         write_binary(topo_file, topo);
 	}
 
@@ -69,9 +70,8 @@ void Simulator::Simulate(const std::string& output_dir) {
         obj_id = 0;
 		std::ofstream itr_file(output_dir + "/itr" + std::to_string(itr_id));
         for (const auto& obj : _system->_all_objs) {
-            MatrixXi topo;
             MatrixXd vertices;
-			obj->GetSurface(vertices, topo);
+			obj->GetRenderVertices(vertices);
             write_binary(itr_file, vertices);
             write_binary(itr_file, obj->GetFrameRotation());
             write_binary(itr_file, obj->GetFrameX());
@@ -112,7 +112,8 @@ void Simulator::InitializeScene(Scene &scene) {
         MatrixXd vertices;
         MatrixXi topo;
 
-		obj->GetSurface(vertices, topo);
+		obj->GetRenderTopos(topo);
+		obj->GetRenderVertices(vertices);
 //        std::cerr << "Rotation " << id << ":\n" << itr->GetRotation() << std::endl;
 //        std::cerr << "Translation " << id << ":\n" << itr->GetTranslation().transpose() << std::endl;
         _obj_id2scene_id.push_back(scene.AddMesh(vertices, topo, obj->GetFrameRotation(), obj->GetFrameX()));
@@ -146,8 +147,7 @@ void Simulator::Processing(Scene &scene) {
     int id = 0;
     for (const auto& obj : _system->_all_objs) {
         MatrixXd vertices;
-        MatrixXi topo;
-		obj->GetSurface(vertices, topo);
+		obj->GetRenderVertices(vertices);
         scene.SelectData(_obj_id2scene_id[id++]);
         scene.SetMesh(vertices, obj->GetFrameRotation(), obj->GetFrameX());
     }

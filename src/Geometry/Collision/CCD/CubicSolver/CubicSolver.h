@@ -20,6 +20,5 @@ protected:
     double _tolerance;
 };
 
-DECLARE_XXX_FACTORY(CubicSolver)
 
 #endif //FEM_CUBICSOLVER_H

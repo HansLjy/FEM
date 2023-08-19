@@ -21,6 +21,4 @@ public:
     virtual ~CCD() = default;
 };
 
-DECLARE_XXX_FACTORY(CCD)
-
 #endif //FEM_CCD_H

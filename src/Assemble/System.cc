@@ -3,14 +3,12 @@
 //
 
 #include "System.h"
-#include "DecomposedObject.hpp"
-#include "Constraint/Constraint.h"
 #include "spdlog/spdlog.h"
 
 System::System(const nlohmann::json &config) : _dof(0) {
     const auto& objects_config = config["objects"];
     for (const auto& object_config : objects_config) {
-        AddObject(ObjectFactory::Instance()->GetObject(object_config["type"], object_config), object_config["name"]);
+        AddObject(Factory<Object>::GetInstance()->GetProduct(object_config["type"], object_config), object_config["name"]);
     }
 
     const auto& external_forces_config = config["external-forces"];
@@ -40,10 +38,6 @@ const Object *System::GetObject(int idx) const {
     return _objs[idx];
 }
 
-int System::GetOffset(int idx) const {
-    return _offset[idx];
-}
-
 int System::GetIndex(const std::string &name) const {
     const auto& result = _index.find(name);
     if (result == _index.end()) {
@@ -58,16 +52,6 @@ void System::Initialize(const json &config) {
 		obj->Initialize();
 	}
 	
-    int cur_offset = 0;
-    const int size = _objs.size();
-    if (_offset.size() != size) {
-        _offset.resize(size);
-    }
-    for (int i = 0; i < size; i++) {
-        _offset[i] = cur_offset;
-        cur_offset += _objs[i]->GetDOF();
-    }
-
 	// For decomposed object
 	_all_objs.clear();
 	_level_bar.clear();
@@ -77,20 +61,21 @@ void System::Initialize(const json &config) {
 		_all_objs.push_back(obj);
 		tail++;
 	}
-	while (head < tail) {
-		if (level_end == head) {
-			_level_bar.push_back(level_end = tail);
-		}
-		const auto obj = _all_objs[head++];
-		if (obj->IsDecomposed()) {
-			const auto& decomposed_object = dynamic_cast<DecomposedObject*>(obj);
-			const auto& children = decomposed_object->GetChildren();
-			for (const auto& child : children) {
-				_all_objs.push_back(child);
-				tail++;
-			}
-		}
-	}
+	// TODO: deal with decomposed object
+	// while (head < tail) {
+	// 	if (level_end == head) {
+	// 		_level_bar.push_back(level_end = tail);
+	// 	}
+	// 	const auto obj = _all_objs[head++];
+	// 	if (obj->IsDecomposed()) {
+	// 		const auto& decomposed_object = dynamic_cast<DecomposedObject*>(obj);
+	// 		const auto& children = decomposed_object->GetChildren();
+	// 		for (const auto& child : children) {
+	// 			_all_objs.push_back(child);
+	// 			tail++;
+	// 		}
+	// 	}
+	// }
 }
 
 System::~System(){

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "ExternalForce.hpp"
-#include "SampledObjectGravity.h"
+#include "SampledObjectGravity.hpp"
 
 template <class Object>
 class ExternalForceFactory {
@@ -9,9 +9,7 @@ public:
     using ExternalForceGenerator = std::function<ExternalForce<Object>*(const json& config)>;
 
     ExternalForceFactory<Object>() {
-        if (SampledObjectGravity<Object>::valid) {
-            _generators.insert(std::make_pair("sampled-object-gravity", [](const json& config) {return new SampledObjectGravity<Object>(config);}));
-        }
+		_generators.insert(std::make_pair("sampled-object-gravity", [](const json& config) {return new SampledObjectGravity<Object>(config);}));
     }
 
     static ExternalForceFactory<Object>* Instance() {

@@ -5,9 +5,16 @@
 #include "SystemStepper.h"
 #include "Target.h"
 
+namespace {
+	const bool system_stepper_registered = Factory<TimeStepper>::GetInstance()->Register("system-stepper",
+	[](const json& config) {
+		return new SystemStepper(config);
+	});
+}
+
 SystemStepper::SystemStepper(const json &config) : TimeStepper(config) {
     const auto& integrator_config = config["integrator"];
-    _integrator = IntegratorFactory::GetIntegrator(integrator_config["type"], integrator_config);
+    _integrator = Factory<Integrator>::GetInstance()->GetProduct(integrator_config["type"], integrator_config);
 }
 
 void SystemStepper::Bind(System &system) {

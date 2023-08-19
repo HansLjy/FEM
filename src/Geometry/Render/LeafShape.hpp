@@ -4,12 +4,13 @@
 
 class LeafRenderShape : public SampledRenderShape {
 public:
+	explicit LeafRenderShape(const json& config) {}
     LeafRenderShape() : SampledRenderShape(true, "leaf.jpeg") {}
-	template<class Object> void PreCompute(const Object* obj);
+	template<class Object> void Initialize(const Object* obj);
 };
 
 template<class Object>
-void LeafRenderShape::PreCompute(const Object* obj) {
+void LeafRenderShape::Initialize(const Object* obj) {
     const VectorXd& uv_coords = obj->_uv_coord;
     int num_points = uv_coords.size() / 2;
     _uv_coords.resize(num_points, 2);

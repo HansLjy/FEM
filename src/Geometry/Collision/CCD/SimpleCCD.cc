@@ -5,8 +5,16 @@
 #include "SimpleCCD.h"
 #include "CubicSolver/CubicSolver.h"
 
+namespace {
+	const bool simple_ccd_registered = Factory<CCD>::GetInstance()->Register("simple-ccd",
+		[](const json& config) {
+			return new SimpleCCD(config);
+		}
+	);
+}
+
 SimpleCCD::SimpleCCD(const json& config)
-	: _epsilon(config["epsilon"]), _cubic_solver(CubicSolverFactory::GetCubicSolver(config["cubic-solver"]["type"], config["cubic-solver"])) {}
+	: _epsilon(config["epsilon"]), _cubic_solver(Factory<CubicSolver>::GetInstance()->GetProduct(config["cubic-solver"]["type"], config["cubic-solver"])) {}
 
 double SimpleCCD::EdgeEdgeCollision(const Eigen::Vector3d &x11, const Eigen::Vector3d &x12,
                                     const Eigen::Vector3d &x21, const Eigen::Vector3d &x22,

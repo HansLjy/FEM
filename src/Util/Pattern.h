@@ -9,47 +9,42 @@
 #include <nlohmann/json.hpp>
 using nlohmann::json;
 
-#define DECLARE_GET_INSTANCE(classname) \
-static classname* GetInstance();
+template <class Product>
+class Factory {
+public:
+	using ProductCreator = std::function<Product*(const json& config)>;
 
-#define DEFINE_GET_INSTANCE(classname) \
-classname *classname::GetInstance() {  \
-	static classname instance;         \
-	return &instance;                  \
-}
+	static Factory* GetInstance() {
+		if (!_the_factory) {
+			_the_factory = new Factory;
+		}
+		return _the_factory;
+	}
 
-#define DECLARE_XXX_FACTORY(classname) \
-class classname##Factory {             \
-public:                                \
-	static classname* Get##classname(const std::string& type, const json& config); \
+	bool Register(const std::string& name, const ProductCreator& creator) {
+		return _creator_map.insert(std::make_pair(name, creator)).second;
+	}
+
+	Product* GetProduct(const std::string& name, const json& config) {
+		return _creator_map[name](config);
+	}
+
+private:
+	static Factory* _the_factory;
+	std::map<std::string, ProductCreator> _creator_map;
 };
 
-#define BEGIN_DEFINE_XXX_FACTORY(classname) \
-classname *classname##Factory::Get##classname(const std::string& type, const json& config) { \
+#define DEFINE_HAS_MEMBER(MEMBER_NAME)                                         \
+    template <typename T>                                                      \
+    class has_member_##MEMBER_NAME {                                           \
+        typedef char yes_type;                                                 \
+        typedef long no_type;                                                  \
+        template <typename U> static yes_type test(decltype(&U::member_name)); \
+        template <typename U> static no_type  test(...);                       \
+    public:                                                                    \
+        static constexpr bool value = sizeof(test<T>(0)) == sizeof(yes_type);  \
+    };
 
-
-#define ADD_PRODUCT(typename, classname) \
-    if (type == typename) {              \
-        return new classname(config);    \
-    }
-
-#define END_DEFINE_XXX_FACTORY  \
-    return nullptr;             \
-}
-
-#define BASE_DECLARE_CLONE(classname) \
-	virtual classname* Clone() const = 0;
-
-#define MIDDLE_DECLARE_CLONE(classname) \
-    classname* Clone() const override = 0;
-
-#define DERIVED_DECLARE_CLONE(classname) \
-	classname* Clone() const override;
-
-#define DEFINE_CLONE(base, derived) \
-base* derived::Clone() const {      \
-    std::cerr << #derived << " cloned" << std::endl; \
-	return new derived(*this);      \
-}
+#define HAS_MEMBER(CLASS_NAME, MEMBER_NAME) (has_member_##MEMBER_NAME<CLASS_NAME>::value)
 
 #endif //FEM_PATTERN_H

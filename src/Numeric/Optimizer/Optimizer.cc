@@ -3,9 +3,6 @@
 //
 
 #include "Optimizer.h"
-#include "Newton.h"
 
-
-BEGIN_DEFINE_XXX_FACTORY(Optimizer)
-    ADD_PRODUCT("newton", Newton)
-END_DEFINE_XXX_FACTORY
+template<>
+Factory<Optimizer>* Factory<Optimizer>::_the_factory = nullptr;

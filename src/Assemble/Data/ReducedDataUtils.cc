@@ -1,6 +1,6 @@
-#include "ReducedObjectUtils.hpp"
+#include "ReducedDataUtils.hpp"
 
-VectorXd ReducedObjectUtils::BezierCurve::GenerateSamplePoints(const VectorXd &control_points, int num_segments) {
+VectorXd ReducedDataUtils::BezierCurve::GenerateSamplePoints(const VectorXd &control_points, int num_segments) {
     VectorXd sample_points((num_segments + 1) * 3);
     double h = 1.0 / num_segments;
     for (int i = 0, j = 0; i <= num_segments; i++, j += 3) {
@@ -14,7 +14,7 @@ VectorXd ReducedObjectUtils::BezierCurve::GenerateSamplePoints(const VectorXd &c
     return sample_points;
 }
 
-SparseMatrixXd ReducedObjectUtils::BezierCurve::GenerateBase(int num_segments) {
+SparseMatrixXd ReducedDataUtils::BezierCurve::GenerateBase(int num_segments) {
     SparseMatrixXd base((num_segments + 1) * 3, 12);
     COO coo;
     const double h = 1.0 / num_segments;
@@ -36,16 +36,16 @@ SparseMatrixXd ReducedObjectUtils::BezierCurve::GenerateBase(int num_segments) {
     return base;
 }
 
-VectorXd ReducedObjectUtils::BezierCurve::GenerateShift(int num_segments) {
+VectorXd ReducedDataUtils::BezierCurve::GenerateShift(int num_segments) {
     return VectorXd::Zero(3 * (num_segments + 1));
 }
 
-VectorXd ReducedObjectUtils::BezierSurface::GenerateSamplePoints(const VectorXd &control_points, int num_u_segments, int num_v_segments){
+VectorXd ReducedDataUtils::BezierSurface::GenerateSamplePoints(const VectorXd &control_points, int num_u_segments, int num_v_segments){
     SparseMatrixXd base = GenerateBase(num_u_segments, num_v_segments);
     return base * control_points;
 }
 
-VectorXd ReducedObjectUtils::BezierSurface::GenerateUVCoord(const VectorXd &control_points, int num_u_segments, int num_v_segments) {
+VectorXd ReducedDataUtils::BezierSurface::GenerateUVCoord(const VectorXd &control_points, int num_u_segments, int num_v_segments) {
     VectorXd x = GenerateSamplePoints(control_points, num_u_segments, num_v_segments);
     Vector3d lower_left = x.segment<3>(0);
     Vector3d u_dir = (x.segment<3>(3) - lower_left).normalized();
@@ -61,14 +61,14 @@ VectorXd ReducedObjectUtils::BezierSurface::GenerateUVCoord(const VectorXd &cont
     return uv_coord;
 }
 
-Vector2d ReducedObjectUtils::BezierSurface::GenerateUVDir(const VectorXd &control_points, const Vector3d &dir) {
+Vector2d ReducedDataUtils::BezierSurface::GenerateUVDir(const VectorXd &control_points, const Vector3d &dir) {
     Vector3d lower_left = control_points.segment<3>(0);
     Vector3d u_dir = (control_points.segment<3>(6) - lower_left).normalized();
     Vector3d v_dir = (control_points.segment<3>(18) - lower_left).normalized();
     return (Vector2d() << u_dir.dot(dir), v_dir.dot(dir)).finished();
 }
 
-SparseMatrixXd ReducedObjectUtils::BezierSurface::GenerateBase(int num_u_segments, int num_v_segments) {
+SparseMatrixXd ReducedDataUtils::BezierSurface::GenerateBase(int num_u_segments, int num_v_segments) {
 const int num_u_control_points = 3;
     const int num_v_control_points = 3;
 
@@ -116,6 +116,6 @@ const int num_u_control_points = 3;
     return hessian;
 }
 
-VectorXd ReducedObjectUtils::BezierSurface::GenerateShift(int num_u_segments, int num_v_segments) {
+VectorXd ReducedDataUtils::BezierSurface::GenerateShift(int num_u_segments, int num_v_segments) {
     return VectorXd::Zero(3 * (num_u_segments + 1) * (num_v_segments + 1));
 }

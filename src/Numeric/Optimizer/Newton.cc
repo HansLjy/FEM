@@ -5,6 +5,13 @@
 #include "Newton.h"
 #include "spdlog/spdlog.h"
 
+namespace {
+	const bool newton_registered = Factory<Optimizer>::GetInstance()->Register("newton",
+	[](const json& config) {
+		return new Newton(config);
+	});
+}
+
 void Newton::Optimize(const ValueFunc &f, const GradiantFunc &g, const HessianFunc &h, VectorXd &x) {
     VectorXd gradient;
     SparseMatrixXd hessian;

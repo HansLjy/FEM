@@ -11,7 +11,7 @@ IPCBarrierTarget::IPCBarrierTarget(const std::vector<Object*>& objs, int begin, 
     : Target(objs, begin, end, config),
       _d_hat(config["d-hat"]),
 	  _kappa(config["kappa"]),
-      _ccd(CCDFactory::GetCCD(config["ccd"]["type"], config["ccd"])),
+      _ccd(Factory<CCD>::GetInstance()->GetProduct(config["ccd"]["type"], config["ccd"])),
 	  _edge_hash_table(config["hashing"]["grid-size"], config["hashing"]["hash-table-size"]),
 	  _vertex_hash_table(config["hashing"]["grid-size"], config["hashing"]["hash-table-size"]) {}
 

@@ -2,7 +2,7 @@
 
 #include "EigenAll.h"
 
-namespace ReducedObjectUtils {
+namespace ReducedDataUtils {
     namespace BezierCurve {
         VectorXd GenerateSamplePoints(const VectorXd& control_points, int num_segments);
         SparseMatrixXd GenerateBase(int num_segments);

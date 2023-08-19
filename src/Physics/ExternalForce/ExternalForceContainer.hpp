@@ -1,90 +1,109 @@
 #pragma once
 #include "ExternalForceFactory.hpp"
+#include "Pattern.h"
 
-template <class Object>
+DEFINE_HAS_MEMBER(_frame_rotation)
+DEFINE_HAS_MEMBER(_frame_x)
+
+// TODO: need something better than int, something that cannot cause any conflicts
+template<class Data>
 class ExternalForceContainer {
 public:
-    void AddExternalForce(const std::string& type, const json& config);
-	VectorXd GetExternalForce(const Object* obj) const;
-	VectorXd GetExternalForceWithFrame(const Object* obj, const Matrix3d &rotation, const Vector3d &position) const;
-	Vector3d GetTotalExternalForce(const Object* obj, const Matrix3d &rotation, const Vector3d &position) const;
-	Matrix3d GetTotalExternalForceTorque(const Object* obj, const Matrix3d &rotation, const Vector3d &position) const;
+	void AddExternalForce(const std::string &type, const json &config) {
+		_external_forces.push_back(ExternalForceFactory<Data>::Instance()->GetExternalForce(type, config));
+	}
 
-    virtual ~ExternalForceContainer();
+	VectorXd GetExternalForce(const Data *data) const {
+		VectorXd ext_force = VectorXd::Zero(data->_dof);
+
+		Matrix3d rotation = Matrix3d::Identity();
+		Vector3d translate = Vector3d::Zero();
+
+		// TODO: consider frame
+		// if (HAS_MEMBER(Data, _frame_rotation) && HAS_MEMBER(Data, _frame_x)) {
+		// 	rotation = data->_frame_rotation;
+		// 	translate = data->_frame_x;
+		// }
+		for (const auto& external_force: _external_forces) {
+			ext_force += external_force->GetExternalForce(data, rotation, translate);
+		}
+		return ext_force;
+	}
+
+	VectorXd GetExternalForceWithFrame(const Data *data, const Matrix3d &rotation, const Vector3d &position) const {
+		VectorXd ext_force = VectorXd::Zero(data->_dof);
+
+		for (const auto& external_force : _external_forces) {
+			ext_force += external_force->GetExternalForce(data, rotation, position);
+		}
+		return ext_force;
+	}
+
+	Vector3d GetTotalExternalForce(const Data *data, const Matrix3d &rotation, const Vector3d &position) const {
+		Vector3d total_external_force = Vector3d::Zero();
+		for (const auto& external_force : _external_forces) {
+			total_external_force += external_force->GetTotalForce(data, rotation, position);
+		}
+		return total_external_force;
+	}
+
+	Matrix3d GetTotalExternalForceTorque(const Data *data, const Matrix3d &rotation, const Vector3d &position) const {
+		Matrix3d total_external_force_torque = Matrix3d::Zero();
+		for (const auto& external_force : _external_forces) {
+			total_external_force_torque += external_force->GetTotalForceAffineTorque(data, rotation, position);
+		}
+		return total_external_force_torque;
+	}
+	
+	~ExternalForceContainer() {
+		for (const auto& external_force : _external_forces) {
+			delete external_force;
+		}
+	}
+
 	ExternalForceContainer() = default;
-    ExternalForceContainer(const ExternalForceContainer<Object>& rhs) = delete;
-    ExternalForceContainer<Object>& operator=(const ExternalForceContainer<Object>& rhs) = delete;
+    ExternalForceContainer(const ExternalForceContainer<Data>& rhs) = delete;
+    ExternalForceContainer<Data>& operator=(const ExternalForceContainer<Data>& rhs) = delete;
 
 private:
-    std::vector<ExternalForce<Object>*> _external_forces;
+    std::vector<ExternalForce<Data>*> _external_forces;
 };
 
-template <class Object>
-void ExternalForceContainer<Object>::AddExternalForce(const std::string &type, const json &config) {
-    _external_forces.push_back(ExternalForceFactory<Object>::Instance()->GetExternalForce(type, config));
-}
-
-template <class Object>
-VectorXd ExternalForceContainer<Object>::GetExternalForce(const Object *obj) const {
-    VectorXd ext_force = VectorXd::Zero(obj->_dof);
-
-	Matrix3d rotation = obj->GetFrameRotation();
-	Vector3d translate = obj->GetFrameX();
-	for (const auto& external_force: _external_forces) {
-		ext_force += external_force->GetExternalForce(obj, rotation, translate);
+template<class> class ReducedObjectData;
+template<class ProxyData>
+class ExternalForceContainer<ReducedObjectData<ProxyData>> {
+public:
+	void AddExternalForce(const std::string &type, const json &config) {
+		_proxy_container.AddExternalForce(type, config);
 	}
-	return ext_force;
-}
 
-template<class Object>
-VectorXd ExternalForceContainer<Object>::GetExternalForceWithFrame(const Object *obj, const Matrix3d &rotation, const Vector3d &position) const {
-    VectorXd ext_force = VectorXd::Zero(obj->_dof);
+	VectorXd GetExternalForce(const ReducedObjectData<ProxyData> *data) const {
+		Matrix3d rotation = Matrix3d::Identity();
+		Vector3d translate = Vector3d::Zero();
 
-	for (const auto& external_force : _external_forces) {
-		ext_force += external_force->GetExternalForce(obj, rotation, position);
+		// TODO: consider frame
+		// if (HAS_MEMBER(Data, _frame_rotation) && HAS_MEMBER(Data, _frame_x)) {
+		// 	rotation = data->_frame_rotation;
+		// 	translate = data->_frame_x;
+		// }
+		return data->_base.transpose() * _proxy_container.GetExternalForceWithFrame(data->_proxy, rotation, translate);
 	}
-	return ext_force;
-}
 
-template<class Object>
-Vector3d ExternalForceContainer<Object>::GetTotalExternalForce(const Object *obj, const Matrix3d &rotation, const Vector3d &position) const {
-	Vector3d total_external_force = Vector3d::Zero();
-	for (const auto& external_force : _external_forces) {
-		total_external_force += external_force->GetTotalForce(obj, rotation, position);
+	VectorXd GetExternalForceWithFrame(const ReducedObjectData<ProxyData> *data, const Matrix3d &rotation, const Vector3d &position) const {
+		return data->_base.transpose() * _proxy_container.GetExternalForceWithFrame(data->_proxy, rotation, position);
 	}
-	return total_external_force;
-}
 
-template<class Object>
-Matrix3d ExternalForceContainer<Object>::GetTotalExternalForceTorque(const Object *obj, const Matrix3d &rotation, const Vector3d &position) const {
-	Matrix3d total_external_force_torque = Matrix3d::Zero();
-	for (const auto& external_force : _external_forces) {
-		total_external_force_torque += external_force->GetTotalForceAffineTorque(obj, rotation, position);
+	Vector3d GetTotalExternalForce(const ReducedObjectData<ProxyData> *data, const Matrix3d &rotation, const Vector3d &position) const {
+		return _proxy_container.GetTotalExternalForce(data->_proxy, rotation, position);
 	}
-	return total_external_force_torque;
-}
 
-template<class Object>
-ExternalForceContainer<Object>::~ExternalForceContainer() {
-	for (const auto& external_force : _external_forces) {
-		delete external_force;
+	Matrix3d GetTotalExternalForceTorque(const ReducedObjectData<ProxyData> *data, const Matrix3d &rotation, const Vector3d &position) const {
+		return _proxy_container.GetTotalExternalForceTorque(data->_proxy, rotation, position);
 	}
-}
+	
+	ExternalForceContainer() = default;
+    ExternalForceContainer(const ExternalForceContainer<ReducedObjectData<ProxyData>>& rhs) = delete;
+    ExternalForceContainer<ReducedObjectData<ProxyData>>& operator=(const ExternalForceContainer<ReducedObjectData<ProxyData>>& rhs) = delete;
 
-#define PROXY_EXTERNAL_FORCES_TO_CONTAINER(Object) \
-    void AddExternalForce(const std::string& type, const json& config) override {\
-        ExternalForceContainer<Object>::AddExternalForce(type, config);\
-    }\
-	VectorXd GetExternalForce() const override {\
-        return ExternalForceContainer<Object>::GetExternalForce(this);\
-    }\
-	VectorXd GetExternalForceWithFrame(const Matrix3d &rotation, const Vector3d &position) const override {\
-        return ExternalForceContainer<Object>::GetExternalForceWithFrame(this, rotation, position);\
-    }\
-	Vector3d GetTotalExternalForce(const Matrix3d &rotation, const Vector3d &position) const override {\
-        return ExternalForceContainer<Object>::GetTotalExternalForce(this, rotation, position);\
-    }\
-	Matrix3d GetTotalExternalForceTorque(const Matrix3d &rotation, const Vector3d &position) const override {\
-        return ExternalForceContainer<Object>::GetTotalExternalForceTorque(this, rotation, position);\
-    }\
-	friend ExternalForceContainer<Object>;
+	ExternalForceContainer<ProxyData> _proxy_container;
+};

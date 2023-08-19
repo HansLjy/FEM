@@ -6,6 +6,13 @@
 #include "EigenAll.h"
 #include "Target/IPCBarrierTarget.h"
 
+namespace {
+	const bool IPC_registered = Factory<Integrator>::GetInstance()->Register("ipc",
+	[](const json& config) {
+		return new IPC(config);
+	});
+}
+
 void IPC::Step(Target &target, double h) const {
     auto& ipc_target = dynamic_cast<IPCBarrierTarget&>(target);
     const int dof = target.GetDOF();

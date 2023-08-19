@@ -6,9 +6,16 @@
 #include "Optimizer/Optimizer.h"
 #include "Eigen/SparseQR"
 
+namespace {
+	const bool ip_registered = Factory<Integrator>::GetInstance()->Register("incremental-potential",
+	[](const json& config) {
+		return new IPIntegrator(config);
+	});
+}
+
 IPIntegrator::IPIntegrator(const nlohmann::json &config) {
     const auto& optimizer_config = config["optimizer"];
-    _optimizer = OptimizerFactory::GetOptimizer(optimizer_config["type"], optimizer_config);
+    _optimizer = Factory<Optimizer>::GetInstance()->GetProduct(optimizer_config["type"], optimizer_config);
 }
 
 IPIntegrator::~IPIntegrator() {

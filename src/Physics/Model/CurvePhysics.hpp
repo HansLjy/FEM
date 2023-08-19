@@ -2,82 +2,37 @@
 // Created by hansljy on 10/19/22.
 //
 
-#include "JsonUtil.h"
-#include "Curve.hpp"
-#include "Collision/CollisionShape/CollisionShape.h"
+#ifndef FEM_CURVE_H
+#define FEM_CURVE_H
 
-namespace {
-    const bool curve_registered = ObjectFactory::Instance()->Register("curve", [](const json& config) {return new Curve(config);});
-    const bool reduced_registered = ObjectFactory::Instance()->Register("reduced-curve", [](const json& config) {return new ReducedCurve(config);});
-}
+#include "Physics.hpp"
+#include "unsupported/Eigen/KroneckerProduct"
 
-VectorXd Curve::GetX(const Vector3d &start, const Vector3d &end, int num_segments){
-    VectorXd x(3 * (num_segments + 1));
-    Vector3d delta = (end - start) / num_segments;
-    Vector3d current = start;
-    for (int i = 0, j = 0; i <= num_segments; i++, j += 3, current += delta) {
-        x.segment<3>(j) = current;
-    }
-    return x;
-}
+class CurvePhysics : public SampledPhysics {
+public:
+	CurvePhysics(const json& config) {}
+	template<class Data> double GetPotential(const Data* data, const Ref<const VectorXd> &x) const;
+	template<class Data> VectorXd GetPotentialGradient(const Data* data, const Ref<const VectorXd> &x) const;
+	template<class Data> void GetPotentialHessian(const Data* data, const Ref<const VectorXd> &x, COO &coo, int x_offset, int y_offset) const;
+};
 
-Curve::Curve(const json& config) : Curve(config["density"], config["alpha-max"], config["alpha-min"], Json2Vec(config["start"]), Json2Vec(config["end"]), config["segments"]) {}
-
-Curve::Curve(double rho, double alpha_max, double alpha_min, const VectorXd &x)
-    : SampledObject(x, GenerateMass(rho, x), 1, GenerateTopo(x.size() / 3)),
-      CurveShape(0.5),
-      _k(100 * alpha_min), _curve_num_points(x.size() / 3) {
-    _alpha.resize(_curve_num_points - 1);
-    if (_curve_num_points > 2) {
-        const double delta_alpha = (alpha_min - alpha_max) / (_curve_num_points - 3);
-        double current_alpha = alpha_max;
-        for (int i = 1; i < _curve_num_points - 1; i++) {
-            _alpha(i) = current_alpha;
-            current_alpha += delta_alpha;
-        }
-    }
-
-    _x_rest = x;
-    _rest_length.resize(_curve_num_points - 1);
-    for (int i = 0, j = 0; i < _curve_num_points - 1; i++, j += 3) {
-        _rest_length(i) = (_x_rest.block<3, 1>(j + 3, 0) - _x_rest.block<3, 1>(j, 0)).norm();
-    }
-    _voronoi_length.resize(_curve_num_points);
-    for (int i = 1; i < _curve_num_points - 1; i++) {
-        _voronoi_length(i) = (_rest_length(i - 1) + _rest_length(i)) / 2;
-    }
-    _voronoi_length(0) = _rest_length(0) / 2;
-    _voronoi_length(_curve_num_points - 1) = _rest_length(_curve_num_points - 2) / 2;
-}
-
-VectorXd Curve::GenerateMass(double rho, const Eigen::VectorXd &x) {
-    int num_points = x.size() / 3;
-    VectorXd mass(num_points);
-    mass.setZero();
-    for (int i = 0, j = 0; i < num_points - 1; i++, j += 3) {
-        Vector3d e = x.segment<3>(j + 3) - x.segment<3>(j);
-        mass(i) += e.norm() * rho / 2;
-        mass(i + 1) += e.norm() * rho / 2;
-    }
-    return mass;
-}
-
-double Curve::GetPotential(const Ref<const VectorXd> &x) const {
+template<class Data>
+double CurvePhysics::GetPotential(const Data* data, const Ref<const VectorXd> &x) const {
 	double potential = 0;
     Vector3d x_current = x.segment<3>(3);
     Vector3d e_prev = x_current - x.segment<3>(0);
 
-    potential += 0.5 * _k * (e_prev.norm() - _rest_length(0)) * (e_prev.norm() - _rest_length(0));
+    potential += 0.5 * data->_k * (e_prev.norm() - data->_rest_length(0)) * (e_prev.norm() - data->_rest_length(0));
 
     // (i - 1) -- e_prev --> (i, x_current) -- e_current --> (i + 1, x_next)
-    for (int i = 1; i < _curve_num_points - 1; i++) {
+    for (int i = 1; i < data->_curve_num_points - 1; i++) {
         Vector3d x_next = x.segment<3>(3 * (i + 1));
         Vector3d e_current = x_next - x_current;
 
-        potential += 0.5 * _k * (e_current.norm() - _rest_length(i)) * (e_current.norm() - _rest_length(i));
+        potential += 0.5 * data->_k * (e_current.norm() - data->_rest_length(i)) * (e_current.norm() - data->_rest_length(i));
 
         Vector3d kB = 2 * e_prev.cross(e_current) / (e_current.norm() * e_prev.norm() + e_prev.dot(e_current));
-        potential += kB.dot(kB) / _voronoi_length(i) * _alpha(i);
+        potential += kB.dot(kB) / data->_voronoi_length(i) * data->_alpha(i);
 
         e_prev = e_current;
         x_current = x_next;
@@ -85,7 +40,8 @@ double Curve::GetPotential(const Ref<const VectorXd> &x) const {
     return potential;
 }
 
-VectorXd Curve::GetPotentialGradient(const Ref<const VectorXd> &x) const {
+template<class Data>
+VectorXd CurvePhysics::GetPotentialGradient(const Data* data, const Ref<const VectorXd> &x) const {
 	VectorXd gradient;
     gradient.resizeLike(x);
     gradient.setZero();
@@ -94,7 +50,7 @@ VectorXd Curve::GetPotentialGradient(const Ref<const VectorXd> &x) const {
     Vector3d e_prev = x_current - x.block<3, 1>(0, 0);
 
     // (i - 1) -- e_prev --> (i, x_current) -- e_current --> (i + 1, x_next)
-    for (int i = 1; i < _curve_num_points - 1; i++) {
+    for (int i = 1; i < data->_curve_num_points - 1; i++) {
         Vector3d x_next = x.block<3, 1>(3 * (i + 1), 0);
         Vector3d e_current = x_next - x_current;
 
@@ -108,7 +64,7 @@ VectorXd Curve::GetPotentialGradient(const Ref<const VectorXd> &x) const {
         Matrix3d nabla_next = (2 * HatMatrix(e_prev) - kB * e_prev.transpose() - prev_div_cur * kB * e_current.transpose()) / denominator;
         Matrix3d nabla_current = - nabla_prev - nabla_next;
 
-        const double coefficient = 2 * _alpha(i) / _voronoi_length(i);
+        const double coefficient = 2 * data->_alpha(i) / data->_voronoi_length(i);
         Vector3d contribute_prev = coefficient * kB.transpose() * nabla_prev;
         Vector3d contribute_current = coefficient * kB.transpose() * nabla_current;
         Vector3d contribute_next = coefficient * kB.transpose() * nabla_next;
@@ -121,9 +77,9 @@ VectorXd Curve::GetPotentialGradient(const Ref<const VectorXd> &x) const {
         x_current = x_next;
 	}
 
-    for (int i = 0, j = 0; i < _curve_num_points - 1; i++, j += 3) {
+    for (int i = 0, j = 0; i < data->_curve_num_points - 1; i++, j += 3) {
         Vector3d e = x.segment<3>(j + 3) - x.segment<3>(j);
-        Vector3d contribution = _k * (e.norm() - _rest_length(i)) * e.normalized();
+        Vector3d contribution = data->_k * (e.norm() - data->_rest_length(i)) * e.normalized();
         gradient.segment<3>(j) -= contribution;
         gradient.segment<3>(j + 3) += contribution;
     }
@@ -131,14 +87,13 @@ VectorXd Curve::GetPotentialGradient(const Ref<const VectorXd> &x) const {
     return gradient;
 }
 
-#include "unsupported/Eigen/KroneckerProduct"
-
-void Curve::GetPotentialHessian(const Ref<const VectorXd> &x, COO &coo, int x_offset, int y_offset) const {
+template<class Data>
+void CurvePhysics::GetPotentialHessian(const Data* data, const Ref<const VectorXd> &x, COO &coo, int x_offset, int y_offset) const {
 	Vector3d x_current = x.segment<3>(3);
     Vector3d e_prev = x_current - x.segment<3>(0);
 
     // (i - 1) -- e_prev --> (i, x_current) -- e_current --> (i + 1, x_next)
-    for (int i = 1, ii = 0; i < _curve_num_points - 1; i++, ii += 3) {
+    for (int i = 1, ii = 0; i < data->_curve_num_points - 1; i++, ii += 3) {
         Vector3d x_next = x.block<3, 1>(3 * (i + 1), 0);
         Vector3d e_current = x_next - x_current;
 
@@ -220,7 +175,7 @@ void Curve::GetPotentialHessian(const Ref<const VectorXd> &x, COO &coo, int x_of
         p2_kB(2, 1) = - p2_kB(2, 2) - p2_kB(2, 0);
         p2_kB(1, 1) = p2_kB(0, 0) + p2_kB(2, 0) + p2_kB(0, 2) + p2_kB(2, 2);
 
-        const double coeff = 2 * _alpha(i) / _voronoi_length(i);
+        const double coeff = 2 * data->_alpha(i) / data->_voronoi_length(i);
         for (int j = 0, jj = 0; j < 3; j++, jj += 3) {
             for (int k = 0, kk = 0; k < 3; k++, kk += 3) {
                 hessian.block<3, 3>(jj, kk) = coeff * (
@@ -242,15 +197,15 @@ void Curve::GetPotentialHessian(const Ref<const VectorXd> &x, COO &coo, int x_of
         x_current = x_next;
     }
 
-    for (int i = 0, ii = 0; i < _curve_num_points - 1; i++, ii += 3) {
+    for (int i = 0, ii = 0; i < data->_curve_num_points - 1; i++, ii += 3) {
         Vector3d e = x.segment<3>(ii + 3) - x.segment<3>(ii);
         const double e_norm = e.norm();
         const Matrix3d I3 = Matrix3d::Identity();
         Matrix6d hessian;
         hessian.setZero();
 
-        Matrix3d sub_hessian = _k * (1 - _rest_length(i) / e.norm()) * I3
-                             + _k * _rest_length(i) / (e_norm * e_norm * e_norm) * e * e.transpose();
+        Matrix3d sub_hessian = data->_k * (1 - data->_rest_length(i) / e.norm()) * I3
+                             + data->_k * data->_rest_length(i) / (e_norm * e_norm * e_norm) * e * e.transpose();
         hessian.block<3, 3>(0, 0) = hessian.block<3, 3>(3, 3) = sub_hessian;
         hessian.block<3, 3>(0, 3) = hessian.block<3, 3>(3, 0) = - sub_hessian;
 
@@ -264,25 +219,4 @@ void Curve::GetPotentialHessian(const Ref<const VectorXd> &x, COO &coo, int x_of
     }
 }
 
-MatrixXi Curve::GenerateTopo(int n) {
-	MatrixXi edge_topo(n - 1, 2);
-	for (int i = 0; i < n - 1; i++) {
-		edge_topo.row(i) << i, i + 1;
-	}
-	return edge_topo;
-}
-
-ReducedCurve::ReducedCurve(const nlohmann::json &config) :
-        ReducedCurve(
-			config["segments"], config["density"], config["alpha-max"], config["alpha-min"],
-			Json2VecX(config["control-points"])
-        ) {}
-
-#include "ReducedObjectUtils.hpp"
-
-ReducedCurve::ReducedCurve(int num_segments, double rho, double alpha_max, double alpha_min,
-                           const VectorXd &control_points)
-        : ReducedObject(control_points,
-                        new Curve(rho, alpha_max, alpha_min, ReducedObjectUtils::BezierCurve::GenerateSamplePoints(control_points, num_segments)),
-                        ReducedObjectUtils::BezierCurve::GenerateBase(num_segments),
-                        ReducedObjectUtils::BezierCurve::GenerateShift(num_segments)) {}
+#endif //FEM_CURVE_H

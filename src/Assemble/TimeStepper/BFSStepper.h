@@ -8,31 +8,31 @@
 #include "TimeStepper.h"
 #include "Integrator/Integrator.h"
 
-class BFSStepper : public TimeStepper {
-public:
-    explicit BFSStepper(const json& config);
-    void Bind(System &system) override;
-    void Step(double h) const override;
+// class BFSStepper : public TimeStepper {
+// public:
+//     explicit BFSStepper(const json& config);
+//     void Bind(System &system) override;
+//     void Step(double h) const override;
 
-    ~BFSStepper() noexcept override;
+//     ~BFSStepper() noexcept override;
 
-protected:
-    Integrator* _integrator;
-	int _levels;
-    std::vector<Target*> _level_targets;
-};
+// protected:
+//     Integrator* _integrator;
+// 	int _levels;
+//     std::vector<Target*> _level_targets;
+// };
 
-class ParallelBFSStepper : public TimeStepper {
-public:
-    explicit ParallelBFSStepper(const json& config);
+// class ParallelBFSStepper : public TimeStepper {
+// public:
+//     explicit ParallelBFSStepper(const json& config);
 
-    void Bind(System &system) override;
-    void Step(double h) const override;
+//     void Bind(System &system) override;
+//     void Step(double h) const override;
 
-    Integrator* _integrator;
+//     Integrator* _integrator;
 
-    int _levels;
-    std::vector<Target*> _targets;
-};
+//     int _levels;
+//     std::vector<Target*> _targets;
+// };
 
 #endif //FEM_DOMAINBFSSTEPPER_H

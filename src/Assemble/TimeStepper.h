@@ -22,6 +22,4 @@ protected:
     json _target_config;
 };
 
-DECLARE_XXX_FACTORY(TimeStepper)
-
 #endif //FEM_TIMESTEPPER_H

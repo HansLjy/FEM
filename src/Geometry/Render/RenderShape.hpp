@@ -2,8 +2,7 @@
 // Created by hansljy on 10/13/22.
 //
 
-#ifndef FEM_RENDERSHAPE_H
-#define FEM_RENDERSHAPE_H
+#pragma once
 
 #include "EigenAll.h"
 #include "JsonUtil.h"
@@ -12,19 +11,18 @@
 /* Render Shape Policy */
 class RenderShape {
 public:
-	RenderShape(const json& config) : RenderShape(config["use-texture"], config["texture-path"]) {}
-	
+	explicit RenderShape(const json& config) : RenderShape(config["use-texture"], config["texture-path"]) {}
 	RenderShape(bool use_texture, const std::string& texture_path = "") : _use_texture(use_texture) {
 		if (use_texture) {
 			_texture_path = std::string(TEXTURE_PATH) + "/" + texture_path;
 		}
 	}
+	template<class Data> void Initialize(Data* data) {}
 
 	// <- precompute uv coords
-	template<class Object> void GetSurface(const Object* obj, MatrixXd &vertices, MatrixXi &topos) const;
-	template<class Object> bool IsUsingTexture(const Object* obj) const {return _use_texture;}
-	template<class Object> const std::string& GetTexturePath(const Object* obj) const {return _texture_path;}
-	template<class Object> void GetUVCoords(const Object* obj, MatrixXf& uv_coords) const {uv_coords = _uv_coords;}
+	template<class Data> bool IsUsingTexture(const Data* obj) const {return _use_texture;}
+	template<class Data> const std::string& GetTexturePath(const Data* obj) const {return _texture_path;}
+	template<class Data> void GetUVCoords(const Data* obj, MatrixXf& uv_coords) const {uv_coords = _uv_coords;}
 
 protected:
 	bool _use_texture = false;
@@ -34,17 +32,26 @@ protected:
 
 class SampledRenderShape : public RenderShape {
 public:
-	SampledRenderShape(bool use_texture, const std::string& texture_path = "") : RenderShape(use_texture, texture_path) {}
+	explicit SampledRenderShape(const json& config) : RenderShape(config) {}
 	SampledRenderShape() : RenderShape(false) {}
-	template<class Object> void GetSurface(const Object *obj, MatrixXd &vertices, MatrixXi &topos) const;
+	SampledRenderShape(bool use_texture, const std::string& texture_path = "") : RenderShape(use_texture, texture_path) {}
+	template<class Data> void GetRenderVertices(const Data *obj, MatrixXd &vertices) const;
+	template<class Data> void GetRenderTopos(const Data *obj, MatrixXi &topos) const;
 };
 
-class ProxyRenderShape {
+template<class ProxyRenderShape>
+class ProxiedRenderShape {
 public:
-	template<class Object> void GetSurface(const Object *obj, MatrixXd &vertices, MatrixXi &topos) const {obj->_proxy->GetSurface(vertices, topos);}
-	template<class Object> bool IsUsingTexture(const Object* obj) const {return obj->_proxy->IsUsingTexture();}
-	template<class Object> const std::string& GetTexturePath(const Object* obj) const {return obj->_proxy->GetTexturePath();}
-	template<class Object> void GetUVCoords(const Object* obj, MatrixXf& uv_coords) const {obj->_proxy->GetUVCoords(uv_coords);}
+	ProxiedRenderShape(const json& config) : _proxy_render_shape(config) {}
+	template<class Data> void Initialize(Data* data) {}
+	template<class Data> void GetRenderVertices(const Data *data, MatrixXd &vertices) const;
+	template<class Data> void GetRenderTopos(const Data *data, MatrixXi &topos) const;
+	template<class Data> bool IsUsingTexture(const Data* data) const;
+	template<class Data> const std::string& GetTexturePath(const Data* data) const;
+	template<class Data> void GetUVCoords(const Data* data, MatrixXf& uv_coords) const;
+
+protected:
+	ProxyRenderShape _proxy_render_shape;
 };
 
 #include "FixedShape/FixedShape.hpp"
@@ -55,35 +62,46 @@ public:
 		  _vertices(FixedShapeFactory::Instance()->GetVertices(config["type"], config)),
 		  _topos(FixedShapeFactory::Instance()->GetFaceTopo(config["type"], config)) {}
 
-	template<class Object> void GetSurface(const Object *obj, MatrixXd &vertices, MatrixXi &topos) const {
-        vertices = _vertices;
-        topos = _topos;
-    }
+	template<class Data> void GetRenderVertices(const Data *obj, MatrixXd &vertices) const { vertices = _vertices; }
+
+	template<class Data> void GetRenderTopos(const Data *obj, MatrixXi &topos) const { topos = _topos; }
 
 protected:
     MatrixXd _vertices;
     MatrixXi _topos;
 };
 
-template<class Object>
-void SampledRenderShape::GetSurface(const Object *obj, MatrixXd &vertices, MatrixXi &topos) const {
+template<class Data>
+void SampledRenderShape::GetRenderVertices(const Data *obj, MatrixXd &vertices) const {
 	vertices = StackVector<double, 3>(obj->_x);
+}
+
+template<class Data>
+void SampledRenderShape::GetRenderTopos(const Data *obj, MatrixXi &topos) const {
 	topos = obj->_face_topo;
 }
 
-#define PROXY_RENDER_SHAPE(RenderShape) \
-    void GetSurface(MatrixXd &vertices, MatrixXi &topos) const override {\
-		return RenderShape::GetSurface(this, vertices, topos);\
-	} \
-    bool IsUsingTexture() const override { \
-        return RenderShape::IsUsingTexture(this); \
-    }\
-	const std::string& GetTexturePath() const override { \
-        return RenderShape::GetTexturePath(this);\
-    }\
-	void GetUVCoords(MatrixXf& uv_coords) const override {\
-        RenderShape::GetUVCoords(this, uv_coords);\
-	}\
-	friend RenderShape;
+template<class ProxyRenderShape>
+template<class Data> void ProxiedRenderShape<ProxyRenderShape>::GetRenderVertices(const Data *data, MatrixXd &vertices) const {
+	_proxy_render_shape.GetRenderVertices(data->_proxy, vertices);
+}
 
-#endif //FEM_RENDERSHAPE_H
+template<class ProxyRenderShape>
+template<class Data> void ProxiedRenderShape<ProxyRenderShape>::GetRenderTopos(const Data *data, MatrixXi &topos) const {
+	_proxy_render_shape.GetRenderTopos(data->_proxy, topos);
+}
+
+template<class ProxyRenderShape>
+template<class Data> bool ProxiedRenderShape<ProxyRenderShape>::IsUsingTexture(const Data* data) const {
+	return _proxy_render_shape.IsUsingTexture(data->_proxy);
+}
+
+template<class ProxyRenderShape>
+template<class Data> const std::string& ProxiedRenderShape<ProxyRenderShape>::GetTexturePath(const Data* data) const {
+	return _proxy_render_shape.GetTexturePath(data->_proxy);
+}
+
+template<class ProxyRenderShape>
+template<class Data> void ProxiedRenderShape<ProxyRenderShape>::GetUVCoords(const Data* data, MatrixXf& uv_coords) const {
+	_proxy_render_shape.GetUVCoords(data->_proxy, uv_coords);
+}
