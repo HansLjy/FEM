@@ -12,7 +12,6 @@ struct BasicData {
 
 struct SampledObjectData : public BasicData {
 	SampledObjectData(const VectorXd& x, const VectorXd& mass, int dimension, const MatrixXi& topo);
-	SampledObjectData(const VectorXd& x, const VectorXd& v, const VectorXd& mass, int dimension, const MatrixXi& topo);
 
 	int _num_points;
 	MatrixXi _edge_topo;
@@ -25,11 +24,11 @@ struct SampledObjectData : public BasicData {
 
 template<class ProxyData>
 struct ReducedObjectData : public BasicData {
-	ReducedObjectData<ProxyData>(const VectorXd& x, ProxyData* proxy, const SparseMatrixXd& base, const VectorXd& shift) : BasicData(x), _proxy(proxy), _base(base), _shift(shift) {}
+	ReducedObjectData<ProxyData>(const VectorXd& x, ProxyData* proxy, const SparseMatrixXd&& base, const VectorXd&& shift) : BasicData(x), _proxy(proxy), _base(base), _shift(shift) {}
 	
 	ProxyData* _proxy;
-	const SparseMatrixXd _base;
-	const VectorXd _shift;
+	SparseMatrixXd _base;
+	VectorXd _shift;
 };
 
 struct FixedObjectData : public BasicData {
