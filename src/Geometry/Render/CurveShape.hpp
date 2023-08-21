@@ -8,7 +8,8 @@
 
 class CurveShape : public RenderShape {
 public:
-    CurveShape(double radius) : RenderShape(false), _radius(radius) {}
+    explicit CurveShape(double radius) : RenderShape(false), _radius(radius) {}
+	explicit CurveShape(const json& config) : CurveShape((double)config["radius"]) {}
     template<class Data> void GetRenderVertices(const Data* data, MatrixXd &vertices) const;
     template<class Data> void GetRenderTopos(const Data* data, MatrixXi &topos) const;
 

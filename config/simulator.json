@@ -4,7 +4,7 @@
     "time-step": 0.01
   },
   "time-stepper": {
-    "type": "parallel-bfs-stepper",
+    "type": "system-stepper",
     "target": {
       "type": "basic",
       "d-hat": 1e-3,
@@ -34,7 +34,7 @@
       }
     }
   },
-  "system-config": "/model/gen-tree-model.json",
+  "system-config": "/model/bezier-curve.json",
   "renderer": {
     "camera":  {
       "position": [10, 0, 5],

@@ -1,0 +1,36 @@
+{
+	"objects": [
+		{
+			"type": "bezier-curve",
+			"name": "bezier-curve",
+			"control-points": [
+				0.0,	0.0,	0.0,
+				0.0,	0.0,	3.3333333333333335,
+				0.0,	0.0,	6.666666666666667,
+				0.0,	0.0,	10.0
+			],
+			"density": 506.0,
+			"alpha-max": 2,
+			"alpha-min": 1,
+			"root": [
+				0,	0,	-1
+			],
+			"segments": 5,
+			"youngs-module": 700000000.0,
+			"physics": {},
+			"render": {
+				"use-texture": false,
+				"texture-path": "",
+				"radius": 0.1
+			},
+			"collision": {}
+		}
+	],
+	"external-forces": [
+		{
+			"type": "sampled-object-gravity",
+			"object-name": "bezier-curve",
+			"g": [0, -98, 0]
+		}
+	]
+}

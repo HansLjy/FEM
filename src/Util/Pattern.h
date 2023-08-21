@@ -22,7 +22,13 @@ public:
 	}
 
 	bool Register(const std::string& name, const ProductCreator& creator) {
-		return _creator_map.insert(std::make_pair(name, creator)).second;
+		bool result = _creator_map.insert(std::make_pair(name, creator)).second;
+		if (result) {
+			std::cerr << name << " registered" << std::endl;
+		} else {
+			std::cerr << name << " can't be registered" << std::endl;
+		}
+		return result;
 	}
 
 	Product* GetProduct(const std::string& name, const json& config) {

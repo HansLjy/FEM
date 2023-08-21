@@ -11,7 +11,6 @@
 /* Render Shape Policy */
 class RenderShape {
 public:
-	explicit RenderShape(const json& config) : RenderShape(config["use-texture"], config["texture-path"]) {}
 	RenderShape(bool use_texture, const std::string& texture_path = "") : _use_texture(use_texture) {
 		if (use_texture) {
 			_texture_path = std::string(TEXTURE_PATH) + "/" + texture_path;
@@ -32,9 +31,9 @@ protected:
 
 class SampledRenderShape : public RenderShape {
 public:
-	explicit SampledRenderShape(const json& config) : RenderShape(config) {}
 	SampledRenderShape() : RenderShape(false) {}
 	SampledRenderShape(bool use_texture, const std::string& texture_path = "") : RenderShape(use_texture, texture_path) {}
+	explicit SampledRenderShape(const json& config) : RenderShape(config["use-texture"], config["texture-path"]) {}
 	template<class Data> void GetRenderVertices(const Data *obj, MatrixXd &vertices) const;
 	template<class Data> void GetRenderTopos(const Data *obj, MatrixXi &topos) const;
 };
