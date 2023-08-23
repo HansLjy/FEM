@@ -72,12 +72,12 @@ protected:
 
 template<class Data>
 void SampledRenderShape::GetRenderVertices(const Data *obj, MatrixXd &vertices) const {
-	vertices = StackVector<double, 3>(obj->_x);
+	vertices = StackVector<double, 3>(obj->_x.topRows(obj->_dof));
 }
 
 template<class Data>
 void SampledRenderShape::GetRenderTopos(const Data *obj, MatrixXi &topos) const {
-	topos = obj->_face_topo;
+	topos = obj->_face_topo.topRows(obj->_num_faces);
 }
 
 template<class ProxyRenderShape>

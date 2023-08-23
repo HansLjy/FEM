@@ -25,7 +25,7 @@
 				3, 7, 5,
 				7, 8, 5
 			],
-			"IFN": -1,
+			"IFN": 2,
 			"stiffness": 38.8,
 			"density": 41.36,
 			"render": {

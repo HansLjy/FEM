@@ -4,14 +4,6 @@
 #include "JsonUtil.h"
 
 struct MassSpringData : public SampledObjectData {
-private:
-	struct EdgeTopo {
-		EdgeTopo(int from, int to) : _from(from), _to(to) {}
-		int _from, _to;
-	};
-	
-
-public:
 	explicit MassSpringData(const json& config);
 
 	/**
@@ -36,8 +28,4 @@ public:
 	double _stiffness;	// stiffness matrix
 	VectorXd _x_rest;
 	VectorXd _rest_length;
-};
-
-struct GridBasedSpringMassData : public ReducedObjectData<MassSpringData> {
-
 };
