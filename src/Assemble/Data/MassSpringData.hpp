@@ -1,10 +1,9 @@
 #pragma once
 
 #include "Data.hpp"
+#include "JsonUtil.h"
 
-using Eigen::Matrix3Xd;
-
-struct SpringMassData : public SampledObjectData {
+struct MassSpringData : public SampledObjectData {
 private:
 	struct EdgeTopo {
 		EdgeTopo(int from, int to) : _from(from), _to(to) {}
@@ -13,6 +12,8 @@ private:
 	
 
 public:
+	explicit MassSpringData(const json& config);
+
 	/**
 	 * @param topo *2D* connection info of the object
 	 * @param density Surface density, mass will be evenly distributed
@@ -26,13 +27,17 @@ public:
 	 *       satisfy the following order: the nth face should be connected to at least one
 	 *       of the faces in [0, n) by edge and the vertices follow the order of adding.
 	 */
-	SpringMassData(const VectorXd& x_rest, const MatrixXi& topo, double density, double stiffness, int IFN = -1);
+	MassSpringData(const VectorXd& x_rest, const MatrixXi& topo, double density, double stiffness, int IFN = -1);
 
 	void AddTriangle(int id1, int id2, const Vector3d& position);
 	void AddTriangle(int id1, int id2, int id3);
 
-	double _stiffness;
 	double _density;	// surface density
+	double _stiffness;	// stiffness matrix
 	VectorXd _x_rest;
 	VectorXd _rest_length;
+};
+
+struct GridBasedSpringMassData : public ReducedObjectData<MassSpringData> {
+
 };

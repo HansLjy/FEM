@@ -1,16 +1,15 @@
 #pragma once
-#include "ExternalForceFactory.hpp"
 #include "Pattern.h"
+#include "ExternalForce/ExternalForce.hpp"
 
 DEFINE_HAS_MEMBER(_frame_rotation)
 DEFINE_HAS_MEMBER(_frame_x)
 
-// TODO: need something better than int, something that cannot cause any conflicts
 template<class Data>
 class ExternalForceContainer {
 public:
 	void AddExternalForce(const std::string &type, const json &config) {
-		_external_forces.push_back(ExternalForceFactory<Data>::Instance()->GetExternalForce(type, config));
+		_external_forces.push_back(Factory<ExternalForce<Data>>::GetInstance()->GetProduct(type, config));
 	}
 
 	VectorXd GetExternalForce(const Data *data) const {

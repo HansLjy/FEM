@@ -31,10 +31,13 @@
         "tolerance": 1e-4,
         "max-iteration": 10,
         "wolfe-condition": 0.1
-      }
+      },
+	  "damping-enabled": true,
+	  "rayleigh-coef-mass": 0.5,
+	  "rayleigh-coef-stiffness": 0.5
     }
   },
-  "system-config": "/model/bezier-curve.json",
+  "system-config": "/model/mass-spring.json",
   "renderer": {
     "camera":  {
       "position": [10, 0, 5],

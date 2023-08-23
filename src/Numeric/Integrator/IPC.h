@@ -9,7 +9,7 @@
 
 class IPC : public Integrator {
 public:
-    explicit IPC(const json& config) : _max_iter(config["max-iteration"]), _tolerance(config["tolerance"]) {};
+    explicit IPC(const json& config) : Integrator(config), _max_iter(config["max-iteration"]), _tolerance(config["tolerance"]) {};
     void Step(Target &target, double h) const override;
 
 protected:

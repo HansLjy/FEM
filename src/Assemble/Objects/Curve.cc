@@ -17,3 +17,6 @@ const bool bezier_cloth_registered = Factory<Object>::GetInstance()->Register("b
 		return new BezierCurve(config);
 	}
 );
+
+template<> Factory<ExternalForce<CurveData>>* Factory<ExternalForce<CurveData>>::_the_factory = nullptr;
+template<> Factory<ExternalForce<BezierCurveData>>* Factory<ExternalForce<BezierCurveData>>::_the_factory = nullptr;

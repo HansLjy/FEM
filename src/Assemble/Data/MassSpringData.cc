@@ -1,11 +1,18 @@
-#include "SpringMassData.hpp"
+#include "MassSpringData.hpp"
 #include "GeometryUtil.h"
 
-int GetMaxIndices(const MatrixXi& topo) {
+MassSpringData::MassSpringData(const json& config) : MassSpringData(Json2VecX(config["x-rest"]), Json2MatXi<3>(config["topo"]), config["density"], config["stiffness"], config["IFN"]) {}
 
+int GetMaxIndex(const MatrixXi& topo, int IFN) {
+	int max_index = -1;
+	for (int i = 0; i < IFN; i++) {
+		const auto& indices = topo.row(i);
+		max_index = std::max(std::max(indices[0], indices[1]), std::max(indices[2], max_index));
+	}
+	return max_index;
 }
 
-void SpringMassData::AddTriangle(int id1, int id2, const Vector3d &position) {
+void MassSpringData::AddTriangle(int id1, int id2, const Vector3d &position) {
 	_edge_topo.row(_num_edges++) << id1, _num_points;
 	_edge_topo.row(_num_edges++) << id2, _num_points;
 	_face_topo.row(_num_faces++) << id1, id2, _num_points;
@@ -21,7 +28,7 @@ void SpringMassData::AddTriangle(int id1, int id2, const Vector3d &position) {
 	_num_points++;
 }
 
-void SpringMassData::AddTriangle(int id1, int id2, int id3) {
+void MassSpringData::AddTriangle(int id1, int id2, int id3) {
 	_edge_topo.row(_num_edges++) << id2, id3;
 	_face_topo.row(_num_faces++) << id1, id2, id3;
 	const double mass_increment = _density * (_x_rest.segment<3>(id2 * 3) - _x_rest.segment<3>(id1 * 3)).cross(_x_rest.segment<3>(id3 * 3) -_x_rest.segment<3>(id1 * 3)).norm() / 2;
@@ -32,9 +39,9 @@ void SpringMassData::AddTriangle(int id1, int id2, int id3) {
 	_mass(id3) += single_mass_increment;
 }
 
-SpringMassData::SpringMassData(const VectorXd& x_rest, const MatrixXi& topo, double density, double stiffness, int IFN)
+MassSpringData::MassSpringData(const VectorXd& x_rest, const MatrixXi& topo, double density, double stiffness, int IFN)
 : SampledObjectData (
-	IFN < 0 ? x_rest : x_rest.head(GetMaxIndices(topo) * 3),
+	IFN < 0 ? x_rest : x_rest.head(GetMaxIndex(topo, IFN) * 3),
 	density, 2,
 	IFN < 0 ? topo : topo.topRows(IFN)
 ), _x_rest(x_rest), _density(density), _stiffness(stiffness) {
@@ -44,9 +51,11 @@ SpringMassData::SpringMassData(const VectorXd& x_rest, const MatrixXi& topo, dou
 	GenerateSurfaceTopo2D(topo, edge_topo_tmp);
 
 	const int num_total_edges = edge_topo_tmp.rows();
+	_x.resizeLike(x_rest);
+	_v.resizeLike(x_rest);
 	_edge_topo.resize(edge_topo_tmp.rows(), 2);	
 	_rest_length.resize(num_total_edges);
 	for (int i = 0; i < num_total_edges; i++) {
-		_rest_length(i) = (x_rest.segment<3>(edge_topo_tmp(i, 0)) - x_rest.segment<3>(edge_topo_tmp(i, 1))).norm();
+		_rest_length(i) = (x_rest.segment<3>(edge_topo_tmp(i, 0) * 3) - x_rest.segment<3>(edge_topo_tmp(i, 1) * 3)).norm();
 	}
 }

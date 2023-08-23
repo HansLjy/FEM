@@ -13,7 +13,7 @@ namespace {
 	});
 }
 
-IPIntegrator::IPIntegrator(const nlohmann::json &config) {
+IPIntegrator::IPIntegrator(const nlohmann::json &config) : Integrator(config) {
     const auto& optimizer_config = config["optimizer"];
     _optimizer = Factory<Optimizer>::GetInstance()->GetProduct(optimizer_config["type"], optimizer_config);
 }
@@ -31,28 +31,19 @@ void IPIntegrator::Step(Target &target, double h) const {
     SparseMatrixXd mass;
     target.GetMass(mass);
 
-	// std::cerr << "Mass:\n" << mass.toDense() << std::endl;
-	// std::cerr << "Force:\n" << force.transpose() << std::endl;
+	VectorXd x_hat(x.size());
 
-	// exit(-1);
-	Eigen::SparseQR<SparseMatrixXd, Eigen::COLAMDOrdering<int>> SparseQR_solver;
-	SparseQR_solver.compute(mass);
-    // Eigen::SimplicialLDLT<SparseMatrixXd> LDLT_solver(mass);
-
-    // Eigen::SelfAdjointEigenSolver<SparseMatrixXd> eigen_solver(mass);
-    // std::cerr << eigen_solver.eigenvalues().transpose() << std::endl;
-
-    // if (LDLT_solver.info() == Eigen::NumericalIssue) {
-    //     std::cerr << "Mass matrix not SPD" << std::endl;
-    //     exit(-1);
-    // }
-
-    // VectorXd a = LDLT_solver.solve(force);
-	VectorXd a = SparseQR_solver.solve(force);
-	// std::cerr << "a: " << a.transpose() << std::endl;
-
-    VectorXd x_hat = x + h * v + h * h * a;
-	// std::cerr << "x-hat: " << x_hat.transpose() << std::endl;
+	if (_damping_enabled) {
+		SparseMatrixXd energy_hessian;
+		target.GetPotentialEnergyHessian(x, energy_hessian);
+		VectorXd Mv = mass * v;
+		mass += h * (_rayleigh_coef_mass * mass + _rayleigh_coef_stiffness * energy_hessian);
+		Eigen::SimplicialLDLT<SparseMatrixXd> LDLT_solver(mass);
+		x_hat = x + LDLT_solver.solve(h * h * force + h * Mv);
+	} else {
+		Eigen::SimplicialLDLT<SparseMatrixXd> LDLT_solver(mass);
+		x_hat = x + h * v + h * h * LDLT_solver.solve(force);
+	}
 
     auto func = [&x_hat, &mass, &h, &target] (const VectorXd& x) -> double {
         return 0.5 * (x - x_hat).transpose() * mass * (x - x_hat) + h * h * target.GetPotentialEnergy(x);
@@ -73,9 +64,6 @@ void IPIntegrator::Step(Target &target, double h) const {
 
     VectorXd x_next = x;
     _optimizer->Optimize(func, grad, hes, x_next);
-
-	// std::cerr << "x-next: " << x_next.transpose() << std::endl;
-	// exit(-1);
 
     VectorXd v_next = (x_next - x) / h;
 

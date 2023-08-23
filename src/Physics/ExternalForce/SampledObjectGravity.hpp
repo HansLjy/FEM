@@ -10,8 +10,8 @@
 template<class Data>
 class SampledObjectGravity : public ExternalForce<Data> {
 public:
-    SampledObjectGravity(const json& config);
-    SampledObjectGravity(const Vector3d& g);
+    explicit SampledObjectGravity(const json& config);
+    explicit SampledObjectGravity(const Vector3d& g);
 
     VectorXd GetExternalForce(const Data* obj, const Matrix3d& rotation, const Vector3d& position) const override;
     Vector3d GetTotalForce(const Data* obj, const Matrix3d& rotation, const Vector3d& position) const override;

@@ -70,7 +70,7 @@ void GUI::MainLoop() {
     glfwMakeContextCurrent(_window);
     glfwSetFramebufferSizeCallback(_window, GUI::ResizeCB);
     glfwSetScrollCallback(_window, GUI::ScrollCB);
-    // glfwSetCursorPosCallback(_window, GUI::MouseMovementCB);
+    glfwSetCursorPosCallback(_window, GUI::MouseMovementCB);
     glfwSetInputMode(_window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {

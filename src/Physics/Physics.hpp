@@ -70,19 +70,19 @@ template<class Data> int BasicPhysics::GetDOF(const Data *obj) {
 }
 
 template<class Data> void BasicPhysics::GetCoordinate(const Data* obj, Ref<VectorXd> x) {
-	x = obj->_x;
+	x = obj->_x.head(obj->_dof);
 }
 
 template<class Data> void BasicPhysics::GetVelocity(const Data* obj, Ref<VectorXd> v) {
-	v = obj->_v;
+	v = obj->_v.head(obj->_dof);
 }
 
 template<class Data> void BasicPhysics::SetCoordinate(Data* obj, const Ref<const VectorXd>& x) {
-	obj->_x = x;
+	obj->_x.head(obj->_dof) = x;
 }
 
 template<class Data> void BasicPhysics::SetVelocity(Data *obj, const Ref<const VectorXd> &v) {
-	obj->_v = v;
+	obj->_v.head(obj->_dof) = v;
 }
 
 template<class Data> void SampledPhysics::GetMass(const Data *obj, COO &coo, int x_offset, int y_offset) {

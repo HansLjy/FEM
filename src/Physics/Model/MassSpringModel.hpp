@@ -2,6 +2,8 @@
 
 class MassSpringPhysics : public SampledPhysics {
 public:
+	MassSpringPhysics() = default;
+	MassSpringPhysics(const json& config) {}
 	template<class Data> double GetPotential(const Data* data, const Ref<const VectorXd> &x) const;
 	template<class Data> VectorXd GetPotentialGradient(const Data* data, const Ref<const VectorXd> &x) const;
 	template<class Data> void GetPotentialHessian(const Data* data, const Ref<const VectorXd> &x, COO &coo, int x_offset, int y_offset) const;
@@ -18,7 +20,7 @@ double MassSpringPhysics::GetPotential(const Data *data, const Ref<const VectorX
 	for (int i = 0; i < num_edges; i++) {
 		const auto& indices = edge_topo.row(i);
 		const int id1 = indices[0], id2 = indices[1];
-		double delta_x = (x.segment<3>(id1 * 3) - x.segment<3>(id2 * 3)).norm() - 
+		double delta_x = (x.segment<3>(id2 * 3) - x.segment<3>(id1 * 3)).norm() - 
 		rest_length(i);
 		energy += stiffness * delta_x * delta_x / 2;
 	}
@@ -36,10 +38,10 @@ VectorXd MassSpringPhysics::GetPotentialGradient(const Data* data, const Ref<con
 	for (int i = 0; i < num_edges; i++) {
 		const auto& indices = edge_topo.row(i);
 		const int id1 = indices[0], id2 = indices[1];
-		Vector3d e = x.segment<3>(3 * id2) - x.segment<3>(3 * id2);
-		Vector3d single_gradient = - stiffness * e + rest_length(i) / e.norm() * e;
-		gradient.segment<3>(id1 * 3) = single_gradient;
-		gradient.segment<3>(id2 * 3) = - single_gradient;
+		Vector3d e = x.segment<3>(3 * id2) - x.segment<3>(3 * id1);
+		Vector3d single_gradient = - stiffness * (1 - rest_length(i) / e.norm()) * e;
+		gradient.segment<3>(id1 * 3) += single_gradient;
+		gradient.segment<3>(id2 * 3) += - single_gradient;
 	}
 	return gradient;
 }
@@ -54,9 +56,10 @@ void MassSpringPhysics::GetPotentialHessian(const Data* data, const Ref<const Ve
 	for (int i = 0; i < num_edges; i++) {
 		const auto& indices = edge_topo.row(i);
 		const int id1 = indices[0], id2 = indices[1];
-		Vector3d e = x.segment<3>(3 * id2) - x.segment<3>(3 * id2);
+		Vector3d e = x.segment<3>(3 * id2) - x.segment<3>(3 * id1);
 		const double e_norm = e.norm();
-		Matrix3d single_hession = (stiffness - rest_length(i) / e_norm) * Matrix3d::Identity() + rest_length(i) / (e_norm * e_norm * e_norm) * e * e.transpose();
+		Matrix3d single_hession = stiffness * ((1 - rest_length(i) / e_norm) * Matrix3d::Identity()
+		                          + rest_length(i) / (e_norm * e_norm * e_norm) * e * e.transpose());
 		const int offset1 = id1 * 3, offset2 = id2 * 3;
 		for (int row = 0; row < 3; row++) {
 			for (int col = 0; col < 3; col++) {
