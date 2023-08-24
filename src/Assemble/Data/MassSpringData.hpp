@@ -21,9 +21,6 @@ struct MassSpringData : public SampledObjectData {
 	 */
 	MassSpringData(const VectorXd& x_rest, const MatrixXi& topo, double density, double stiffness, int IFN = -1);
 
-	void AddTriangle(int id1, int id2, const Vector3d& position);
-	void AddTriangle(int id1, int id2, int id3);
-
 	double _density;	// surface density
 	double _stiffness;	// stiffness matrix
 	VectorXd _x_rest;

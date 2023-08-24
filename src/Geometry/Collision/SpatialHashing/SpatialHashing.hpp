@@ -54,6 +54,12 @@ public:
         return infos;
     }
 
+	// find nodeinfos in the grid containing position
+	const std::vector<NodeInfo>& Find(const Vector3d& position, int time_stamp) {
+		const auto pos_discrete = GetDiscretePosition(position);
+
+	}
+
 protected:
     struct HashTableEntry {
         int time_stamp;
@@ -91,6 +97,16 @@ protected:
 				}
 			}
         }
+    }
+
+	const std::vector<NodeInfo>& HashTableFind(unsigned int hash_value, int time_stamp) {
+		static const std::vector<NodeInfo> empty_list;
+        const auto& hash_entry = _hash_table[hash_value];
+        if (hash_entry.time_stamp == time_stamp) {
+			return hash_entry.list;
+        } else {
+			return empty_list;
+		}
     }
 
     static const int px = 73856093;

@@ -22,6 +22,8 @@ using Eigen::MatrixX;
 using Eigen::VectorX;
 using Eigen::MatrixXi;
 
+using Eigen::Vector3i;
+
 using Eigen::RowVector3i;
 using Eigen::RowVector2i;
 using Eigen::RowVector4i;
