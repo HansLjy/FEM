@@ -12,6 +12,7 @@ public:
      * @brief Draw the whole scene
      */
     void Draw(Shader& shader);
+    void DrawBoundingBox(Shader& shader);
 
     /**
      * @brief Add a new slot for meshes into the scene
@@ -27,14 +28,12 @@ public:
      */
     void SelectData(int idx);
 
-    /**
-     * @brief Set the Mesh for the seleted mesh
-     * 
-     */
-    void SetMesh(const MatrixXd& vertices, const Matrix3d& R, const Vector3d& b);
-    
     void SetTexture(const std::string& texture_path, const MatrixXf& uv_coords);
+
+    void SetMesh(const MatrixXd& vertices, const Matrix3d& R, const Vector3d& b);
+    void SetBoundingBoxMesh(const MatrixXd& vertices, const Matrix3d& R, const Vector3d& b);
     void SetTopo(const MatrixXi& topo);
+    void SetBoundingBoxTopo(const MatrixXi& topo);
 
     int AddMesh(const MatrixXd& vertices, const MatrixXi& topo, const Matrix3d& R, const Vector3d& b);
 

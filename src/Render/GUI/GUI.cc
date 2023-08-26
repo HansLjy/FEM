@@ -16,8 +16,8 @@
 #include <string>
 #include <iostream>
 
-GUI::GUI(const std::string &title, int width, int height, int opengl_major_version, int opengl_minor_version)
-         : _title(title), _width(width), _height(height),
+GUI::GUI(bool draw_bb, const std::string &title, int width, int height, int opengl_major_version, int opengl_minor_version)
+         : _draw_bounding_box(draw_bb), _title(title), _width(width), _height(height),
            _major_version(opengl_major_version),
            _minor_version(opengl_minor_version){
     theGUI = this;
@@ -89,6 +89,10 @@ void GUI::MainLoop() {
     float cur_frame;
 
 
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+
     /* initialize floor */
     glGenVertexArrays(1, &_floor_VAO);
     {
@@ -147,6 +151,9 @@ void GUI::MainLoop() {
         }
 
         scene.Draw(object_shader);
+		if (_draw_bounding_box) {
+			scene.DrawBoundingBox(object_shader);
+		}
 
         // TODO draw floor
 //        floor_shader.Use();

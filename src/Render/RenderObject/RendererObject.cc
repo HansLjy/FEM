@@ -14,8 +14,19 @@ RendererObject::RendererObject() {
 }
 
 void RendererObject::SetTopo(const MatrixXi &topo) {
-    _topo = topo;
-    _vertex_array_data.resize(_topo.size(), 8);
+	this->SetTopoTemplate<&RendererObject::_topo, &RendererObject::_vertex_array_data>(topo);
+}
+
+void RendererObject::SetBoundingBoxTopo(const MatrixXi &topo) {
+	this->SetTopoTemplate<&RendererObject::_bb_topo, &RendererObject::_bb_vertex_array_data>(topo);
+}
+
+void RendererObject::SetMesh(const Eigen::MatrixXd &vertices, const Eigen::Matrix3d &R, const Eigen::Vector3d &b) {
+	SetMeshTemplate<&RendererObject::_VAO, &RendererObject::_topo, &RendererObject::_vertex_array_data>(vertices, R, b);
+}
+
+void RendererObject::SetBoundingBoxMesh(const Eigen::MatrixXd &vertices, const Eigen::Matrix3d &R, const Eigen::Vector3d &b) {
+	SetMeshTemplate<&RendererObject::_bb_VAO, &RendererObject::_bb_topo, &RendererObject::_bb_vertex_array_data>(vertices, R, b);
 }
 
 void RendererObject::SetTexture(const std::string &texture_path, const MatrixXf& uv_coords) {
@@ -50,67 +61,24 @@ void RendererObject::SetTexture(const std::string &texture_path, const MatrixXf&
     }
 }
 
-void RendererObject::SetMesh(const Eigen::MatrixXd &vertices, const Eigen::Matrix3d &R, const Eigen::Vector3d &b) {
-    // TODO: make this more efficient
-    int num_triangles = _topo.rows();
-    for (int i = 0, cnt_rows = 0; i < num_triangles; i++, cnt_rows += 3) {
-        Eigen::RowVector3i indices = _topo.row(i);
-        Eigen::RowVector3f vertex[3];
-        for (int j = 0; j < 3; j++) {
-            vertex[j] = vertices.row(indices[j]).cast<float>();
-        }
-        Eigen::RowVector3f normal = ((vertex[1] - vertex[0]).cross(vertex[2] - vertex[0])).cast<float>();
-
-        for (int j = 0; j < 3; j++) {
-            _vertex_array_data.block<1, 3>(cnt_rows + j, 0) = vertex[j];
-            _vertex_array_data.block<1, 3>(cnt_rows + j, 3) = normal;
-        }
-    }
-
-    for (int i = 0; i < 3; i++) {
-        for (int j = 0; j < 3; j++) {
-            _rotation[i][j] = R(j, i);  // This is because _rotation[i] means ith column,
-                                        // not row. GLM is fucking shit
-        }
-        _shift[i] = b(i);
-    }
-
-    BindVertexArray();
-}
-
-void RendererObject::BindVertexArray() {
-    unsigned int VBO;
-    glGenBuffers(1, &VBO);
-
-    glBindVertexArray(_VAO);
-    
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, _vertex_array_data.size() * sizeof(float), _vertex_array_data.data(), GL_DYNAMIC_DRAW);
-
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
-    glEnableVertexAttribArray(1);
-
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
-    glEnableVertexAttribArray(2);
-
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindVertexArray(0);
-
-    glDeleteBuffers(1, &VBO);
-}
-
 void RendererObject::Draw(Shader& shader) const {
     shader.SetFloat("rotation", _rotation);
     shader.SetFloat("shift", _shift);
     shader.SetInt("useTexture", _use_texture);
+	shader.SetFloat("alpha", 1);
     if (_use_texture) {
         glBindTexture(GL_TEXTURE_2D, _texture_id);
     }
     glBindVertexArray(_VAO);
     glDrawArrays(GL_TRIANGLES, 0, _vertex_array_data.rows());
+}
+
+void RendererObject::DrawBoundingBox(Shader& shader) const {
+    shader.SetFloat("rotation", _rotation);
+    shader.SetFloat("shift", _shift);
+	shader.SetFloat("alpha", 0.1);
+    glBindVertexArray(_bb_VAO);
+    glDrawArrays(GL_TRIANGLES, 0, _bb_vertex_array_data.rows());
 }
 
 RendererObject::~RendererObject() {
@@ -119,13 +87,18 @@ RendererObject::~RendererObject() {
     }
 }
 
-RendererObject::RendererObject(const RendererObject& mesh)
-    : _rotation(mesh._rotation),
-      _shift(mesh._shift),
-      _use_texture(mesh._use_texture), 
-      _texture_id(mesh._texture_id), 
-      _topo(mesh._topo) {
-    _vertex_array_data = mesh._vertex_array_data;
+RendererObject::RendererObject(const RendererObject& rhs)
+    : _rotation(rhs._rotation),
+      _shift(rhs._shift),
+      _use_texture(rhs._use_texture), 
+      _texture_id(rhs._texture_id),
+	  _vertex_array_data(rhs._vertex_array_data),
+	  _bb_vertex_array_data(rhs._bb_vertex_array_data),
+      _topo(rhs._topo),
+	  _bb_topo(rhs._bb_topo)
+	  {
     glGenVertexArrays(1, &_VAO);
-    BindVertexArray();
+    BindVertexArrayTemplate<&RendererObject::_VAO, &RendererObject::_vertex_array_data>();
+	glGenVertexArrays(1, &_bb_VAO);
+    BindVertexArrayTemplate<&RendererObject::_bb_VAO, &RendererObject::_bb_vertex_array_data>();
 }

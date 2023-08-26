@@ -4,6 +4,7 @@ file(GLOB_RECURSE GEOMETRY_SOURCE_FILE
         Render/*.cc
         Collision/*.cc
         Shape/*.cc
+		Voxelizer/*.cc
     )
 
 if(BUILD_TEST)

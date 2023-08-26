@@ -56,10 +56,14 @@ void ExampleApp::InitializeScene(Scene &scene) {
     scene.SetTopo(topo);
     scene.SetTexture(RENDERER_TEXTURE_PATH "/treetrunk.jpeg", uv_coords);
     scene.SetMesh(vertices, Matrix3d::Identity(), Vector3d::Zero());
+	scene.SetBoundingBoxTopo(topo);
+	scene.SetBoundingBoxMesh(vertices.array() * 2, Matrix3d::Identity(), Vector3d::Zero());
 
     Matrix3d R = Matrix3d(AngleAxisd(EIGEN_PI / 12, Vector3d::UnitX()));
     Vector3d b = (Vector3d() << 1, 1, 1).finished();
-    scene.AddMesh(vertices, topo, R, b);
+    scene.AddMesh();
+	scene.SetTopo(topo);
+	scene.SetMesh(vertices, R, b);
 }
 
 void ExampleApp::Processing(Scene &scene) {

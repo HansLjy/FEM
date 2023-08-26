@@ -30,6 +30,8 @@ uniform Light light;
 uniform int useTexture;
 uniform sampler2D ourTexture;
 
+uniform float alpha;
+
 void main() {
     if (useTexture != 0) {
         vec3 texture_color = texture(ourTexture, TextureCoord).xyz;
@@ -45,7 +47,7 @@ void main() {
         float specular_strength = max(dot(eye_dir, reflect(-light_dir, norm)), 0);
         vec3 specular = specular_strength * texture_color * light.specular;
 
-        FragColor = vec4(diffuse + ambient + specular, 1.0);
+        FragColor = vec4(diffuse + ambient + specular, alpha);
     } else {
         vec3 ambient = light.ambient * material.ambient;
         
@@ -59,6 +61,6 @@ void main() {
         float specular_strength = max(dot(eye_dir, reflect(-light_dir, norm)), 0);
         vec3 specular = specular_strength * material.specular * light.specular;
 
-        FragColor = vec4(diffuse + ambient + specular, 1.0);
+        FragColor = vec4(diffuse + ambient + specular, alpha);
     }
 }
