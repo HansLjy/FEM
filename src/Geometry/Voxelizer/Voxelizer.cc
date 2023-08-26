@@ -1,60 +1,6 @@
 #include "Voxelizer.hpp"
 #include <iostream>
 
-const Matrix<int, 12, 2> local_edge_topo = (Matrix<int, 12, 2>() <<
-	0, 4,
-	0, 1,
-	1, 5,
-	5, 4,
-	4, 6,
-	5, 7,
-	1, 3,
-	0, 2,
-	2, 3,
-	3, 7,
-	7, 6,
-	6, 2
-).finished();
-
-const Matrix<int, 12, 3> local_face_topo = (Matrix<int, 12, 3>() <<
-	0, 5, 4,
-	0, 1, 5,
-	2, 6, 7,
-	2, 7, 3,
-	7, 6, 4,
-	7, 4, 5,
-	3, 1, 0,
-	3, 0, 2,
-	7, 5, 1,
-	7, 1, 3,
-	6, 2, 0,
-	6, 0, 4
-).finished();
-
-MatrixXi Voxelizer::GetEdgeTopo(const MatrixXi& grid_topo) {
-	int num_grids = grid_topo.rows();
-	MatrixXi edge_topo(num_grids * 12, 2);
-	for (int i = 0, i12 = 0; i < num_grids; i++, i12 += 12) {
-		const auto& indices = grid_topo.row(i);
-		for (int j = 0; j < 12; j++) {
-			edge_topo.row(i12 + j) << indices[local_edge_topo(j, 0)], indices[local_edge_topo(j, 1)];
-		}
-	}
-	return edge_topo;
-}
-
-MatrixXi Voxelizer::GetFaceTopo(const MatrixXi& grid_topo) {
-	int num_grids = grid_topo.rows();
-	MatrixXi face_topo(num_grids * 12, 3);
-	for (int i = 0, i12 = 0; i < num_grids; i++, i12 += 12) {
-		const auto& indices = grid_topo.row(i);
-		for (int j = 0; j < 12; j++) {
-			face_topo.row(i12 + j) << indices[local_face_topo(j, 0)], indices[local_face_topo(j, 1)], indices[local_face_topo(j, 2)];
-		}
-	}
-	return face_topo;
-}
-
 Vector3i Voxelizer::GetVertexGrid(const Vector3d &coord) {
 	Vector3i index;
 	for (int i = 0; i < 3; i++) {
@@ -113,7 +59,7 @@ void SimplePointCloudVoxelizer::Voxelize(const Ref<const VectorXd> &x, int num_p
 	// TODO:
 }
 
-void SimpleMeshVoxelizer::Voxelize(const Ref<const VectorXd> &x, const Ref<const MatrixXi> &face_topo, double grid_size, VectorXd &grid_vertices, MatrixXi &grid_topo) {
+void SimpleMeshVoxelizer::Voxelize(const Ref<const VectorXd> &x, const Ref<const MatrixXi> &face_topo, double grid_size, VectorXd &grid_vertices, MatrixXi &grid_topo, MatrixXi &grid_edge_topo, MatrixXi &grid_face_topo) {
 	_grid_size = grid_size;
 	const int num_points = x.size() / 3;
 	const int num_faces = face_topo.rows();
@@ -165,32 +111,33 @@ void SimpleMeshVoxelizer::Voxelize(const Ref<const VectorXd> &x, const Ref<const
 	grid_topo.resize(visited_cnt, 8);
 
 	int offset[] = {
-		1, _discrete_size[0], _discrete_size[1] * _discrete_size[2]
+		1, _discrete_size[0], _discrete_size[0] * _discrete_size[1]
 	};
 
 	// face_local_id[dir][i]: the local id of the ith vertex of face[dir],
 	//						  where face[dir] is the previous adjacent edge
 	//						  in direction dir
-	static const int face_local_id[3][4] = {
-		{0, 2, 4, 6},
-		{0, 1, 4, 5},
-		{0, 1, 2, 3}
+	static const int face_local_id[6][4] = {
+		{0, 4, 6, 2},
+		{0, 1, 5, 4},
+		{0, 2, 3, 1},
+		{1, 3, 7, 5},
+		{2, 6, 7, 3},
+		{4, 5, 7, 6}
 	};
 	static const int dir_offset[3] = {1, 2, 4};
-	bool on_edge[3];
+	
 	visited_cnt = 0;
-	for (int z_discrete = 0; z_discrete < _discrete_size[2]; z_discrete++) {
-		on_edge[2] = (z_discrete == 0);
-		for (int y_discrete = 0; y_discrete < _discrete_size[1]; y_discrete++) {
-			on_edge[1] = (y_discrete == 0);
-			for (int x_discrete = 0; x_discrete < _discrete_size[0]; x_discrete++) {
-				on_edge[0] = (x_discrete == 0);
-				int cur_grid_id = GetGridId(x_discrete, y_discrete, z_discrete);
+	int discrete_coord[3];
+	int cur_grid_id = 0;
+	for (discrete_coord[2] = 0; discrete_coord[2] < _discrete_size[2]; discrete_coord[2]++) {
+		for (discrete_coord[1] = 0; discrete_coord[1] < _discrete_size[1]; discrete_coord[1]++) {
+			for (discrete_coord[0] = 0; discrete_coord[0] < _discrete_size[0]; discrete_coord[0]++, cur_grid_id++) {
 				if (visited[cur_grid_id]) {
 					bool vertex_existed[8] = {};
 					topo_id2grid_id[visited_cnt] = cur_grid_id;
 					for (int dir = 0; dir < 3; dir++) {
-						if (!on_edge[dir] && visited[cur_grid_id - offset[dir]]) {
+						if (discrete_coord[dir] != 0 && visited[cur_grid_id - offset[dir]]) {
 							auto cur_face_local_id = face_local_id[dir];
 							int nbr_grid_id = std::find(
 								topo_id2grid_id.begin(),
@@ -206,9 +153,9 @@ void SimpleMeshVoxelizer::Voxelize(const Ref<const VectorXd> &x, const Ref<const
 					for (int id = 0; id < 8; id++) {
 						if (!vertex_existed[id]) {
 							grid_vertices_list.push_back((Vector3d() <<
-								(x_discrete + (id & 1)) * grid_size,
-								(y_discrete + ((id >> 1) & 1)) * grid_size,
-								(z_discrete + ((id >> 2) & 1)) * grid_size
+								(discrete_coord[0] + min_grid_coords[0] + (id & 1)) * grid_size,
+								(discrete_coord[1] + min_grid_coords[1] + ((id >> 1) & 1)) * grid_size,
+								(discrete_coord[2] + min_grid_coords[2] + ((id >> 2) & 1)) * grid_size
 							).finished());
 							grid_topo(visited_cnt, id) = grid_vertices_list.size() - 1;
 						}
@@ -224,4 +171,77 @@ void SimpleMeshVoxelizer::Voxelize(const Ref<const VectorXd> &x, const Ref<const
 	for (int i = 0, i3 = 0; i < total_grid_vertices; i++, i3 += 3) {
 		grid_vertices.segment<3>(i3) = grid_vertices_list[i];
 	}
+
+	// std::cerr << "Grid vertices: " << std::endl << StackVector<double, 3>(grid_vertices) << std::endl;
+	// std::cerr << "Grid topo: " << std::endl << grid_topo << std::endl;
+
+	visited_cnt = 0;
+	cur_grid_id = 0;
+	std::vector<RowVector2i> edge_list;
+	std::vector<RowVector3i> face_list;
+	for (discrete_coord[2] = 0; discrete_coord[2] < _discrete_size[2]; discrete_coord[2]++) {
+		for (discrete_coord[1] = 0; discrete_coord[1] < _discrete_size[1]; discrete_coord[1]++) {
+			for (discrete_coord[0] = 0; discrete_coord[0] < _discrete_size[0]; discrete_coord[0]++, cur_grid_id++) {
+				if (visited[cur_grid_id]) {
+					const auto& indices = grid_topo.row(visited_cnt);
+					for (int dir = 0; dir < 3; dir++) {
+						const auto rear_face_local_id = face_local_id[dir];
+						if (discrete_coord[dir] == 0 || !visited[cur_grid_id - offset[dir]]) {
+							// std::cerr << "Grid " << cur_grid_id << " direction " << dir << std::endl;
+							face_list.push_back((RowVector3i() << 
+								indices[rear_face_local_id[0]],
+								indices[rear_face_local_id[1]],
+								indices[rear_face_local_id[2]]
+							).finished());
+							face_list.push_back((RowVector3i() << 
+								indices[rear_face_local_id[0]],
+								indices[rear_face_local_id[2]],
+								indices[rear_face_local_id[3]]
+							).finished());
+							for (int i = 0; i < 4; i++) {
+								edge_list.push_back((RowVector2i() <<
+									indices[rear_face_local_id[i]],
+									indices[rear_face_local_id[(1 + i) & 3]]
+								).finished());
+							}
+						}
+						const auto front_face_local_id = face_local_id[dir + 3];
+						if (discrete_coord[dir] == _discrete_size[dir] - 1 || !visited[cur_grid_id + offset[dir]]) {
+							// std::cerr << "Grid " << cur_grid_id << " direction " << dir + 3 << std::endl;
+							face_list.push_back((RowVector3i() << 
+								indices[front_face_local_id[0]],
+								indices[front_face_local_id[1]],
+								indices[front_face_local_id[2]]
+							).finished());
+							face_list.push_back((RowVector3i() << 
+								indices[front_face_local_id[0]],
+								indices[front_face_local_id[2]],
+								indices[front_face_local_id[3]]
+							).finished());
+							for (int i = 0; i < 4; i++) {
+								edge_list.push_back((RowVector2i() <<
+									indices[front_face_local_id[i]],
+									indices[front_face_local_id[(1 + i) & 3]]
+								).finished());
+							}
+						}
+					}
+					visited_cnt++;
+				}
+			}
+		}
+	}
+	const int num_grid_edges = edge_list.size();
+	const int num_grid_faces = face_list.size();
+	grid_edge_topo.resize(edge_list.size(), 2);
+	grid_face_topo.resize(face_list.size(), 3);
+	for (int i = 0; i < num_grid_edges; i++) {
+		grid_edge_topo.row(i) = edge_list[i];
+	}
+	for (int i = 0; i < num_grid_faces; i++) {
+		grid_face_topo.row(i) = face_list[i];
+	}
+
+	// std::cerr << "Edge topo:" << std::endl << grid_edge_topo << std::endl;
+	// std::cerr << "Face topo:" << std::endl << grid_face_topo << std::endl;
 }

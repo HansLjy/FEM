@@ -2,10 +2,6 @@
 #include "EigenAll.h"
 
 class Voxelizer {
-public:
-	static MatrixXi GetEdgeTopo(const MatrixXi& grid_topo);
-	static MatrixXi GetFaceTopo(const MatrixXi& grid_topo);
-
 protected:
 	double _grid_size;
 	int _discrete_size[3]; // number of maximum grids in all direction
@@ -31,11 +27,11 @@ protected:
 
 class MeshVoxelizer : public Voxelizer {
 public:
-	virtual void Voxelize(const Ref<const VectorXd>& x, const Ref<const MatrixXi>& face_topo, double grid_size, VectorXd& grid_vertices, MatrixXi& grid_topo) = 0;
+	virtual void Voxelize(const Ref<const VectorXd>& x, const Ref<const MatrixXi>& face_topo, double grid_size, VectorXd& grid_vertices, MatrixXi& grid_topo, MatrixXi& grid_edge_topo, MatrixXi& grid_face_topo) = 0;
 };
 
 // A very coarse voxelizer
 class SimpleMeshVoxelizer : public MeshVoxelizer {
 public:
-	void Voxelize(const Ref<const VectorXd> &x, const Ref<const MatrixXi> &face_topo, double grid_size, VectorXd &grid_vertices, MatrixXi &grid_topo) override;
+	void Voxelize(const Ref<const VectorXd> &x, const Ref<const MatrixXi> &face_topo, double grid_size, VectorXd &grid_vertices, MatrixXi &grid_topo, MatrixXi &grid_edge_topo, MatrixXi &grid_face_topo) override;
 };

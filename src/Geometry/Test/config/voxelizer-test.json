@@ -1,5 +1,5 @@
 {
-	"obj-file": "/.obj",
-	"grid-size": 10,
-	"eye": [15, 0, 5]
+	"obj-file": "/bunny_2503.obj",
+	"grid-size": 0.1,
+	"eye": [3, 0, 3]
 }

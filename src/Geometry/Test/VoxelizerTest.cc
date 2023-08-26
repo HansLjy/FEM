@@ -33,18 +33,13 @@ public:
 
 		SimpleMeshVoxelizer voxlizer;
 		VectorXd grid_vertices;
-		MatrixXi grid_topo;
-		voxlizer.Voxelize(vertices, topo, _grid_size, grid_vertices, grid_topo);
-
-		// std::cerr << "Grid vertices" << std::endl << StackVector<double, 3>(grid_vertices) << std::endl;
-		// std::cerr << "Grid topo" << std::endl << grid_topo << std::endl;
-
-		const auto triangle_grid_topo = Voxelizer::GetFaceTopo(grid_topo);
+		MatrixXi grid_topo, edge_topo, face_topo;
+		voxlizer.Voxelize(vertices, topo, _grid_size, grid_vertices, grid_topo, edge_topo, face_topo);
 
 		scene.AddMesh();
 		scene.SetTopo(topo);
 		scene.SetMesh(StackVector<double, 3>(vertices), Matrix3d::Identity(), Vector3d::Zero());
-		scene.SetBoundingBoxTopo(triangle_grid_topo);
+		scene.SetBoundingBoxTopo(face_topo);
 		scene.SetBoundingBoxMesh(StackVector<double, 3>(grid_vertices), Matrix3d::Identity(), Vector3d::Zero());
 	}
 

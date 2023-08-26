@@ -14,11 +14,11 @@ RendererObject::RendererObject() {
 }
 
 void RendererObject::SetTopo(const MatrixXi &topo) {
-	this->SetTopoTemplate<&RendererObject::_topo, &RendererObject::_vertex_array_data>(topo);
+	SetTopoTemplate<&RendererObject::_topo, &RendererObject::_vertex_array_data>(topo);
 }
 
 void RendererObject::SetBoundingBoxTopo(const MatrixXi &topo) {
-	this->SetTopoTemplate<&RendererObject::_bb_topo, &RendererObject::_bb_vertex_array_data>(topo);
+	SetTopoTemplate<&RendererObject::_bb_topo, &RendererObject::_bb_vertex_array_data>(topo);
 }
 
 void RendererObject::SetMesh(const Eigen::MatrixXd &vertices, const Eigen::Matrix3d &R, const Eigen::Vector3d &b) {
@@ -84,6 +84,9 @@ void RendererObject::DrawBoundingBox(Shader& shader) const {
 RendererObject::~RendererObject() {
     if (_VAO != 0) {
         glDeleteVertexArrays(1, &_VAO);
+    }
+    if (_bb_VAO != 0) {
+        glDeleteVertexArrays(1, &_bb_VAO);
     }
 }
 
