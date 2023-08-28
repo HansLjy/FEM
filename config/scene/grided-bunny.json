@@ -7,7 +7,7 @@
 			"grid-size": 0.02,
 			"proxy-density": 50.0,
 			"proxy-IFN": 2503,
-			"stiffness": 50,
+			"stiffness": 250,
 			"physics": {},
 			"render": {
 				"use-texture": false,
@@ -27,7 +27,7 @@
 		{
 			"type": "fixture-force",
 			"object-name": "coarse-grid",
-			"stiffness": 100
+			"stiffness": 500
 		}
 	]
 }

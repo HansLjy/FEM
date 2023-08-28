@@ -39,6 +39,9 @@ void IPIntegrator::Step(Target &target, double h) const {
 		VectorXd Mv = mass * v;
 		mass += h * (_rayleigh_coef_mass * mass + _rayleigh_coef_stiffness * energy_hessian);
 		Eigen::SimplicialLDLT<SparseMatrixXd> LDLT_solver(mass);
+		if (LDLT_solver.info() != Eigen::Success) {
+			std::cerr << "fucked" << std::endl;
+		}
 		x_hat = x + LDLT_solver.solve(h * h * force + h * Mv);
 	} else {
 		Eigen::SimplicialLDLT<SparseMatrixXd> LDLT_solver(mass);

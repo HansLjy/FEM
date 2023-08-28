@@ -57,6 +57,18 @@ void CoarseGridBasedData::Update() {
 				* ((id & 4) ? tri_coef[2] : (1 - tri_coef[2]));
 		}
 	}
+	int num_zero_mass = 0;
+	for (int i = 0; i < _num_points; i++) {
+		if(_mass(i) == 0) {
+			num_zero_mass++;
+		}
+	}
+	double avg_mass = _mass.sum() / (_num_points - num_zero_mass);
+	for (int i = 0; i < _num_points; i++) {
+		if (_mass(i) == 0) {
+			_mass(i) = avg_mass;
+		}
+	}
 
 	_num_edges = _edge_topo.rows();
 	_num_faces = _face_topo.rows();

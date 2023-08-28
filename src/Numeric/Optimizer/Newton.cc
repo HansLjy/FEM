@@ -28,6 +28,7 @@ void Newton::Optimize(const ValueFunc &f, const GradiantFunc &g, const HessianFu
         const double fk = f(x);
         while (f(x + alpha * p) > fk + alpha * derivative) {
             alpha /= 2;
+			spdlog::info("alpha = {}", alpha);
         }
         x = x + alpha * p;
         g(x, gradient);

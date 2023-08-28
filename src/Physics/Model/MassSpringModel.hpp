@@ -1,4 +1,5 @@
 #include "Physics.hpp"
+#include <iostream>
 
 class MassSpringPhysics : public SampledPhysics {
 public:
@@ -61,15 +62,31 @@ void MassSpringPhysics::GetPotentialHessian(const Data* data, const Ref<const Ve
 		Matrix3d single_hession = stiffness * ((1 - rest_length(i) / e_norm) * Matrix3d::Identity()
 		                          + rest_length(i) / (e_norm * e_norm * e_norm) * e * e.transpose());
 		const int offset1 = id1 * 3, offset2 = id2 * 3;
-		for (int row = 0; row < 3; row++) {
-			for (int col = 0; col < 3; col++) {
-				double val = single_hession(row, col);
-				coo.push_back(Tripletd(x_offset + offset1 + row, y_offset + offset1 + col, val));
-				coo.push_back(Tripletd(x_offset + offset1 + row, y_offset + offset2 + col, -val));
-				coo.push_back(Tripletd(x_offset + offset2 + row, y_offset + offset1 + col, -val));
-				coo.push_back(Tripletd(x_offset + offset2 + row, y_offset + offset2 + col, val));
+		
+		#if BUILD_TEST
+			for (int row = 0; row < 3; row++) {
+				for (int col = 0; col < 3; col++) {
+					double val = single_hession(row, col);
+					coo.push_back(Tripletd(x_offset + offset1 + row, y_offset + offset1 + col, val));
+					coo.push_back(Tripletd(x_offset + offset1 + row, y_offset + offset2 + col, -val));
+					coo.push_back(Tripletd(x_offset + offset2 + row, y_offset + offset1 + col, -val));
+					coo.push_back(Tripletd(x_offset + offset2 + row, y_offset + offset2 + col, val));
+				}
 			}
-		}
+		#else
+			Matrix6d block_hession;
+			block_hession.block<3, 3>(0, 0) = block_hession.block<3, 3>(3, 3) = single_hession;
+			block_hession.block<3, 3>(0, 3) = block_hession.block<3, 3>(3, 0) = -single_hession;
+			block_hession = PositiveProject(block_hession);
+			for (int row = 0; row < 3; row++) {
+				for (int col = 0; col < 3; col++) {
+					coo.push_back(Tripletd(x_offset + offset1 + row, y_offset + offset1 + col, block_hession(row, col)));
+					coo.push_back(Tripletd(x_offset + offset1 + row, y_offset + offset2 + col, block_hession(row, col + 3)));
+					coo.push_back(Tripletd(x_offset + offset2 + row, y_offset + offset1 + col, block_hession(row + 3, col)));
+					coo.push_back(Tripletd(x_offset + offset2 + row, y_offset + offset2 + col, block_hession(row + 3, col + 3)));
+				}
+			}
+		#endif
 	}
 }
 
