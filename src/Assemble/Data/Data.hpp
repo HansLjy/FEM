@@ -11,8 +11,8 @@ struct BasicData {
 };
 
 struct SampledObjectData : public BasicData {
-	SampledObjectData(const VectorXd& x, double density, int dimension, const MatrixXi& topo);
-	SampledObjectData(const VectorXd& x, const VectorXd& mass, int dimension, const MatrixXi& topo);
+	SampledObjectData(const VectorXd& x, double density, int dimension, const MatrixXi& topo, int IFN = -1);
+	SampledObjectData(const VectorXd& x, const VectorXd& mass, int dimension, const MatrixXi& topo, int IFN = -1);
 
 	int _num_points;
 	int _num_edges;

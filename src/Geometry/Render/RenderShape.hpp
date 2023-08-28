@@ -25,6 +25,10 @@ public:
 	template<class Data> const std::string& GetTexturePath(const Data* obj) const {return _texture_path;}
 	template<class Data> void GetUVCoords(const Data* obj, MatrixXf& uv_coords) const {uv_coords = _uv_coords;}
 
+	template<class Data> bool HasOuterFrame(const Data* obj) const {return false;}
+	template<class Data> void GetFrameVertices(const Data* obj, MatrixXd& vertices) const {}
+	template<class Data> void GetFrameTopo(const Data* obj, MatrixXi& topo) const {}
+
 protected:
 	bool _have_bounding_box = false;
 	bool _use_texture = false;
@@ -52,6 +56,10 @@ public:
 	template<class Data> const std::string& GetTexturePath(const Data* data) const;
 	template<class Data> void GetUVCoords(const Data* data, MatrixXf& uv_coords) const;
 
+	template<class Data> bool HasOuterFrame(const Data* obj) const;
+	template<class Data> void GetFrameVertices(const Data* obj, MatrixXd& vertices) const;
+	template<class Data> void GetFrameTopo(const Data* obj, MatrixXi& topo) const;
+
 protected:
 	ProxyRenderShape _proxy_render_shape;
 };
@@ -65,7 +73,6 @@ public:
 		  _topos(FixedShapeFactory::Instance()->GetFaceTopo(config["type"], config)) {}
 
 	template<class Data> void GetRenderVertices(const Data *obj, MatrixXd &vertices) const { vertices = _vertices; }
-
 	template<class Data> void GetRenderTopos(const Data *obj, MatrixXi &topos) const { topos = _topos; }
 
 protected:
@@ -106,4 +113,20 @@ template<class Data> const std::string& ProxiedRenderShape<ProxyRenderShape>::Ge
 template<class ProxyRenderShape>
 template<class Data> void ProxiedRenderShape<ProxyRenderShape>::GetUVCoords(const Data* data, MatrixXf& uv_coords) const {
 	_proxy_render_shape.GetUVCoords(data->_proxy, uv_coords);
+}
+
+
+template<class ProxyRenderShape>
+template<class Data> bool ProxiedRenderShape<ProxyRenderShape>::HasOuterFrame(const Data* obj) const {
+	return _proxy_render_shape.HasOuterFrame(obj->_proxy);
+}
+
+template<class ProxyRenderShape>
+template<class Data> void ProxiedRenderShape<ProxyRenderShape>::GetFrameVertices(const Data* obj, MatrixXd& vertices) const {
+	_proxy_render_shape.GetFrameVertices(obj->_proxy, vertices);
+}
+
+template<class ProxyRenderShape>
+template<class Data> void ProxiedRenderShape<ProxyRenderShape>::GetFrameTopo(const Data* obj, MatrixXi& topo) const {
+	_proxy_render_shape.GetFrameTopo(obj->_proxy, topo);
 }

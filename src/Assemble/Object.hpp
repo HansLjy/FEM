@@ -61,6 +61,9 @@ public:
 	/* Render Shape */
 	virtual void GetRenderVertices(MatrixXd& vertices) const = 0;
 	virtual void GetRenderTopos(MatrixXi& topos) const = 0;
+	virtual bool HasOuterFrame() const = 0;
+	virtual void GetFrameVertices(MatrixXd& vertices) const = 0;
+	virtual void GetFrameTopo(MatrixXi& topo) const = 0;
 	virtual bool IsUsingTexture() const = 0;
 	virtual const std::string& GetTexturePath() const = 0;
 	virtual void GetUVCoords(MatrixXf& uv_coords) const = 0;
@@ -108,6 +111,9 @@ public:
 
 	void GetRenderVertices(MatrixXd &vertices) const override {Render::GetRenderVertices(this, vertices);}
 	void GetRenderTopos(MatrixXi &topos) const override {Render::GetRenderTopos(this, topos);}
+	bool HasOuterFrame() const override {return Render::HasOuterFrame(this);}
+	void GetFrameVertices(MatrixXd &vertices) const override {Render::GetFrameVertices(this, vertices);}
+	void GetFrameTopo(MatrixXi &topo) const override {Render::GetFrameTopo(this, topo);};
 	bool IsUsingTexture() const override {return Render::IsUsingTexture(this);}
 	const std::string & GetTexturePath() const override {return Render::GetTexturePath(this);}
 	void GetUVCoords(MatrixXf &uv_coords) const override {Render::GetUVCoords(this, uv_coords);}

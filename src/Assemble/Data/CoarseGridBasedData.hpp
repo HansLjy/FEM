@@ -2,15 +2,9 @@
 #include "MassSpringData.hpp"
 
 struct CoarseGridBasedData : public MassSpringData {
-	
-	void Refresh();
-
-	struct {
-		int _num_points;
-		VectorXd _x;
-		MatrixXi _topo;
-	} _proxy;
-
-
+public:
+	CoarseGridBasedData(const VectorXd& proxy_x, const MatrixXi& proxy_topo, double proxy_density, int proxy_dimension, int proxy_IFN, double stiffness);
+	void Update();
+	SampledObjectData _proxy;
 };
 
