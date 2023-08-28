@@ -1,5 +1,5 @@
 #pragma once
-#include "Data.hpp"
+#include "SampledData.hpp"
 #include "JsonUtil.h"
 
 struct ClothData : public SampledObjectData {

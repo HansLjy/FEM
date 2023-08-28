@@ -3,6 +3,7 @@
 #include <fstream>
 #include <string>
 #include "spdlog/spdlog.h"
+#include "Pattern.h"
 
 void ObjIO::LoadFromFile(const std::string &filename, VectorXd &vertices, MatrixXi &topo) const {
 	std::ifstream obj_file(filename);

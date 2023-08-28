@@ -7,11 +7,13 @@ file(GLOB_RECURSE ASSEMBLE_SOURCE
 		Objects/*.cc
         )
 
-list(APPEND ASSEMBLE_SOURCE Object.cc System.cc TimeStepper.cc)
+list(APPEND ASSEMBLE_SOURCE Object.cc System.cc TimeStepper.cc Player.cc Simulator.cc)
 
 add_library(Assemble ${ASSEMBLE_SOURCE})
 target_include_directories(Assemble PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-target_link_libraries(Assemble Physics)
-target_link_libraries(Assemble Numeric)
-target_link_libraries(Assemble Geometry)
-target_link_libraries(Assemble FEMUtility)
+target_link_libraries(Assemble PUBLIC Physics)
+target_link_libraries(Assemble PUBLIC Numeric)
+target_link_libraries(Assemble PUBLIC FileIO)
+target_link_libraries(Assemble PUBLIC Geometry)
+target_link_libraries(Assemble PUBLIC FEMUtility)
+target_link_libraries(Assemble PUBLIC Renderer)

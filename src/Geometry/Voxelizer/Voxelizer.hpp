@@ -27,11 +27,11 @@ protected:
 
 class MeshVoxelizer : public Voxelizer {
 public:
-	virtual void Voxelize(const Ref<const VectorXd>& x, const Ref<const MatrixXi>& face_topo, double grid_size, VectorXd& grid_vertices, MatrixXi& grid_topo, MatrixXi& grid_edge_topo, MatrixXi& grid_face_topo) = 0;
+	virtual void Voxelize(const Ref<const VectorXd>& x, const Ref<const MatrixXi>& face_topo, double grid_size, VectorXd& grid_vertices, MatrixXi& grid_topo, MatrixXi& grid_edge_topo, MatrixXi& grid_face_topo, VectorXi& vertices_grid_id, MatrixXd& tri_coefs) = 0;
 };
 
 // A very coarse voxelizer
 class SimpleMeshVoxelizer : public MeshVoxelizer {
 public:
-	void Voxelize(const Ref<const VectorXd> &x, const Ref<const MatrixXi> &face_topo, double grid_size, VectorXd &grid_vertices, MatrixXi &grid_topo, MatrixXi &grid_edge_topo, MatrixXi &grid_face_topo) override;
+	void Voxelize(const Ref<const VectorXd> &x, const Ref<const MatrixXi> &face_topo, double grid_size, VectorXd &grid_vertices, MatrixXi &grid_topo, MatrixXi &grid_edge_topo, MatrixXi &grid_face_topo, VectorXi &vertices_grid_id, MatrixXd &tri_coefs) override;
 };

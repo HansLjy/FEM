@@ -19,6 +19,7 @@ mark_as_advanced(
 )
 
 add_definitions(-DTEXTURE_PATH="${PROJECT_SOURCE_DIR}/data/texture")
+add_definitions(-DMODEL_PATH="${PROJECT_SOURCE_DIR}/data/model")
 add_definitions(-DOUTPUT_PATH="${PROJECT_SOURCE_DIR}/output")
 add_definitions(-DCONFIG_PATH="${PROJECT_SOURCE_DIR}/config")
 
@@ -27,7 +28,6 @@ add_subdirectory(src/Numeric)
 add_subdirectory(src/Geometry)
 add_subdirectory(src/Physics)
 add_subdirectory(src/Render)
-add_subdirectory(src/Simulator)
 add_subdirectory(src/Assemble)
 add_subdirectory(src/Matrix)
 add_subdirectory(src/IO)
@@ -37,7 +37,6 @@ target_link_libraries(fem FEMUtility)
 target_link_libraries(fem Geometry)
 target_link_libraries(fem Physics)
 target_link_libraries(fem Renderer)
-target_link_libraries(fem Simulator)
 target_link_libraries(fem -Wl,--whole-archive Numeric -Wl,--no-whole-archive)
 target_link_libraries(fem -Wl,--whole-archive Assemble -Wl,--no-whole-archive)
 

@@ -13,6 +13,7 @@ template <class Product>
 class Factory {
 public:
 	using ProductCreator = std::function<Product*(const json& config)>;
+	using StatelessProductCreator = std::function<Product*()>;
 
 	static Factory* GetInstance() {
 		if (!_the_factory) {
@@ -31,13 +32,28 @@ public:
 		return result;
 	}
 
+	bool Register(const std::string& name, const StatelessProductCreator& creator) {
+		bool result = _stateless_creator_map.insert(std::make_pair(name, creator)).second;
+		if (result) {
+			std::cerr << name << " registered" << std::endl;
+		} else {
+			std::cerr << name << " can't be registered" << std::endl;
+		}
+		return result;
+	}
+
 	Product* GetProduct(const std::string& name, const json& config) {
 		return _creator_map[name](config);
+	}
+
+	Product* GetProduct(const std::string& name) {
+		return _stateless_creator_map[name]();
 	}
 
 private:
 	static Factory* _the_factory;
 	std::map<std::string, ProductCreator> _creator_map;
+	std::map<std::string, StatelessProductCreator> _stateless_creator_map;
 };
 
 #define DEFINE_HAS_MEMBER(MEMBER_NAME)                                         \

@@ -10,24 +10,11 @@ struct BasicData {
 	VectorXd _x, _v;
 };
 
-struct SampledObjectData : public BasicData {
-	SampledObjectData(const VectorXd& x, double density, int dimension, const MatrixXi& topo, int IFN = -1);
-	SampledObjectData(const VectorXd& x, const VectorXd& mass, int dimension, const MatrixXi& topo, int IFN = -1);
-
-	int _num_points;
-	int _num_edges;
-	int _num_faces;
-	MatrixXi _edge_topo;
-	MatrixXi _face_topo;
-	MatrixXi _tet_topo;
-
-	double _total_mass;
-	VectorXd _mass;
-};
-
 template<class ProxyData>
 struct ReducedObjectData : public BasicData {
 	ReducedObjectData<ProxyData>(const VectorXd& x, ProxyData* proxy, const SparseMatrixXd&& base, const VectorXd&& shift) : BasicData(x), _proxy(proxy), _base(base), _shift(shift) {}
+
+	virtual ~ReducedObjectData() {delete _proxy;}
 	
 	ProxyData* _proxy;
 	SparseMatrixXd _base;

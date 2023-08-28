@@ -11,6 +11,7 @@ using nlohmann::json;
 
 class Player : public GUI {
 public:
+	Player(bool display_bb) : GUI(display_bb) {}
     void LoadAnimation(const std::string& config_path);
     void InitializeScene(Scene &scene) override;
     void Processing(Scene &scene) override;

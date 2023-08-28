@@ -114,14 +114,19 @@ void Simulator::InitializeScene(Scene &scene) {
 
 		obj->GetRenderTopos(topo);
 		obj->GetRenderVertices(vertices);
-//        std::cerr << "Rotation " << id << ":\n" << itr->GetRotation() << std::endl;
-//        std::cerr << "Translation " << id << ":\n" << itr->GetTranslation().transpose() << std::endl;
+
         _obj_id2scene_id.push_back(scene.AddMesh(vertices, topo, obj->GetFrameRotation(), obj->GetFrameX()));
         if (obj->IsUsingTexture()) {
             MatrixXf uv_coords;
             obj->GetUVCoords(uv_coords);
             scene.SetTexture(obj->GetTexturePath(), uv_coords);
         }
+		if (_draw_bounding_box && obj->HasOuterFrame()) {
+			MatrixXd bounding_box_vertices;
+			MatrixXi bounding_box_topo;
+			obj->GetFrameTopo(bounding_box_topo);
+			obj->GetFrameVertices(bounding_box_vertices);
+		}
     }
 }
 
@@ -146,10 +151,30 @@ void Simulator::Processing(Scene &scene) {
 
     int id = 0;
     for (const auto& obj : _system->_all_objs) {
+        scene.SelectData(_obj_id2scene_id[id++]);
+
+		if (obj->IsRenderTopoUpdated()) {
+			spdlog::info("render topo updated");
+			MatrixXi topo;
+			obj->GetRenderTopos(topo);
+			scene.SetTopo(topo);
+		}
         MatrixXd vertices;
 		obj->GetRenderVertices(vertices);
-        scene.SelectData(_obj_id2scene_id[id++]);
         scene.SetMesh(vertices, obj->GetFrameRotation(), obj->GetFrameX());
-    }
 
+		if (_draw_bounding_box && obj->HasOuterFrame()) {
+			if (obj->IsFrameTopoUpdated()) {
+				spdlog::info("bb topo updated");
+				MatrixXi topo;
+				obj->GetFrameTopo(topo);
+				scene.SetBoundingBoxTopo(topo);
+				// std::cerr << "BB topo" << std::endl << topo << std::endl;
+			}
+			MatrixXd bb_vertices;
+			obj->GetFrameVertices(bb_vertices);
+			scene.SetBoundingBoxMesh(bb_vertices, obj->GetFrameRotation(), obj->GetFrameX());
+			// std::cerr << "BB vertices" << std::endl << bb_vertices << std::endl;
+		}
+    }
 }

@@ -37,10 +37,10 @@
 	  "rayleigh-coef-stiffness": 0.5
     }
   },
-  "system-config": "/model/mass-spring.json",
+  "system-config": "/scene/grided-bunny.json",
   "renderer": {
     "camera":  {
-      "position": [10, 0, 5],
+      "position": [1, 0, 1],
       "look": [-1, 0, 0],
       "up": [0, 0, 1]
     },

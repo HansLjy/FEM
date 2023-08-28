@@ -29,6 +29,10 @@ public:
 	template<class Data> void GetFrameVertices(const Data* obj, MatrixXd& vertices) const {}
 	template<class Data> void GetFrameTopo(const Data* obj, MatrixXi& topo) const {}
 
+	template<class Data> bool IsTopoUpdated(Data* data) const {return false;}
+	template<class Data> bool IsBBTopoUpdated(Data* data) const {return false;}
+
+
 protected:
 	bool _have_bounding_box = false;
 	bool _use_texture = false;
@@ -60,6 +64,8 @@ public:
 	template<class Data> void GetFrameVertices(const Data* obj, MatrixXd& vertices) const;
 	template<class Data> void GetFrameTopo(const Data* obj, MatrixXi& topo) const;
 
+	template<class Data> bool IsTopoUpdated(Data* data) const;
+	template<class Data> bool IsBBTopoUpdated(Data* data) const;
 protected:
 	ProxyRenderShape _proxy_render_shape;
 };
@@ -129,4 +135,14 @@ template<class Data> void ProxiedRenderShape<ProxyRenderShape>::GetFrameVertices
 template<class ProxyRenderShape>
 template<class Data> void ProxiedRenderShape<ProxyRenderShape>::GetFrameTopo(const Data* obj, MatrixXi& topo) const {
 	_proxy_render_shape.GetFrameTopo(obj->_proxy, topo);
+}
+
+template<class ProxyRenderShape>
+template<class Data> bool ProxiedRenderShape<ProxyRenderShape>::IsTopoUpdated(Data* data) const {
+	return _proxy_render_shape.IsTopoUpdated(data->_proxy);
+}
+
+template<class ProxyRenderShape>
+template<class Data> bool ProxiedRenderShape<ProxyRenderShape>::IsBBTopoUpdated(Data* data) const {
+	return _proxy_render_shape.IsBBTopoUpdated(data->_proxy);
 }

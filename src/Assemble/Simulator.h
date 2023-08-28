@@ -15,7 +15,7 @@ glm::vec3 Json2GlmVec3(const json& vec);
 
 class Simulator : public GUI {
 public:
-    Simulator(const std::string& title) : GUI(title) {}
+    Simulator(bool display_bb, const std::string& title) : GUI(display_bb, title) {}
 
     void InitializeScene(Scene &scene) override;
     void Processing(Scene &scene) override;

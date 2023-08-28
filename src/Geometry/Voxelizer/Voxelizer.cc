@@ -59,7 +59,9 @@ void SimplePointCloudVoxelizer::Voxelize(const Ref<const VectorXd> &x, int num_p
 	// TODO:
 }
 
-void SimpleMeshVoxelizer::Voxelize(const Ref<const VectorXd> &x, const Ref<const MatrixXi> &face_topo, double grid_size, VectorXd &grid_vertices, MatrixXi &grid_topo, MatrixXi &grid_edge_topo, MatrixXi &grid_face_topo) {
+using GridFunc = std::function<void(Vector3d& trilinear_coef, const Ref<const Eigen::RowVectorXi> indices)>;
+
+void SimpleMeshVoxelizer::Voxelize(const Ref<const VectorXd> &x, const Ref<const MatrixXi> &face_topo, double grid_size, VectorXd &grid_vertices, MatrixXi &grid_topo, MatrixXi &grid_edge_topo, MatrixXi &grid_face_topo, VectorXi &vertices_grid_id, MatrixXd &tri_coefs) {
 	_grid_size = grid_size;
 	const int num_points = x.size() / 3;
 	const int num_faces = face_topo.rows();
@@ -242,6 +244,17 @@ void SimpleMeshVoxelizer::Voxelize(const Ref<const VectorXd> &x, const Ref<const
 		grid_face_topo.row(i) = face_list[i];
 	}
 
-	// std::cerr << "Edge topo:" << std::endl << grid_edge_topo << std::endl;
-	// std::cerr << "Face topo:" << std::endl << grid_face_topo << std::endl;
+	vertices_grid_id.resize(num_points);
+	tri_coefs.resize(num_points, 3);
+
+	for (int i = 0, i3 = 0; i < num_points; i++, i3 += 3) {
+		const Vector3d& position = x.segment<3>(i3);
+		const auto position_discrete = GetVertexGrid(position);
+		tri_coefs.row(i) = (position - position_discrete.cast<double>() * grid_size).array() / grid_size;
+		vertices_grid_id(i) = std::find(
+			topo_id2grid_id.begin(),
+			topo_id2grid_id.end(),
+			GetGridId(position_discrete - min_grid_coords)
+		) - topo_id2grid_id.begin();
+	}
 }

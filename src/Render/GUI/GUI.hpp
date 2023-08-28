@@ -33,7 +33,7 @@ public:
 
     void ProcessKeyboard(float duration);
 
-private:
+protected:
     GLFWwindow* _window;
     int _width;
     int _height;

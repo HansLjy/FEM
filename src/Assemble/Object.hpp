@@ -60,9 +60,11 @@ public:
 
 	/* Render Shape */
 	virtual void GetRenderVertices(MatrixXd& vertices) const = 0;
+	virtual bool IsRenderTopoUpdated() = 0;
 	virtual void GetRenderTopos(MatrixXi& topos) const = 0;
 	virtual bool HasOuterFrame() const = 0;
 	virtual void GetFrameVertices(MatrixXd& vertices) const = 0;
+	virtual bool IsFrameTopoUpdated() = 0;
 	virtual void GetFrameTopo(MatrixXi& topo) const = 0;
 	virtual bool IsUsingTexture() const = 0;
 	virtual const std::string& GetTexturePath() const = 0;
@@ -117,6 +119,8 @@ public:
 	bool IsUsingTexture() const override {return Render::IsUsingTexture(this);}
 	const std::string & GetTexturePath() const override {return Render::GetTexturePath(this);}
 	void GetUVCoords(MatrixXf &uv_coords) const override {Render::GetUVCoords(this, uv_coords);}
+	bool IsRenderTopoUpdated() override {return Render::IsTopoUpdated(this);}
+	bool IsFrameTopoUpdated() override {return Render::IsBBTopoUpdated(this);}
 
 	double GetMaxVelocity(const Ref<const VectorXd> &v) const override {return Collision::GetMaxVelocity(this, v);}
 	void ComputeCollisionShape(const Ref<const VectorXd> &x) override {Collision::ComputeCollisionShape(this, x);}

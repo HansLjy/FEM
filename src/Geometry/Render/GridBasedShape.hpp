@@ -2,8 +2,18 @@
 
 #include "RenderShape.hpp"
 
-class GridBasedShape : public ProxiedRenderShape<SampledRenderShape> {
+class GridBasedShape : public RenderShape {
 public:
+	explicit GridBasedShape(const json& config) : RenderShape(config) {}
+
+	template<class Data> void GetRenderVertices(const Data *obj, MatrixXd &vertices) const {
+		vertices = StackVector<double, 3>(obj->_proxy->_x);
+	}
+	
+	template<class Data> void GetRenderTopos(const Data *obj, MatrixXi &topos) const {
+		topos = obj->_proxy->_face_topo;
+	}
+
 	template<class Data> bool HasOuterFrame(const Data* obj) const {
         return true;
     }
@@ -13,7 +23,19 @@ public:
     }
 
 	template<class Data> void GetFrameTopo(const Data* obj, MatrixXi& topo) const {
-        topo = obj->_edge_topo;
+        topo = obj->_face_topo;
     }
+	
+	template<class Data> bool IsTopoUpdated(Data* data) const {
+		bool result = data->_topo_changed;
+		data->_topo_changed = false;
+		return result;
+	}
+
+	template<class Data> bool IsBBTopoUpdated(Data* data) const {
+		bool result = data->_bb_topo_changed;
+		data->_bb_topo_changed = false;
+		return result;
+	}
 };
 

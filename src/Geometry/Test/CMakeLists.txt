@@ -4,6 +4,7 @@ file(GLOB GEOMETRY_TEST_SOURCE
 	CubicSolverTest.cc
 	DistanceFunctionTest.cc
 	SpatialHashingTest.cc
+	VoxelizerTest.cc
 )
 
 if (GEOMETRY_TEST_SOURCE)
@@ -11,14 +12,15 @@ if (GEOMETRY_TEST_SOURCE)
     add_executable(GeometryTest ${GEOMETRY_TEST_SOURCE})
     target_link_libraries(GeometryTest PRIVATE FEMUtility)
     target_link_libraries(GeometryTest PRIVATE Geometry)
+    target_link_libraries(GeometryTest PRIVATE -Wl,--whole-archive FileIO -Wl,--no-whole-archive)
     include(GoogleTest)
     gtest_discover_tests(GeometryTest)
 endif ()
 
-add_executable(VoxelizerTest VoxelizerTest.cc)
-target_link_libraries(VoxelizerTest PRIVATE Geometry)
-target_link_libraries(VoxelizerTest PRIVATE Renderer)
-target_link_libraries(VoxelizerTest PRIVATE FileIO)
+add_executable(VoxelizerVisTest VoxelizerVisTest.cc)
+target_link_libraries(VoxelizerVisTest PRIVATE Geometry)
+target_link_libraries(VoxelizerVisTest PRIVATE Renderer)
+target_link_libraries(VoxelizerVisTest PRIVATE -Wl,--whole-archive FileIO -Wl,--no-whole-archive)
 
 add_definitions(-DGEOMETRY_TEST_CONFIG_PATH="${CMAKE_CURRENT_SOURCE_DIR}/config")
 add_definitions(-DGEOMETRY_TEST_DATA_PATH="${CMAKE_CURRENT_SOURCE_DIR}/data")
