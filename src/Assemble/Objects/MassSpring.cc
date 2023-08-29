@@ -3,7 +3,7 @@
 #include "Model/MassSpringModel.hpp"
 #include "Render/RenderShape.hpp"
 #include "Collision/CollisionShape/CollisionShape.h"
-#include "ExternalForce/SampledObjectFixForce.hpp"
+#include "ExternalForce/SampledObjectFixtureForce.hpp"
 #include "ExternalForce/SampledObjectGravity.hpp"
 
 using MassSpring = ConcreteObject<MassSpringData, MassSpringData, MassSpringPhysics, SampledRenderShape, NullCollisionShape>;
@@ -19,6 +19,6 @@ namespace {
 		return new SampledObjectGravity<MassSpringData>(config);
 	});
 	const bool fix_force_registered = Factory<ExternalForce<MassSpringData>>::GetInstance()->Register("fixture-force", [](const json& config) {
-		return new SampledObjecFixForce<MassSpringData>(config);
+		return new SampledObjecFixtureForce<MassSpringData>(config);
 	});
 }

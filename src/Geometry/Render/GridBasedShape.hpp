@@ -1,5 +1,6 @@
 #pragma once
 
+#include <iostream>
 #include "RenderShape.hpp"
 
 class GridBasedShape : public RenderShape {
@@ -7,11 +8,11 @@ public:
 	explicit GridBasedShape(const json& config) : RenderShape(config) {}
 
 	template<class Data> void GetRenderVertices(const Data *obj, MatrixXd &vertices) const {
-		vertices = StackVector<double, 3>(obj->_proxy->_x);
+		vertices = StackVector<double, 3>(obj->_proxy->_x.head(obj->_proxy->_dof));
 	}
 	
 	template<class Data> void GetRenderTopos(const Data *obj, MatrixXi &topos) const {
-		topos = obj->_proxy->_face_topo;
+		topos = obj->_proxy->_face_topo.topRows(obj->_proxy->_num_faces);
 	}
 
 	template<class Data> bool HasOuterFrame(const Data* obj) const {

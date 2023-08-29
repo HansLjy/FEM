@@ -3,25 +3,38 @@
 #include "spdlog/spdlog.h"
 
 CoarseGridBasedData::CoarseGridBasedData(const json& config)
-	: CoarseGridBasedData(config["filename"], config["proxy-density"], config["proxy-IFN"], config["stiffness"], config["grid-size"]) {}
+	: CoarseGridBasedData(config["filename"], config["proxy-IFN"], config["unit-length-stiffness"], config["return-stiffness"], config["grid-size"], config["grid-density"]) {}
 
-CoarseGridBasedData::CoarseGridBasedData(const std::string& filename, double proxy_density, int proxy_IFN, double stiffness, double _grid_size)
-	: MassSpringData(VectorXd(0), MatrixXi(0, 3), 0, stiffness),
-	 _proxy(new DynamicSampledObjectData(filename, proxy_density, proxy_IFN)),
-	 _grid_size(_grid_size) {
+CoarseGridBasedData::CoarseGridBasedData(
+	const std::string& filename,
+	int proxy_IFN,
+	double unit_length_stiffness,
+	double unit_ret_stiffness,
+	double grid_size,
+	double grid_density
+) : MassSpringData(VectorXd(0), MatrixXi(0, 3), 0, 0),
+	_proxy(new DynamicSampledObjectData(filename, 0, proxy_IFN)),
+	_grid_size(grid_size),
+	_unit_length_stiffness(unit_length_stiffness),
+	_unit_ret_stiffness(unit_ret_stiffness),
+	_grid_density(grid_density) {
 	Update();
 }
 
 CoarseGridBasedData::CoarseGridBasedData(
 	const VectorXd& proxy_x,
 	const MatrixXi& proxy_topo,
-	double proxy_density,
 	int proxy_IFN,
-	double stiffness,
-	double grid_size
-) : MassSpringData(VectorXd(0), MatrixXi(0, 3), 0, stiffness),
-	_proxy(new DynamicSampledObjectData(proxy_x, proxy_density, proxy_topo, proxy_IFN)),
-	_grid_size(grid_size) {
+	double unit_length_stiffness,
+	double unit_ret_stiffness,
+	double grid_size,
+	double grid_density
+) : MassSpringData(VectorXd(0), MatrixXi(0, 3), 0, 0),
+	_proxy(new DynamicSampledObjectData(proxy_x, 0, proxy_topo, proxy_IFN)),
+	_grid_size(grid_size),
+	_unit_length_stiffness(unit_length_stiffness),
+	_unit_ret_stiffness(unit_ret_stiffness),
+	_grid_density(grid_density) {
 	Update();
 }
 
@@ -34,6 +47,8 @@ void CoarseGridBasedData::AddFace(int id1, int id2, const Vector3d& position) {
 }
 
 void CoarseGridBasedData::Update() {
+	_stiffness = _grid_size * _unit_length_stiffness;
+	_ret_stiffness = _grid_size * _grid_size * _grid_size * _unit_ret_stiffness;
 	SimpleMeshVoxelizer voxelizer;
 	voxelizer.Voxelize(
 		_proxy->_x, _proxy->_face_topo, _grid_size,
@@ -41,41 +56,38 @@ void CoarseGridBasedData::Update() {
 		_vertices_grid_id, _trilinear_coef
 	);
 	spdlog::info("Voxelization finished, #grid = {}, #vertices = {}", _grid_topo.rows(), _x.size() / 3);
+
+	
+
 	_dof = _x.size();
 	_v = VectorXd::Zero(_dof);
 	_num_points = _dof / 3;
 
 	_mass = VectorXd::Zero(_num_points);
-	for (int i = 0; i < _proxy->_num_points; i++) {
-		const auto& tri_coef = _trilinear_coef.row(i);
-		const auto& indices = _grid_topo.row(_vertices_grid_id(i));
-		const double single_mass = _proxy->_mass(i);
-		for (int id = 0; id < 8; id++) {
-			_mass(indices[id]) += single_mass
-				* ((id & 1) ? tri_coef[0] : (1 - tri_coef[0]))
-				* ((id & 2) ? tri_coef[1] : (1 - tri_coef[1]))
-				* ((id & 4) ? tri_coef[2] : (1 - tri_coef[2]));
-		}
-	}
-	int num_zero_mass = 0;
-	for (int i = 0; i < _num_points; i++) {
-		if(_mass(i) == 0) {
-			num_zero_mass++;
-		}
-	}
-	double avg_mass = _mass.sum() / (_num_points - num_zero_mass);
-	for (int i = 0; i < _num_points; i++) {
-		if (_mass(i) == 0) {
-			_mass(i) = avg_mass;
-		}
-	}
+
+	const double single_mass_increment = _grid_density * _grid_size * _grid_size * _grid_size / 8;
+	const int num_grids = _grid_topo.rows();
 
 	_num_edges = _edge_topo.rows();
+	_edge_topo.conservativeResize(_num_edges + 4 * num_grids, 2);
+	_rest_length.resize(_num_edges + 4 * num_grids);
+	_rest_length.head(_num_edges).setConstant(_grid_size);
+	_rest_length.tail(4 * num_grids).setConstant(_grid_size * std::sqrt(3));
+	for (int i = 0; i < num_grids; i++) {
+		const auto& indices = _grid_topo.row(i);
+		for (int id = 0; id < 8; id++) {
+			_mass(indices[id]) += single_mass_increment;
+		}
+		_edge_topo.row(_num_edges++) << indices(0), indices(7);
+		_edge_topo.row(_num_edges++) << indices(1), indices(6);
+		_edge_topo.row(_num_edges++) << indices(2), indices(5);
+		_edge_topo.row(_num_edges++) << indices(3), indices(4);
+	}
+
 	_num_faces = _face_topo.rows();
 	_total_mass = _mass.sum();
 
 	_x_rest = _x;
-	_rest_length = VectorXd::Constant(_num_edges, _grid_size);
 	_proxy->_v = VectorXd::Zero(_proxy->_x.size());
 
 	_topo_changed = true;

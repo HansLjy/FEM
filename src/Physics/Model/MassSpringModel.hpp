@@ -63,7 +63,7 @@ void MassSpringPhysics::GetPotentialHessian(const Data* data, const Ref<const Ve
 		                          + rest_length(i) / (e_norm * e_norm * e_norm) * e * e.transpose());
 		const int offset1 = id1 * 3, offset2 = id2 * 3;
 		
-		#if BUILD_TEST
+		#ifdef BUILD_TEST
 			for (int row = 0; row < 3; row++) {
 				for (int col = 0; col < 3; col++) {
 					double val = single_hession(row, col);

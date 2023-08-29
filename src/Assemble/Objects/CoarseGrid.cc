@@ -5,9 +5,9 @@
 #include "Render/GridBasedShape.hpp"
 #include "Collision/CollisionShape/CollisionShape.h"
 #include "ExternalForce/SampledObjectGravity.hpp"
-#include "ExternalForce/SampledObjectFixForce.hpp"
+#include "ExternalForce/SampledObjectFixtureForce.hpp"
 
-using CoarseGrid = ConcreteObject<CoarseGridBasedData, CoarseGridBasedData, GridBasedPhysics<MassSpringPhysics>, GridBasedShape, NullCollisionShape>;
+using CoarseGrid = ConcreteObject<CoarseGridBasedData, CoarseGridBasedData, GridBasedPhysics, GridBasedShape, NullCollisionShape>;
 
 template<>
 Factory<ExternalForce<CoarseGridBasedData>>* Factory<ExternalForce<CoarseGridBasedData>>::_the_factory = nullptr;
@@ -20,6 +20,6 @@ namespace {
 		return new SampledObjectGravity<CoarseGridBasedData>(config);
 	});
 	const bool fixture_force_registered = Factory<ExternalForce<CoarseGridBasedData>>::GetInstance()->Register("fixture-force", [](const json& config) {
-		return new SampledObjecFixForce<CoarseGridBasedData>(config);
+		return new SampledObjecFixtureForce<CoarseGridBasedData>(config);
 	});
 }

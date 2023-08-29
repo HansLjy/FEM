@@ -23,6 +23,10 @@ add_definitions(-DMODEL_PATH="${PROJECT_SOURCE_DIR}/data/model")
 add_definitions(-DOUTPUT_PATH="${PROJECT_SOURCE_DIR}/output")
 add_definitions(-DCONFIG_PATH="${PROJECT_SOURCE_DIR}/config")
 
+if(BUILD_TEST)
+	add_definitions(-DBUILD_TEST)
+endif()
+
 add_subdirectory(src/Util)
 add_subdirectory(src/Numeric)
 add_subdirectory(src/Geometry)

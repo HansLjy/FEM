@@ -36,6 +36,12 @@ TEST(VoxelizerTest, ContainmentTest) {
 		int grid_id = vertices_grid_id(i);
 		Vector3d corner = grid_vertices.segment<3>(grid_topo(grid_id, 0) * 3);
 		EXPECT_NEAR((corner + tri_coefs.row(i).transpose() * grid_size - vertices.segment<3>(i * 3)).norm(), 0, 1e-10);
+		EXPECT_LT(tri_coefs(i, 0), 1);
+		EXPECT_LT(tri_coefs(i, 1), 1);
+		EXPECT_LT(tri_coefs(i, 2), 1);
+		EXPECT_GE(tri_coefs(i, 0), 0);
+		EXPECT_GE(tri_coefs(i, 1), 0);
+		EXPECT_GE(tri_coefs(i, 2), 0);
 	}
 
 }

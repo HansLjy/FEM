@@ -24,15 +24,15 @@
     },
     "integrator": {
       "type": "incremental-potential",
-      "tolerance": 5e-4,
+      "tolerance": 1e-6,
       "max-iteration": 10,
       "optimizer": {
         "type": "newton",
-        "tolerance": 1e-4,
+        "tolerance": 1e-8,
         "max-iteration": 10,
         "wolfe-condition": 0.1
       },
-	  "damping-enabled": true,
+	  "damping-enabled": false,
 	  "rayleigh-coef-mass": 0.5,
 	  "rayleigh-coef-stiffness": 0.5
     }
@@ -40,7 +40,7 @@
   "system-config": "/scene/grided-bunny.json",
   "renderer": {
     "camera":  {
-      "position": [1, 0, 1],
+      "position": [0.3, 0.1, 0],
       "look": [-1, 0, 0],
       "up": [0, 0, 1]
     },

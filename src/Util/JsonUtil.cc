@@ -4,14 +4,6 @@
 
 #include "JsonUtil.h"
 
-VectorXd Json2VecX(const json& vec) {
-    VectorXd result(vec.size());
-    for (int i = 0; i < vec.size(); i++) {
-        result(i) = vec[i];
-    }
-    return result;
-}
-
 Matrix3d Json2Matrix3d(const json& mat) {
     return (Matrix3d() <<
         mat[0], mat[1], mat[2],

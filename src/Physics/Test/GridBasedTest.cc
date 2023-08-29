@@ -1,20 +1,26 @@
 #include <fstream>
 #include "DerivativeTest.h"
-#include "Model/MassSpringModel.hpp"
+#include "Model/GridBasedPhysics.hpp"
 #include "gtest/gtest.h"
 
 struct Grid {
-	Grid(int num_points, int num_edges, double stiffness, const MatrixXi& edge_topo, const VectorXd& rest_length) : _dof(num_points * 3), _num_edges(num_edges), _stiffness(stiffness), _edge_topo(edge_topo), _rest_length(rest_length) {}
+	Grid(int num_points, int num_edges, double stiffness, double ret_stiffness, const MatrixXi& edge_topo, const VectorXd& rest_length, const VectorXd& x_rest)
+	: _dof(num_points * 3), _num_points(num_points), _num_edges(num_edges),
+	  _stiffness(stiffness), _ret_stiffness(ret_stiffness), _edge_topo(edge_topo),
+	  _rest_length(rest_length), _x_rest(x_rest) {}
 
 	int _dof;
+	int _num_points;
 	int _num_edges;
 	double _stiffness;
+	double _ret_stiffness;
 	MatrixXi _edge_topo;
 	VectorXd _rest_length;
+	VectorXd _x_rest;
 };
 
 
-Grid* GenerateTestSrpingMassData(int num_points, int num_edges, double stiffness) {
+Grid* GenerateTestSrpingMassData(int num_points, int num_edges) {
 	MatrixXi edge_topo(num_edges, 2);
 	VectorXd rest_length(num_edges);
 	for (int i = 0; i < num_edges; i++) {
@@ -23,21 +29,23 @@ Grid* GenerateTestSrpingMassData(int num_points, int num_edges, double stiffness
 		edge_topo.row(i) << id1, id2;
 		rest_length(i) = 1.0 * std::rand() / RAND_MAX;
 	}
-	return new Grid(num_points, num_edges, stiffness, edge_topo, rest_length);
+	const double stiffness = 1.0 * std::rand() / RAND_MAX;
+	const double ret_stiffness = 1.0 * std::rand() / RAND_MAX;
+	const VectorXd x_rest = VectorXd::Random(num_points * 3);
+	return new Grid(num_points, num_edges, stiffness,  ret_stiffness, edge_topo, rest_length, x_rest);
 }
 
 const double gradient_step = 1e-8;
 const double hessian_step = 1e-4;
 
-TEST(MassSpringTest, GradientTest) {
+TEST(GridTest, GradientTest) {
 	std::fstream config_file(PHYSICS_TEST_CONFIG_PATH "/SpringMassTest.json");
 	json config;
 	config_file >> config;
 	const int num_points = config["num-points"];
 	const int num_edges = config["num-edges"];
-	const double stiffness = 1.0 * std::rand() / RAND_MAX;
-	const auto data = GenerateTestSrpingMassData(num_points, num_edges, stiffness);
-	MassSpringPhysics physics;
+	const auto data = GenerateTestSrpingMassData(num_points, num_edges);
+	GridBasedPhysics physics;
 	
 	GenerateDerivative(data, physics, gradient_step, hessian_step)
 	

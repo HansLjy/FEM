@@ -40,11 +40,16 @@ void IPIntegrator::Step(Target &target, double h) const {
 		mass += h * (_rayleigh_coef_mass * mass + _rayleigh_coef_stiffness * energy_hessian);
 		Eigen::SimplicialLDLT<SparseMatrixXd> LDLT_solver(mass);
 		if (LDLT_solver.info() != Eigen::Success) {
-			std::cerr << "fucked" << std::endl;
+			std::cerr << "System Matrix Not PSD" << std::endl;
+			exit(-1);
 		}
 		x_hat = x + LDLT_solver.solve(h * h * force + h * Mv);
 	} else {
 		Eigen::SimplicialLDLT<SparseMatrixXd> LDLT_solver(mass);
+		if (LDLT_solver.info() != Eigen::Success) {
+			std::cerr << "System Matrix Not PSD" << std::endl;
+			exit(-1);
+		}
 		x_hat = x + h * v + h * h * LDLT_solver.solve(force);
 	}
 
@@ -65,8 +70,13 @@ void IPIntegrator::Step(Target &target, double h) const {
         hessian = h * h * hessian + mass;
     };
 
+
     VectorXd x_next = x;
     _optimizer->Optimize(func, grad, hes, x_next);
+
+	// VectorXd tmp_gradient;
+	// grad(x_next, tmp_gradient);
+	// spdlog::info("residue = {}", tmp_gradient.norm());
 
     VectorXd v_next = (x_next - x) / h;
 

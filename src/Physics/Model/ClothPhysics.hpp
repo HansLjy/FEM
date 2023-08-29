@@ -149,9 +149,11 @@ VectorXd ClothPhysics::GetPotentialGradient(const Data* data, const Ref<const Ve
 
 template<class Data>
 void ClothPhysics::GetPotentialHessian(const Data* data, const Ref<const VectorXd>& x, COO &coo, int x_offset, int y_offset) const {
-//    static double triangle_hessian_t = 0;
-//    static int cnt = 0;
-//    auto start_t = clock();
+	const double k_stretch = data->_k_stretch;
+	const double k_shear = data->_k_shear;
+	const auto& stretch_u = data->_stretch_u;
+	const auto& stretch_v = data->_stretch_v;
+
     for (int i = 0; i < data->_num_triangles; i++) {
         RowVector3i index = data->_face_topo.row(i);
         Vector3d xi = x.segment<3>(3 * index(0));
@@ -180,14 +182,14 @@ void ClothPhysics::GetPotentialHessian(const Data* data, const Ref<const VectorX
         Matrix6d p2EpX2;
 
 #ifdef BUILD_TEST
-        p2EpX2.block<3, 3>(0, 0) = _k_stretch * area * area * (1 - _stretch_u / F1_norm) * Matrix3d::Identity()
-                                 + _k_shear * area * area * F2F2T
-                                 + _k_stretch * area * area * _stretch_u / F1_norm3 * F1F1T;
-        p2EpX2.block<3, 3>(0, 3) = _k_shear * area * area * F1F2T.transpose() + _k_shear * C[2] * area * Matrix3d::Identity();
-        p2EpX2.block<3, 3>(3, 0) = _k_shear * area * area * F1F2T + _k_shear * C[2] * area * Matrix3d::Identity();
-        p2EpX2.block<3, 3>(3, 3) = _k_stretch * area * area * (1 - _stretch_v / F2_norm) * Matrix3d::Identity()
-                                 + _k_shear * area * area * F1F1T
-                                 + _k_stretch * area * area * _stretch_v / F2_norm3 * F2F2T;
+        p2EpX2.block<3, 3>(0, 0) = k_stretch * area * area * (1 - stretch_u / F1_norm) * Matrix3d::Identity()
+                                 + k_shear * area * area * F2F2T
+                                 + k_stretch * area * area * stretch_u / F1_norm3 * F1F1T;
+        p2EpX2.block<3, 3>(0, 3) = k_shear * area * area * F1F2T.transpose() + k_shear * C[2] * area * Matrix3d::Identity();
+        p2EpX2.block<3, 3>(3, 0) = k_shear * area * area * F1F2T + k_shear * C[2] * area * Matrix3d::Identity();
+        p2EpX2.block<3, 3>(3, 3) = k_stretch * area * area * (1 - stretch_v / F2_norm) * Matrix3d::Identity()
+                                 + k_shear * area * area * F1F1T
+                                 + k_stretch * area * area * stretch_v / F2_norm3 * F2F2T;
 #else
         p2EpX2.block<3, 3>(0, 0) = (data->_k_stretch * area * area * (1 - data->_stretch_u / F1_norm) + 0.5 * data->_k_shear * C[2] * area) * Matrix3d::Identity()
                                    + data->_k_shear * area * area * F2F2T

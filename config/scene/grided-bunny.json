@@ -5,9 +5,10 @@
 			"name": "coarse-grid",
 			"filename": "/bunny_2503.obj",
 			"grid-size": 0.02,
-			"proxy-density": 50.0,
-			"proxy-IFN": 2503,
-			"stiffness": 250,
+			"grid-density": 50.0,
+			"proxy-IFN": 4968,
+			"unit-length-stiffness": 500,
+			"return-stiffness": 500,
 			"physics": {},
 			"render": {
 				"use-texture": false,
@@ -23,11 +24,6 @@
 			"type": "gravity",
 			"object-name": "coarse-grid",
 			"g": [0, 0, -9.8]
-		},
-		{
-			"type": "fixture-force",
-			"object-name": "coarse-grid",
-			"stiffness": 500
 		}
 	]
 }

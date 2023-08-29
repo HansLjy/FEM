@@ -19,7 +19,15 @@ Vector<double, dim> Json2Vec(const json& vec) {
     }
     return vector;
 }
-VectorXd Json2VecX(const json& vec);
+
+template<typename T = double>
+VectorX<T> Json2VecX(const json& vec) {
+    VectorX<T> result(vec.size());
+    for (int i = 0; i < vec.size(); i++) {
+        result(i) = vec[i];
+    }
+    return result;
+}
 
 template<int cols>
 MatrixXi Json2MatXi(const json& vec) {
