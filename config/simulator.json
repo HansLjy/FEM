@@ -40,7 +40,7 @@
   "system-config": "/scene/grided-bunny.json",
   "renderer": {
     "camera":  {
-      "position": [0.3, 0.1, 0],
+      "position": [3, 0, 0],
       "look": [-1, 0, 0],
       "up": [0, 0, 1]
     },

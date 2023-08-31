@@ -33,7 +33,7 @@ struct Camera {
     float _far;
 
 private:
-    const float kMovementSpeed = 3.0f;
+    const float kMovementSpeed = 0.8f;
     const float kMouseSensitivity = 0.1f;
     const float kZoomingSpeed = 1.0f;
 

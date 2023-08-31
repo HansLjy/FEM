@@ -59,6 +59,11 @@ CPMAddPackage(
 	GIT_TAG v3.11.2
 )
 
+CPMAddPackage(
+	NAME igl
+	GIT_REPOSITORY git@github.com:libigl/libigl.git
+	GIT_TAG v2.4.0
+)
 
 set(FEM_UTILITY_SOURCE EigenAll.cc JsonUtil.cc GeometryUtil.cc)
 
@@ -71,6 +76,8 @@ target_include_directories(FEMUtility PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(FEMUtility PUBLIC Eigen3::Eigen)
 target_link_libraries(FEMUtility PUBLIC spdlog::spdlog)
 target_link_libraries(FEMUtility PUBLIC nlohmann_json::nlohmann_json)
+target_link_libraries(FEMUtility PUBLIC igl::core)
+
 if (BUILD_TEST)
 	target_link_libraries(FEMUtility PUBLIC TestUtility)
 endif ()
