@@ -2,7 +2,7 @@
 // Created by hansljy on 11/29/22.
 //
 
-#include "BFSStepper.h"
+#include "BFSStepper.hpp"
 
 // BFSStepper::BFSStepper(const nlohmann::json &config) : TimeStepper(config) {
 //     const auto& integrator_config = config["integrator"];

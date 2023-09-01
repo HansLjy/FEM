@@ -5,13 +5,13 @@
 #ifndef FEM_SYSTEMSTEPPER_H
 #define FEM_SYSTEMSTEPPER_H
 
-#include "TimeStepper.h"
+#include "TimeStepper.hpp"
 #include "Integrator/Integrator.h"
 
 class SystemStepper : public TimeStepper {
 public:
     explicit SystemStepper(const json& config);
-    void Bind(System &system) override;
+	void Bind(System *system) override;
     void Step(double h) const override;
 
     ~SystemStepper() override;

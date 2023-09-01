@@ -1,20 +1,18 @@
-//
-// Created by hansljy on 10/8/22.
-//
-
 #include "System.h"
-#include "spdlog/spdlog.h"
 
-System::System(const nlohmann::json &config) : _dof(0) {
+System::System(const nlohmann::json &config) {
     const auto& objects_config = config["objects"];
     for (const auto& object_config : objects_config) {
-        AddObject(Factory<Object>::GetInstance()->GetProduct(object_config["type"], object_config), object_config["name"]);
+        AddObject(
+			Factory<Object>::GetInstance()->GetProduct(object_config["type"], object_config),
+			object_config["name"]
+		);
     }
 
     const auto& external_forces_config = config["external-forces"];
     for (const auto& external_force_config : external_forces_config) {
         int idx = GetIndex(external_force_config["object-name"]);
-        GetObject(idx)->AddExternalForce(external_force_config["type"], external_force_config);
+        _objs[idx]->AddExternalForce(external_force_config["type"], external_force_config);
     }
 }
 
@@ -26,16 +24,7 @@ int System::AddObject(Object* obj, const std::string &name) {
         return -1;
     }
     _objs.push_back(obj);
-    _dof += obj->GetDOF();
     return new_idx;
-}
-
-Object * System::GetObject(int idx) {
-    return _objs[idx];
-}
-
-const Object *System::GetObject(int idx) const {
-    return _objs[idx];
 }
 
 int System::GetIndex(const std::string &name) const {
@@ -51,31 +40,6 @@ void System::Initialize(const json &config) {
 	for (auto& obj : _objs) {
 		obj->Initialize();
 	}
-	
-	// For decomposed object
-	_all_objs.clear();
-	_level_bar.clear();
-	int head = 0, tail = 0, level_end = 0;
-	_level_bar.push_back(0);
-	for (const auto& obj : _objs) {
-		_all_objs.push_back(obj);
-		tail++;
-	}
-	// TODO: deal with decomposed object
-	// while (head < tail) {
-	// 	if (level_end == head) {
-	// 		_level_bar.push_back(level_end = tail);
-	// 	}
-	// 	const auto obj = _all_objs[head++];
-	// 	if (obj->IsDecomposed()) {
-	// 		const auto& decomposed_object = dynamic_cast<DecomposedObject*>(obj);
-	// 		const auto& children = decomposed_object->GetChildren();
-	// 		for (const auto& child : children) {
-	// 			_all_objs.push_back(child);
-	// 			tail++;
-	// 		}
-	// 	}
-	// }
 }
 
 System::~System(){

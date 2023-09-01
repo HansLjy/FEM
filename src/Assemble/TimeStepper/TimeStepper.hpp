@@ -11,8 +11,8 @@ class TimeStepper {
 public:
     explicit TimeStepper(const json& config)
         : _target_config(config["target"]) {}
-    
-	virtual void Bind(System& system);
+
+	virtual void Bind(System* system);
     virtual void Step(double h) const = 0;
     virtual ~TimeStepper() = default;
 	TimeStepper(const TimeStepper& rhs) = delete;

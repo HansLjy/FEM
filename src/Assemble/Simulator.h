@@ -7,7 +7,7 @@
 
 #include "GUI/GUI.hpp"
 #include "System.h"
-#include "TimeStepper.h"
+#include "TimeStepper/TimeStepper.hpp"
 
 #include <string>
 

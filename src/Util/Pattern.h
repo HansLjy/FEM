@@ -7,6 +7,7 @@
 
 #include <iostream>
 #include <nlohmann/json.hpp>
+#include <spdlog/spdlog.h>
 using nlohmann::json;
 
 template <class Product>
@@ -43,10 +44,16 @@ public:
 	}
 
 	Product* GetProduct(const std::string& name, const json& config) {
+		if (_creator_map.find(name) == _creator_map.end()) {
+			spdlog::error("Unknown product name {} detected", name);
+		}
 		return _creator_map[name](config);
 	}
 
 	Product* GetProduct(const std::string& name) {
+		if (_stateless_creator_map.find(name) == _stateless_creator_map.end()) {
+			spdlog::error("Unknown product name {} detected", name);
+		}
 		return _stateless_creator_map[name]();
 	}
 

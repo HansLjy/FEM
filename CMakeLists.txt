@@ -14,6 +14,10 @@ set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 # profile mode
 set(CMAKE_CXX_FLAGS_PROFILE "-g -O2")
 
+# C++ 17!!!!
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
 mark_as_advanced(
 	CMAKE_CXX_FLAGS_PROFILE
 )

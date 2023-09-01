@@ -6,50 +6,25 @@
 #define FEM_SYSTEM_H
 
 #include "Object.hpp"
+#include "JsonUtil.h"
 #include <string>
 #include <map>
 #include <vector>
 
-class Constraint;
-class SystemStepper;
-
-class System final {
-public:
+struct System final {
     explicit System(const json& config);
-
-    int GetDOF() {return _dof;}
-
-    /**
-     * Add object into the system
-     * @param obj object to be added
-     * @param name name of the object (for future access)
-     * @return
-     *  Upon success, return the index of the object
-     *  otherwise, return -1.
-     *  Failure could be the result of name collision
-     */
-    int AddObject(Object* obj, const std::string& name);
-    Object * GetObject(int idx);
-    const Object* GetObject(int idx) const;
     void Initialize(const json &config);
-    int GetIndex(const std::string& name) const;
-
-    ~System();
     System(const System& rhs) = delete;
+    ~System();
 
-    friend class Constraint;
-	friend class SystemStepper;
-    friend class SystemTarget;
-    friend class DomainTarget;
-	
-	std::vector<Object*> _all_objs;
-	std::vector<int> _level_bar;	
+    std::vector<Object*> _objs;
 
 protected:
-    int _dof;
-    std::vector<Object*> _objs;
-    std::map<std::string, int> _index;
+	//<- id for object, -1 if failure
+    int AddObject(Object* obj, const std::string& name);
+    int GetIndex(const std::string& name) const;
 
+    std::map<std::string, int> _index;
 };
 
 #endif //FEM_SYSTEM_H

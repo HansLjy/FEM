@@ -43,7 +43,7 @@ void Simulator::LoadScene(const std::string &config) {
     _light_Kl = light_config_json["Kl"];
     _light_Kq = light_config_json["Kq"];
 
-    _time_stepper->Bind(*_system);
+    _time_stepper->Bind(_system);
 
     spdlog::info("Scene loaded");
 }
@@ -54,7 +54,7 @@ void Simulator::Simulate(const std::string& output_dir) {
     int obj_id = 0;
 	std::ofstream topo_file(output_dir + "/topo");
 
-	for (const auto& obj : _system->_all_objs) {
+	for (const auto& obj : _system->_objs) {
         MatrixXi topo;
         MatrixXd vertices;
 		obj->GetRenderTopos(topo);
@@ -69,7 +69,7 @@ void Simulator::Simulate(const std::string& output_dir) {
         _time_stepper->Step(_time_step);
         obj_id = 0;
 		std::ofstream itr_file(output_dir + "/itr" + std::to_string(itr_id));
-        for (const auto& obj : _system->_all_objs) {
+        for (const auto& obj : _system->_objs) {
             MatrixXd vertices;
 			obj->GetRenderVertices(vertices);
             write_binary(itr_file, vertices);
@@ -108,7 +108,7 @@ void Simulator::InitializeScene(Scene &scene) {
         _light_Kc, _light_Kl, _light_Kq
     );
 
-    for (const auto& obj : _system->_all_objs) {
+    for (const auto& obj : _system->_objs) {
         MatrixXd vertices;
         MatrixXi topo;
 
@@ -150,7 +150,7 @@ void Simulator::Processing(Scene &scene) {
     }
 
     int id = 0;
-    for (const auto& obj : _system->_all_objs) {
+    for (const auto& obj : _system->_objs) {
         scene.SelectData(_obj_id2scene_id[id++]);
 
 		if (obj->IsRenderTopoUpdated()) {

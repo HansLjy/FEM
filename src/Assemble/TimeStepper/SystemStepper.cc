@@ -2,7 +2,7 @@
 // Created by hansljy on 11/28/22.
 //
 
-#include "SystemStepper.h"
+#include "SystemStepper.hpp"
 #include "Target.h"
 
 namespace {
@@ -17,9 +17,9 @@ SystemStepper::SystemStepper(const json &config) : TimeStepper(config) {
     _integrator = Factory<Integrator>::GetInstance()->GetProduct(integrator_config["type"], integrator_config);
 }
 
-void SystemStepper::Bind(System &system) {
+void SystemStepper::Bind(System* system) {
     TimeStepper::Bind(system);
-    _target = TargetFactory::GetTarget(system._objs, 0, system._objs.size(), _target_config["type"], _target_config);
+    _target = TargetFactory::GetTarget(system->_objs, 0, system->_objs.size(), _target_config["type"], _target_config);
 }
 
 void SystemStepper::Step(double h) const {

@@ -7,7 +7,7 @@ file(GLOB_RECURSE ASSEMBLE_SOURCE
 		Objects/*.cc
         )
 
-list(APPEND ASSEMBLE_SOURCE Object.cc System.cc TimeStepper.cc Player.cc Simulator.cc)
+list(APPEND ASSEMBLE_SOURCE Object.cc System.cc Player.cc Simulator.cc)
 
 add_library(Assemble ${ASSEMBLE_SOURCE})
 target_include_directories(Assemble PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})

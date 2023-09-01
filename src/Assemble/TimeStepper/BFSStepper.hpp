@@ -5,7 +5,7 @@
 #ifndef FEM_DOMAINBFSSTEPPER_H
 #define FEM_DOMAINBFSSTEPPER_H
 
-#include "TimeStepper.h"
+#include "TimeStepper.hpp"
 #include "Integrator/Integrator.h"
 
 // class BFSStepper : public TimeStepper {

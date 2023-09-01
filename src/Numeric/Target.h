@@ -9,7 +9,6 @@
 #include "Pattern.h"
 
 class Object;
-class ObjectIterator;
 
 /**
  * Target is the general target problem encountered
