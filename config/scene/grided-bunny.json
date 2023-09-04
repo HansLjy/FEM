@@ -10,7 +10,7 @@
 			"unit-length-stiffness": 5e4,
 			"unit-length-diag-stiffness": 5e5,
 			"return-stiffness": 5e6,
-			"physics": {},
+			"energy-model": {},
 			"render": {
 				"use-texture": false,
 				"texture-path": "",

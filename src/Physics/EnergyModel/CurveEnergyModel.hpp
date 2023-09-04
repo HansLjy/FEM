@@ -5,19 +5,21 @@
 #ifndef FEM_CURVE_H
 #define FEM_CURVE_H
 
-#include "Physics.hpp"
+#include "EigenAll.h"
+#include "JsonUtil.h"
 #include "unsupported/Eigen/KroneckerProduct"
 
-class CurvePhysics : public SampledPhysics {
+class CurveEnergyModel {
 public:
-	CurvePhysics(const json& config) {}
+	CurveEnergyModel(const json& config) {}
+	template<class Data> void Initialize(const Data* data) {}
 	template<class Data> double GetPotential(const Data* data, const Ref<const VectorXd> &x) const;
 	template<class Data> VectorXd GetPotentialGradient(const Data* data, const Ref<const VectorXd> &x) const;
 	template<class Data> void GetPotentialHessian(const Data* data, const Ref<const VectorXd> &x, COO &coo, int x_offset, int y_offset) const;
 };
 
 template<class Data>
-double CurvePhysics::GetPotential(const Data* data, const Ref<const VectorXd> &x) const {
+double CurveEnergyModel::GetPotential(const Data* data, const Ref<const VectorXd> &x) const {
 	double potential = 0;
     Vector3d x_current = x.segment<3>(3);
     Vector3d e_prev = x_current - x.segment<3>(0);
@@ -41,7 +43,7 @@ double CurvePhysics::GetPotential(const Data* data, const Ref<const VectorXd> &x
 }
 
 template<class Data>
-VectorXd CurvePhysics::GetPotentialGradient(const Data* data, const Ref<const VectorXd> &x) const {
+VectorXd CurveEnergyModel::GetPotentialGradient(const Data* data, const Ref<const VectorXd> &x) const {
 	VectorXd gradient;
     gradient.resizeLike(x);
     gradient.setZero();
@@ -88,7 +90,7 @@ VectorXd CurvePhysics::GetPotentialGradient(const Data* data, const Ref<const Ve
 }
 
 template<class Data>
-void CurvePhysics::GetPotentialHessian(const Data* data, const Ref<const VectorXd> &x, COO &coo, int x_offset, int y_offset) const {
+void CurveEnergyModel::GetPotentialHessian(const Data* data, const Ref<const VectorXd> &x, COO &coo, int x_offset, int y_offset) const {
 	Vector3d x_current = x.segment<3>(3);
     Vector3d e_prev = x_current - x.segment<3>(0);
 

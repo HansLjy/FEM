@@ -83,33 +83,34 @@ public:
 	virtual ~Object() = default;
 };
 
-template<class Data, class DataForExternalForce, class Physics, class Render, class Collision>
-class ConcreteObject : public Object, public Data, public Physics, public Render, public Collision, public ExternalForceContainer<DataForExternalForce> {
+template<class Data, class DataForExternalForce, class Coordinate, class MassModel, class EnergyModel, class Render, class Collision>
+class ConcreteObject : public Object, public Data, public EnergyModel, public Render, public Collision, public ExternalForceContainer<DataForExternalForce> {
 public:
-	ConcreteObject(const json& config) : Data(config), Physics(config["physics"]), Render(config["render"]), Collision(config["collision"]) {}
+	ConcreteObject() = default;
+	ConcreteObject(const json& config) : Data(config), EnergyModel(config["energy-model"]), Render(config["render"]), Collision(config["collision"]) {}
 
 	void Initialize() override {
-		Physics::Initialize(this);
+		EnergyModel::Initialize(this);
 		Render::Initialize(this);
 		Collision::Initialize(this);
 	}
 
-	int GetDOF() const override {return Physics::GetDOF(this);}
-	void GetCoordinate(Ref<VectorXd> x) const override {Physics::GetCoordinate(this, x);}
-	void GetVelocity(Ref<VectorXd> v) const override {Physics::GetVelocity(this, v);}
-	void SetCoordinate(const Ref<const VectorXd> &x) override {Physics::SetCoordinate(this, x);}
-	void SetVelocity(const Ref<const VectorXd> &v) override {Physics::SetVelocity(this, v);}
+	int GetDOF() const override {return Coordinate::GetDOF(this);}
+	void GetCoordinate(Ref<VectorXd> x) const override {Coordinate::GetCoordinate(this, x);}
+	void GetVelocity(Ref<VectorXd> v) const override {Coordinate::GetVelocity(this, v);}
+	void SetCoordinate(const Ref<const VectorXd> &x) override {Coordinate::SetCoordinate(this, x);}
+	void SetVelocity(const Ref<const VectorXd> &v) override {Coordinate::SetVelocity(this, v);}
 
-	void GetMass(COO &coo, int x_offset, int y_offset) const override {Physics::GetMass(this, coo, x_offset, y_offset);}
-	double GetTotalMass() const override {return Physics::GetTotalMass(this);}
-	Vector3d GetUnnormalizedMassCenter() const override {return Physics::GetUnnormalizedMassCenter(this);}
-	Matrix3d GetInertialTensor() const override {return Physics::GetInertialTensor(this);}
-	VectorXd GetInertialForce(const Vector3d &v, const Vector3d &a, const Vector3d &omega, const Vector3d &alpha, const Matrix3d &rotation) const override {return Physics::GetInertialForce(this, v, a, omega, alpha, rotation);}
-	VectorXd GetInertialForce(const Vector3d &v, const Vector3d &a, const Matrix3d &affine, const Matrix3d &affine_velocity, const Matrix3d &affine_acceleration) const override {return Physics::GetInertialForce(this, v, a, affine, affine_velocity, affine_acceleration);}
+	void GetMass(COO &coo, int x_offset, int y_offset) const override {MassModel::GetMass(this, coo, x_offset, y_offset);}
+	double GetTotalMass() const override {return MassModel::GetTotalMass(this);}
+	Vector3d GetUnnormalizedMassCenter() const override {return MassModel::GetUnnormalizedMassCenter(this);}
+	Matrix3d GetInertialTensor() const override {return MassModel::GetInertialTensor(this);}
+	VectorXd GetInertialForce(const Vector3d &v, const Vector3d &a, const Vector3d &omega, const Vector3d &alpha, const Matrix3d &rotation) const override {return MassModel::GetInertialForce(this, v, a, omega, alpha, rotation);}
+	VectorXd GetInertialForce(const Vector3d &v, const Vector3d &a, const Matrix3d &affine, const Matrix3d &affine_velocity, const Matrix3d &affine_acceleration) const override {return MassModel::GetInertialForce(this, v, a, affine, affine_velocity, affine_acceleration);}
 
-	double GetPotential(const Ref<const VectorXd> &x) const override {return Physics::GetPotential(this, x);}
-	VectorXd GetPotentialGradient(const Ref<const VectorXd> &x) const override {return Physics::GetPotentialGradient(this, x);}
-	void GetPotentialHessian(const Ref<const VectorXd> &x, COO &coo, int x_offset, int y_offset) const override {Physics::GetPotentialHessian(this, x, coo, x_offset, y_offset);}
+	double GetPotential(const Ref<const VectorXd> &x) const override {return EnergyModel::GetPotential(this, x);}
+	VectorXd GetPotentialGradient(const Ref<const VectorXd> &x) const override {return EnergyModel::GetPotentialGradient(this, x);}
+	void GetPotentialHessian(const Ref<const VectorXd> &x, COO &coo, int x_offset, int y_offset) const override {EnergyModel::GetPotentialHessian(this, x, coo, x_offset, y_offset);}
 
 	void GetRenderVertices(MatrixXd &vertices) const override {Render::GetRenderVertices(this, vertices);}
 	void GetRenderTopos(MatrixXi &topos) const override {Render::GetRenderTopos(this, topos);}

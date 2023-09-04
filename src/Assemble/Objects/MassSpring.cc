@@ -1,12 +1,4 @@
-#include "Object.hpp"
-#include "Data/MassSpringData.hpp"
-#include "Model/MassSpringModel.hpp"
-#include "Render/RenderShape.hpp"
-#include "Collision/CollisionShape/CollisionShape.h"
-#include "ExternalForce/SampledObjectFixtureForce.hpp"
-#include "ExternalForce/SampledObjectGravity.hpp"
-
-using MassSpring = ConcreteObject<MassSpringData, MassSpringData, MassSpringPhysics, SampledRenderShape, NullCollisionShape>;
+#include "MassSpring.hpp"
 
 template<>
 Factory<ExternalForce<MassSpringData>>* Factory<ExternalForce<MassSpringData>>::_the_factory = nullptr;

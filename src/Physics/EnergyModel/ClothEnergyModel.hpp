@@ -3,18 +3,20 @@
 //
 
 #pragma once
-#include "Physics.hpp"
+#include "EigenAll.h"
+#include "JsonUtil.h"
 
-class ClothPhysics : public SampledPhysics {
+class ClothEnergyModel {
 public:
-	ClothPhysics(const json& config) {}
+	ClothEnergyModel(const json& config) {}
+	template<class Data> void Initialize(const Data* data) {}
 	template<class Data> double GetPotential(const Data* data, const Ref<const VectorXd> &x) const;
 	template<class Data> VectorXd GetPotentialGradient(const Data* data, const Ref<const VectorXd> &x) const;
 	template<class Data> void GetPotentialHessian(const Data* data, const Ref<const VectorXd> &x, COO &coo, int x_offset, int y_offset) const;
 };
 
 template<class Data>
-double ClothPhysics::GetPotential(const Data* data, const Ref<const VectorXd> &x) const {
+double ClothEnergyModel::GetPotential(const Data* data, const Ref<const VectorXd> &x) const {
 	double energy = 0;
     for (int i = 0; i < data->_num_triangles; i++) {
         RowVector3i index = data->_face_topo.row(i);
@@ -68,7 +70,7 @@ CalculatePFPX(const Eigen::Vector3d &e0, const Eigen::Vector3d &e1, const Eigen:
 }
 
 template<class Data>
-VectorXd ClothPhysics::GetPotentialGradient(const Data* data, const Ref<const VectorXd>& x) const {
+VectorXd ClothEnergyModel::GetPotentialGradient(const Data* data, const Ref<const VectorXd>& x) const {
     VectorXd gradient(x.size());
     gradient.setZero();
     for (int i = 0; i < data->_num_triangles; i++) {
@@ -148,7 +150,7 @@ VectorXd ClothPhysics::GetPotentialGradient(const Data* data, const Ref<const Ve
 #include "Timer.h"
 
 template<class Data>
-void ClothPhysics::GetPotentialHessian(const Data* data, const Ref<const VectorXd>& x, COO &coo, int x_offset, int y_offset) const {
+void ClothEnergyModel::GetPotentialHessian(const Data* data, const Ref<const VectorXd>& x, COO &coo, int x_offset, int y_offset) const {
 	const double k_stretch = data->_k_stretch;
 	const double k_shear = data->_k_shear;
 	const auto& stretch_u = data->_stretch_u;
