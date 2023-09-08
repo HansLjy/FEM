@@ -1,6 +1,12 @@
-#include "System.h"
+#include "GeneralSystem.hpp"
 
-System::System(const nlohmann::json &config) {
+std::vector<Object *>& GeneralSystem::GetObjs() {
+	return _objs;
+}
+
+
+
+GeneralSystem::GeneralSystem(const nlohmann::json &config) {
     const auto& objects_config = config["objects"];
     for (const auto& object_config : objects_config) {
         AddObject(
@@ -16,7 +22,7 @@ System::System(const nlohmann::json &config) {
     }
 }
 
-int System::AddObject(Object* obj, const std::string &name) {
+int GeneralSystem::AddObject(Object* obj, const std::string &name) {
     int new_idx = _objs.size();
     auto result = _index.insert(std::pair<std::string, int>(name, new_idx));
     if (!result.second) {
@@ -27,7 +33,7 @@ int System::AddObject(Object* obj, const std::string &name) {
     return new_idx;
 }
 
-int System::GetIndex(const std::string &name) const {
+int GeneralSystem::GetIndex(const std::string &name) const {
     const auto& result = _index.find(name);
     if (result == _index.end()) {
         spdlog::error("Name {} does not correspond to any objects in the system", name);
@@ -36,13 +42,13 @@ int System::GetIndex(const std::string &name) const {
     return (*result).second;
 }
 
-void System::Initialize(const json &config) {
+void GeneralSystem::Initialize(const json &config) {
 	for (auto& obj : _objs) {
 		obj->Initialize();
 	}
 }
 
-System::~System(){
+GeneralSystem::~GeneralSystem(){
     for (const auto& obj : _objs) {
         delete obj;
     }

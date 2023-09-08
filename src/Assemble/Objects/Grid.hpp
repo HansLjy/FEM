@@ -9,4 +9,3 @@
 #include "ExternalForce/SampledObjectFixtureForce.hpp"
 
 using Grid = ConcreteObject<GridData, GridData, GridCoordinate, SampledObjectMassModel, GridEnergyModel, GridShape, NullCollisionShape>;
-

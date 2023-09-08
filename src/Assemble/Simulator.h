@@ -6,7 +6,7 @@
 #define FEM_SIMULATOR_H
 
 #include "GUI/GUI.hpp"
-#include "System.h"
+#include "System"
 #include "TimeStepper/TimeStepper.hpp"
 
 #include <string>

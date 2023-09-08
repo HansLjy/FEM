@@ -5,7 +5,7 @@ template<>
 Factory<ExternalForce<GridData>>* Factory<ExternalForce<GridData>>::_the_factory = nullptr;
 
 namespace {
-	const bool coarse_grid_registered = Factory<Object>::GetInstance()->Register("grid", [](const json& config) {
+	const bool grid_registered = Factory<Object>::GetInstance()->Register("grid", [](const json& config) {
 		return new Grid(config);
 	});
 	const bool gravity_registered = Factory<ExternalForce<GridData>>::GetInstance()->Register("gravity", [](const json& config) {

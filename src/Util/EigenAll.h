@@ -7,6 +7,8 @@
 #include <Eigen/Core>
 #include <fstream>
 
+using Eigen::Dynamic;
+
 using Eigen::Matrix;
 using Eigen::Vector;
 using Eigen::MatrixXd;
@@ -25,13 +27,15 @@ using Eigen::MatrixXi;
 
 using Eigen::Vector3i;
 
+using MatrixX3i = Eigen::Matrix<int, Dynamic, 3>;
+using MatrixX2i = Eigen::Matrix<int, Dynamic, 2>;
+
 using Eigen::RowVector3i;
 using Eigen::RowVector2i;
 using Eigen::RowVector4i;
 
 using Eigen::Ref;
 
-using Eigen::Dynamic;
 
 typedef Eigen::Vector<double, 5> Vector5d;
 typedef Eigen::Matrix<double, 5, 5> Matrix5d;

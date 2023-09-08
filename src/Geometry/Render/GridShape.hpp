@@ -6,6 +6,7 @@
 class GridShape : public RenderShape {
 public:
 	explicit GridShape(const json& config) : RenderShape(config) {}
+	GridShape(bool have_bounding_box) : RenderShape(have_bounding_box, false) {}
 
 	template<class Data> void GetRenderVertices(const Data *obj, MatrixXd &vertices) const {
 		vertices = StackVector<double, 3>(obj->_proxy->_x.head(obj->_proxy->_dof));

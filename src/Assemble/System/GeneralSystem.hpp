@@ -5,19 +5,17 @@
 #ifndef FEM_SYSTEM_H
 #define FEM_SYSTEM_H
 
-#include "Object.hpp"
-#include "JsonUtil.h"
+#include "System.hpp"
 #include <string>
 #include <map>
 #include <vector>
 
-struct System final {
-    explicit System(const json& config);
+struct GeneralSystem : public System {
+    explicit GeneralSystem(const json& config);
+	~GeneralSystem();
+	
     void Initialize(const json &config);
-    System(const System& rhs) = delete;
-    ~System();
-
-    std::vector<Object*> _objs;
+	std::vector<Object *> & GetObjs() override;
 
 protected:
 	//<- id for object, -1 if failure
@@ -25,6 +23,7 @@ protected:
     int GetIndex(const std::string& name) const;
 
     std::map<std::string, int> _index;
+    std::vector<Object*> _objs;
 };
 
 #endif //FEM_SYSTEM_H

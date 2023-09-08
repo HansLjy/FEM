@@ -5,21 +5,22 @@
 #ifndef FEM_TIMESTEPPER_H
 #define FEM_TIMESTEPPER_H
 
-#include "System.h"
+#include "System/System.hpp"
 
 class TimeStepper {
 public:
-    explicit TimeStepper(const json& config)
-        : _target_config(config["target"]) {}
-
-	virtual void Bind(System* system);
-    virtual void Step(double h) const = 0;
-    virtual ~TimeStepper() = default;
+	TimeStepper() = default;
 	TimeStepper(const TimeStepper& rhs) = delete;
+
+	virtual void Bind(System* system) {
+		_system = system;
+	}
+
+    virtual void Step(double h) = 0;
+    virtual ~TimeStepper() = default;
 
 protected:
     System* _system = nullptr;
-    json _target_config;
 };
 
 #endif //FEM_TIMESTEPPER_H

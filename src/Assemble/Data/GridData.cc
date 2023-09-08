@@ -42,12 +42,12 @@ GridData::GridData(
 	Update();
 }
 
-void GridData::AddFace(int id1, int id2, int id3) {
-	_proxy->AddFace(id1, id2, id3);
+void GridData::AddFace() {
+	_proxy->AddFace();
 }
 
-void GridData::AddFace(int id1, int id2, const Vector3d& position) {
-	_proxy->AddFace(id1, id2, position);
+void GridData::AddFace(const Vector3d& position) {
+	_proxy->AddFace(position);
 }
 
 void GridData::Update() {

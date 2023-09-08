@@ -25,12 +25,20 @@ struct DynamicSampledObjectData : public SampledObjectData {
 	DynamicSampledObjectData(const std::string& filename, double density, int IFN);
 	DynamicSampledObjectData(const VectorXd& x, double density, const MatrixXi& topo, int IFN);
 
-	void AddFace(int id1, int id2, int id3);
-	void AddFace(int id1, int id2, const Vector3d& position);
+	/**
+	 * The topos are assumed to be consistent with the order
+	 * of adding triangles. So when faces are added, there
+	 * is no need to specify the ids of the faces.
+	 * 
+	 */
+	void AddFace();
+	void AddFace(const Vector3d& position);
 
 	double _density;
+	VectorXd _mass_incrementals;
 	VectorXd _x_rest;
 
 protected:
 	void SetIFN(int IFN);
+	void GenerateMassIncrementals();
 };

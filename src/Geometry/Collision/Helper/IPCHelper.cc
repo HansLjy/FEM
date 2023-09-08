@@ -2,45 +2,27 @@
 // Created by hansljy on 12/2/22.
 //
 
-#include "IPCBarrierTarget.h"
+#include "IPCHelper.hpp"
 #include "Collision/CollisionUtility.h"
 #include "spdlog/spdlog.h"
 #include "Collision/CollisionShape/CollisionShape.h"
 
-IPCBarrierTarget::IPCBarrierTarget(const std::vector<Object*>& objs, int begin, int end, const json& config)
-    : Target(objs, begin, end, config),
-      _d_hat(config["d-hat"]),
+IPCHelper::IPCHelper(const json& config)
+    : _d_hat(config["d-hat"]),
 	  _kappa(config["kappa"]),
       _ccd(Factory<CCD>::GetInstance()->GetProduct(config["ccd"]["type"], config["ccd"])),
 	  _edge_hash_table(config["hashing"]["grid-size"], config["hashing"]["hash-table-size"]),
 	  _vertex_hash_table(config["hashing"]["grid-size"], config["hashing"]["hash-table-size"]) {}
 
-double IPCBarrierTarget::GetPotentialEnergy(const Ref<const Eigen::VectorXd> &x) const {
-	return Target::GetPotentialEnergy(x) + GetBarrierEnergy();
-}
-
-void IPCBarrierTarget::GetPotentialEnergyGradient(const Ref<const Eigen::VectorXd> &x, Ref<Eigen::VectorXd> gradient) const {
-	Target::GetPotentialEnergyGradient(x, gradient);
-	gradient += GetBarrierEnergyGradient();
-}
-
-void IPCBarrierTarget::GetPotentialEnergyHessian(const Ref<const Eigen::VectorXd> &x, COO &coo, int offset_x, int offset_y) const {
-	Target::GetPotentialEnergyHessian(x, coo, offset_x, offset_y);
-	GetBarrierEnergyHessian(coo, offset_x, offset_y);
-}
-
 #define PROCESS_CONSTRAINT_PAIR(Initialization, VF, EE) \
     for (const auto& constraint_pair : _constraint_set) {\
+		const int id1 = constraint_pair._obj_id1;\
+		const int id2 = constraint_pair._obj_id2;\
         const auto obj1 = _objs[constraint_pair._obj_id1];\
         const auto obj2 = _objs[constraint_pair._obj_id2];\
 		\
         const auto& vertices1 = obj1->GetCollisionVertices();\
         const auto& vertices2 = obj2->GetCollisionVertices();\
-		\
-		const auto& rotation1 = obj1->GetFrameRotation();\
-		const auto& rotation2 = obj2->GetFrameRotation();\
-		const auto& translation1 = obj1->GetFrameX();\
-		const auto& translation2 = obj2->GetFrameX();\
         \
         Initialization \
         switch (constraint_pair._type) {\
@@ -70,7 +52,7 @@ void IPCBarrierTarget::GetPotentialEnergyHessian(const Ref<const Eigen::VectorXd
         }\
     }
 
-double IPCBarrierTarget::GetBarrierEnergy() const {
+double IPCHelper::GetBarrierEnergy() const {
     double barrier_energy = 0;
     PROCESS_CONSTRAINT_PAIR(
         ,
@@ -80,13 +62,13 @@ double IPCBarrierTarget::GetBarrierEnergy() const {
     return barrier_energy * _kappa;
 }
 
-VectorXd IPCBarrierTarget::GetBarrierEnergyGradient() const {
-    VectorXd gradient(GetDOF());
+VectorXd IPCHelper::GetBarrierEnergyGradient() const {
+    VectorXd gradient(_dof);
     gradient.setZero();
 
     PROCESS_CONSTRAINT_PAIR (
-        const int dof1 = obj1->GetDOF();
-        const int dof2 = obj2->GetDOF();
+        const int dof1 = _dofs[id1];
+        const int dof2 = _dofs[id2];
         const int offset1 = _offsets[constraint_pair._obj_id1];
         const int offset2 = _offsets[constraint_pair._obj_id2];,
 
@@ -107,7 +89,7 @@ VectorXd IPCBarrierTarget::GetBarrierEnergyGradient() const {
     return gradient * _kappa;
 }
 
-void IPCBarrierTarget::GetBarrierEnergyHessian(COO &coo, int offset_x, int offset_y) const {
+void IPCHelper::GetBarrierEnergyHessian(COO &coo, int offset_x, int offset_y) const {
     for (const auto& constraint_pair : _constraint_set) {
         const auto obj1 = _objs[constraint_pair._obj_id1];
         const auto obj2 = _objs[constraint_pair._obj_id2];
@@ -132,7 +114,7 @@ void IPCBarrierTarget::GetBarrierEnergyHessian(COO &coo, int offset_x, int offse
                 
                 const int offset[4] = {offset1, offset2, offset2, offset2};
 				const int index[4] = {vertex_index, face_index(0), face_index(1), face_index(2)};
-                const Object* shape[4] = {obj1, obj2, obj2, obj2};
+                const CollisionShapeInterface* shape[4] = {obj1, obj2, obj2, obj2};
 
 				for (int i = 0, ii = 0; i < 4; i++, ii += 3) {
 					for (int j = 0, jj = 0; j < 4; j++, jj += 3) {
@@ -159,7 +141,7 @@ void IPCBarrierTarget::GetBarrierEnergyHessian(COO &coo, int offset_x, int offse
 
                 const int offset[4] = {offset1, offset1, offset2, offset2};
 				const int index[4] = {edge_index1(0), edge_index1(1), edge_index2(0), edge_index2(1)};
-                const Object* shape[4] = {obj1, obj1, obj2, obj2};
+                const CollisionShapeInterface* shape[4] = {obj1, obj1, obj2, obj2};
 
 				for (int i = 0, ii = 0; i < 4; i++, ii += 3) {
 					for (int j = 0, jj = 0; j < 4; j++, jj += 3) {
@@ -175,51 +157,47 @@ void IPCBarrierTarget::GetBarrierEnergyHessian(COO &coo, int offset_x, int offse
     }
 }
 
-double IPCBarrierTarget::GetMaxStep(const Eigen::VectorXd &p) {
+double IPCHelper::GetMaxStep(const Eigen::VectorXd &p) {
     double max_step_inside = 1;
 
 	PROCESS_CONSTRAINT_PAIR(
 		const int offset1 = _offsets[constraint_pair._obj_id1];
-		const int dof1 = obj1->GetDOF();
+		const int dof1 = _dofs[id1];
 		const auto& p1 = p.segment(offset1, dof1);
 		const int offset2 = _offsets[constraint_pair._obj_id2];
-		const int dof2 = obj2->GetDOF();
+		const int dof2 = _dofs[id2];
 		const auto& p2 = p.segment(offset2, dof2);,
 
 		max_step_inside = std::min(
 			max_step_inside,
 			_ccd->VertexFaceCollision(
-				rotation1 * vertex + translation1,
-				rotation2 * face1 + translation2,
-				rotation2 * face2 + translation2,
-				rotation2 * face3 + translation2,
-				rotation1 * obj1->GetCollisionVertexVelocity(p1, vertex_index),
-				rotation2 * obj2->GetCollisionVertexVelocity(p2, face_index(0)),
-				rotation2 * obj2->GetCollisionVertexVelocity(p2, face_index(1)),
-				rotation2 * obj2->GetCollisionVertexVelocity(p2, face_index(2))
+				vertex, face1, face2, face3,
+				obj1->GetCollisionVertexVelocity(p1, vertex_index),
+				obj2->GetCollisionVertexVelocity(p2, face_index(0)),
+				obj2->GetCollisionVertexVelocity(p2, face_index(1)),
+				obj2->GetCollisionVertexVelocity(p2, face_index(2))
 			)
 		);,
 
 		max_step_inside = std::min(
 			max_step_inside,
 			_ccd->EdgeEdgeCollision(
-				rotation1 * edge11 + translation1,
-				rotation1 * edge12 + translation1,
-				rotation2 * edge21 + translation2,
-				rotation2 * edge22 + translation2,
-				rotation1 * obj1->GetCollisionVertexVelocity(p1, edge_index1(0)),
-				rotation1 * obj1->GetCollisionVertexVelocity(p1, edge_index1(1)),
-				rotation2 * obj2->GetCollisionVertexVelocity(p2, edge_index2(0)),
-				rotation2 * obj2->GetCollisionVertexVelocity(p2, edge_index2(1))
+				edge11, edge12, edge21, edge22,
+				obj1->GetCollisionVertexVelocity(p1, edge_index1(0)),
+				obj1->GetCollisionVertexVelocity(p1, edge_index1(1)),
+				obj2->GetCollisionVertexVelocity(p2, edge_index2(0)),
+				obj2->GetCollisionVertexVelocity(p2, edge_index2(1))
 			)
 		);
 	)
 
 	double max_velocity = 0;
 	int cur_offset = 0;
+	int cur_id = 0;
 	for (const auto obj : _objs) {
-		max_velocity = std::max(max_velocity, obj->GetMaxVelocity(p.segment(cur_offset, obj->GetDOF())));
-		cur_offset += obj->GetDOF();
+		max_velocity = std::max(max_velocity, obj->GetMaxVelocity(p.segment(cur_offset, _dofs[cur_id])));
+		cur_offset += _dofs[cur_id];
+		cur_id++;
 	}
 
 	double max_step_outside = max_velocity > 0 ? _d_hat / (2 * max_velocity) : 1;
@@ -245,14 +223,16 @@ double IPCBarrierTarget::GetMaxStep(const Eigen::VectorXd &p) {
 	// }
 }
 
-void IPCBarrierTarget::ComputeConstraintSet(const Eigen::VectorXd &x) {
+void IPCHelper::ComputeConstraintSet(const Eigen::VectorXd &x) {
 	    /* insert into hash table */
 	_constraint_set.clear();
 
     int cur_offset = 0;
+	int cur_id = 0;
 	for (auto obj : _objs) {
-		obj->ComputeCollisionShape(x.segment(cur_offset, obj->GetDOF()));
-		cur_offset += obj->GetDOF();
+		obj->ComputeCollisionShape(x.segment(cur_offset, _dofs[cur_id]));
+		cur_offset += _dofs[cur_id];
+		cur_id++;
 	}
     
 	_time_stamp++;
@@ -260,9 +240,6 @@ void IPCBarrierTarget::ComputeConstraintSet(const Eigen::VectorXd &x) {
 	cur_offset = 0;
     int obj_id = 0;
     for (auto obj : _objs) {
-        const Matrix3d rotation = obj->GetFrameRotation();
-        const Vector3d translation = obj->GetFrameX();
-
 		const auto& vertices = obj->GetCollisionVertices();
 		const auto& face_topo = obj->GetCollisionFaceTopo();
 		const auto& edge_topo = obj->GetCollisionEdgeTopo();
@@ -271,7 +248,7 @@ void IPCBarrierTarget::ComputeConstraintSet(const Eigen::VectorXd &x) {
         const int num_edges = edge_topo.rows();
 
         for (int i = 0; i < num_vertices; i++) {
-            Vector3d vertice = rotation * vertices.row(i).transpose() + translation;
+            Vector3d vertice = vertices.row(i).transpose();
             _vertex_hash_table.Insert(
                 vertice,
                 VertexPrimitiveInfo {obj_id, i, vertice},
@@ -280,8 +257,8 @@ void IPCBarrierTarget::ComputeConstraintSet(const Eigen::VectorXd &x) {
         }
 
         for (int i = 0; i < num_edges; i++) {
-            Vector3d edge_vertex1 = rotation * vertices.row(edge_topo(i, 0)).transpose() + translation;
-            Vector3d edge_vertex2 = rotation * vertices.row(edge_topo(i, 1)).transpose() + translation;
+            Vector3d edge_vertex1 = vertices.row(edge_topo(i, 0)).transpose();
+            Vector3d edge_vertex2 = vertices.row(edge_topo(i, 1)).transpose();
             Vector3d bb_min = edge_vertex1.cwiseMin(edge_vertex2);
             Vector3d bb_max = edge_vertex1.cwiseMax(edge_vertex2);
 
@@ -291,7 +268,7 @@ void IPCBarrierTarget::ComputeConstraintSet(const Eigen::VectorXd &x) {
                 _time_stamp
             );
         }
-        cur_offset += obj->GetDOF();
+        cur_offset += _dofs[obj_id];
         obj_id++;
     }
 
@@ -299,9 +276,6 @@ void IPCBarrierTarget::ComputeConstraintSet(const Eigen::VectorXd &x) {
 
     obj_id = 0;
     for (auto obj : _objs) {
-        const Matrix3d rotation = obj->GetFrameRotation();
-        const Vector3d translation = obj->GetFrameX();
-
 		const auto& vertices = obj->GetCollisionVertices();
 		const auto& face_topo = obj->GetCollisionFaceTopo();
 		const auto& edge_topo = obj->GetCollisionEdgeTopo();
@@ -312,9 +286,9 @@ void IPCBarrierTarget::ComputeConstraintSet(const Eigen::VectorXd &x) {
         /* vertex-face collision */
         for (int i = 0; i < num_faces; i++) {
             const auto topo = face_topo.row(i);
-            Vector3d face_vertex1 = rotation * vertices.row(topo(0)).transpose() + translation;
-            Vector3d face_vertex2 = rotation * vertices.row(topo(1)).transpose() + translation;
-            Vector3d face_vertex3 = rotation * vertices.row(topo(2)).transpose() + translation;
+            Vector3d face_vertex1 = vertices.row(topo(0)).transpose();
+            Vector3d face_vertex2 = vertices.row(topo(1)).transpose();
+            Vector3d face_vertex3 = vertices.row(topo(2)).transpose();
 
             Vector3d bb_min = face_vertex1.cwiseMin(face_vertex2.cwiseMin(face_vertex3)) - Vector3d::Constant(_d_hat);
             Vector3d bb_max = face_vertex1.cwiseMax(face_vertex2.cwiseMax(face_vertex3)) + Vector3d::Constant(_d_hat);
@@ -338,8 +312,8 @@ void IPCBarrierTarget::ComputeConstraintSet(const Eigen::VectorXd &x) {
         for (int i = 0; i < num_edges; i++) {
             const auto topo = edge_topo.row(i);
 
-            Vector3d edge_vertex1 = rotation * vertices.row(topo(0)).transpose() + translation;
-            Vector3d edge_vertex2 = rotation * vertices.row(topo(1)).transpose() + translation;
+            Vector3d edge_vertex1 = vertices.row(topo(0)).transpose();
+            Vector3d edge_vertex2 = vertices.row(topo(1)).transpose();
 
             Vector3d bb_min = edge_vertex1.cwiseMin(edge_vertex2) - Vector3d::Constant(_d_hat);
             Vector3d bb_max = edge_vertex1.cwiseMax(edge_vertex2) + Vector3d::Constant(_d_hat);
@@ -381,27 +355,24 @@ void IPCBarrierTarget::ComputeConstraintSet(const Eigen::VectorXd &x) {
 	// }
 }
 
-double IPCBarrierTarget::GetFullCCD(const VectorXd& p) {
+double IPCHelper::GetFullCCD(const VectorXd& p) {
 	// FULL CCD using hashing
 	_time_stamp++;
 
 	int cur_offset = 0;
     int obj_id = 0;
     for (auto obj : _objs) {
-        const Matrix3d rotation = obj->GetFrameRotation();
-        const Vector3d translation = obj->GetFrameX();
-
 		const auto& vertices = obj->GetCollisionVertices();
 		const auto& face_topo = obj->GetCollisionFaceTopo();
 		const auto& edge_topo = obj->GetCollisionEdgeTopo();
-		const auto& p_obj = p.segment(cur_offset, obj->GetDOF());
+		const auto& p_obj = p.segment(cur_offset, _dofs[obj_id]);
         const int num_vertices = vertices.rows();
         const int num_faces = face_topo.rows();
         const int num_edges = edge_topo.rows();
 
         for (int i = 0; i < num_vertices; i++) {
-            Vector3d vertice = rotation * vertices.row(i).transpose() + translation;
-			Vector3d vertice_next = rotation * (vertices.row(i).transpose() + obj->GetCollisionVertexVelocity(p_obj, i)) + translation;
+            Vector3d vertice = vertices.row(i).transpose();
+			Vector3d vertice_next = (vertices.row(i).transpose() + obj->GetCollisionVertexVelocity(p_obj, i));
 
 			Vector3d min_point = vertice.cwiseMin(vertice_next);
 			Vector3d max_point = vertice.cwiseMax(vertice_next);
@@ -414,10 +385,10 @@ double IPCBarrierTarget::GetFullCCD(const VectorXd& p) {
         }
 
         for (int i = 0; i < num_edges; i++) {
-            Vector3d edge_vertex1 = rotation * vertices.row(edge_topo(i, 0)).transpose() + translation;
-			Vector3d edge_vertex_next1 = rotation * (vertices.row(edge_topo(i, 0)).transpose() + obj->GetCollisionVertexVelocity(p_obj, edge_topo(i, 0))) + translation;
-            Vector3d edge_vertex2 = rotation * vertices.row(edge_topo(i, 1)).transpose() + translation;
-			Vector3d edge_vertex_next2 = rotation * (vertices.row(edge_topo(i, 1)).transpose() + obj->GetCollisionVertexVelocity(p_obj, edge_topo(i, 1))) + translation;
+            Vector3d edge_vertex1 = vertices.row(edge_topo(i, 0)).transpose();
+			Vector3d edge_vertex_next1 = vertices.row(edge_topo(i, 0)).transpose() + obj->GetCollisionVertexVelocity(p_obj, edge_topo(i, 0));
+            Vector3d edge_vertex2 = vertices.row(edge_topo(i, 1)).transpose();
+			Vector3d edge_vertex_next2 = vertices.row(edge_topo(i, 1)).transpose() + obj->GetCollisionVertexVelocity(p_obj, edge_topo(i, 1));
             Vector3d bb_min = edge_vertex1.cwiseMin(edge_vertex_next1).cwiseMin(edge_vertex2.cwiseMin(edge_vertex_next2));
             Vector3d bb_max = edge_vertex1.cwiseMax(edge_vertex_next1).cwiseMax(edge_vertex2.cwiseMax(edge_vertex_next2));
 
@@ -427,7 +398,7 @@ double IPCBarrierTarget::GetFullCCD(const VectorXd& p) {
                 _time_stamp
             );
         }
-        cur_offset += obj->GetDOF();
+        cur_offset += _offsets[obj_id];
         obj_id++;
     }
 
@@ -439,13 +410,10 @@ double IPCBarrierTarget::GetFullCCD(const VectorXd& p) {
 	double ttc = 1;
 
     for (auto obj : _objs) {
-        const Matrix3d rotation = obj->GetFrameRotation();
-        const Vector3d translation = obj->GetFrameX();
-
 		const auto& vertices = obj->GetCollisionVertices();
 		const auto& face_topo = obj->GetCollisionFaceTopo();
 		const auto& edge_topo = obj->GetCollisionEdgeTopo();
-		const auto& p_obj = p.segment(cur_offset, obj->GetDOF());
+		const auto& p_obj = p.segment(cur_offset, _dofs[obj_id]);
 
         const int num_faces = face_topo.rows();
         const int num_edges = edge_topo.rows();
@@ -453,14 +421,14 @@ double IPCBarrierTarget::GetFullCCD(const VectorXd& p) {
         /* vertex-face collision */
         for (int i = 0; i < num_faces; i++) {
             const auto topo = face_topo.row(i);
-            Vector3d face_vertex1 = rotation * vertices.row(topo(0)).transpose() + translation;
-			Vector3d face_vertex_v1 = rotation * obj->GetCollisionVertexVelocity(p_obj, topo(0));
+            Vector3d face_vertex1 = vertices.row(topo(0)).transpose();
+			Vector3d face_vertex_v1 = obj->GetCollisionVertexVelocity(p_obj, topo(0));
             Vector3d face_vertex_next1 = face_vertex1 + face_vertex_v1;
-            Vector3d face_vertex2 = rotation * vertices.row(topo(1)).transpose() + translation;
-			Vector3d face_vertex_v2 = rotation * obj->GetCollisionVertexVelocity(p_obj, topo(1));
+            Vector3d face_vertex2 = vertices.row(topo(1)).transpose();
+			Vector3d face_vertex_v2 = obj->GetCollisionVertexVelocity(p_obj, topo(1));
             Vector3d face_vertex_next2 = face_vertex2 + face_vertex_v2;
-            Vector3d face_vertex3 = rotation * vertices.row(topo(2)).transpose() + translation;
-			Vector3d face_vertex_v3 = rotation * obj->GetCollisionVertexVelocity(p_obj, topo(2));
+            Vector3d face_vertex3 = vertices.row(topo(2)).transpose();
+			Vector3d face_vertex_v3 = obj->GetCollisionVertexVelocity(p_obj, topo(2));
             Vector3d face_vertex_next3 = face_vertex3 + face_vertex_v3;
 
             Vector3d bb_min = face_vertex1.cwiseMin(face_vertex2.cwiseMin(face_vertex3)).cwiseMin(face_vertex_next1.cwiseMin(face_vertex_next2.cwiseMin(face_vertex_next3)));
@@ -472,8 +440,8 @@ double IPCBarrierTarget::GetFullCCD(const VectorXd& p) {
 					continue;
 				}
 				const auto other_obj = _objs[candidate._obj_id];
-				const Vector3d vertex = other_obj->GetFrameRotation() * other_obj->GetCollisionVertices().row(candidate._primitive_id).transpose() + other_obj->GetFrameX();
-				const Vector3d vertex_v = other_obj->GetFrameRotation() * other_obj->GetCollisionVertexVelocity(p.segment(_offsets[candidate._obj_id], other_obj->GetDOF()), candidate._primitive_id);
+				const Vector3d vertex = other_obj->GetCollisionVertices().row(candidate._primitive_id).transpose();
+				const Vector3d vertex_v = other_obj->GetCollisionVertexVelocity(p.segment(_offsets[candidate._obj_id], _dofs[candidate._obj_id]), candidate._primitive_id);
 
 				double new_ttc =
 					_ccd->VertexFaceCollision(
@@ -498,11 +466,11 @@ double IPCBarrierTarget::GetFullCCD(const VectorXd& p) {
         for (int i = 0; i < num_edges; i++) {
             const auto topo = edge_topo.row(i);
 
-            Vector3d edge_vertex1 = rotation * vertices.row(topo(0)).transpose() + translation;
-			Vector3d edge_vertex_v1 = rotation * obj->GetCollisionVertexVelocity(p_obj, topo(0));
+            Vector3d edge_vertex1 = vertices.row(topo(0)).transpose();
+			Vector3d edge_vertex_v1 = obj->GetCollisionVertexVelocity(p_obj, topo(0));
 			Vector3d edge_vertex_next1 = edge_vertex1 + edge_vertex_v1;
-            Vector3d edge_vertex2 = rotation * vertices.row(topo(1)).transpose() + translation;
-			Vector3d edge_vertex_v2 = rotation * obj->GetCollisionVertexVelocity(p_obj, topo(1));
+            Vector3d edge_vertex2 = vertices.row(topo(1)).transpose();
+			Vector3d edge_vertex_v2 = obj->GetCollisionVertexVelocity(p_obj, topo(1));
 			Vector3d edge_vertex_next2 = edge_vertex2 + edge_vertex_v2;
 			
             Vector3d bb_min = edge_vertex1.cwiseMin(edge_vertex_next1).cwiseMin(edge_vertex2.cwiseMin(edge_vertex_next2));
@@ -520,12 +488,13 @@ double IPCBarrierTarget::GetFullCCD(const VectorXd& p) {
 					}
 				}
 				const auto other_obj = _objs[candidate._obj_id];
-				const auto other_p_obj = p.segment(_offsets[candidate._obj_id], other_obj->GetDOF());
+				const int other_obj_dof = _dofs[candidate._obj_id];
+				const auto other_p_obj = p.segment(_offsets[candidate._obj_id], other_obj_dof);
 				const auto other_topo = other_obj->GetCollisionEdgeTopo().row(candidate._primitive_id);
-				Vector3d other_edge_vertex1 = other_obj->GetFrameRotation() * other_obj->GetCollisionVertices().row(other_topo(0)).transpose() + other_obj->GetFrameX();
-				Vector3d other_edge_vertex_v1 = other_obj->GetFrameRotation() * other_obj->GetCollisionVertexVelocity(other_p_obj, other_topo(0));
-				Vector3d other_edge_vertex2 = other_obj->GetFrameRotation() * other_obj->GetCollisionVertices().row(other_topo(1)).transpose() + other_obj->GetFrameX();
-				Vector3d other_edge_vertex_v2 = other_obj->GetFrameRotation() * other_obj->GetCollisionVertexVelocity(other_p_obj, other_topo(1));
+				Vector3d other_edge_vertex1 = other_obj->GetCollisionVertices().row(other_topo(0)).transpose();
+				Vector3d other_edge_vertex_v1 = other_obj->GetCollisionVertexVelocity(other_p_obj, other_topo(0));
+				Vector3d other_edge_vertex2 = other_obj->GetCollisionVertices().row(other_topo(1)).transpose();
+				Vector3d other_edge_vertex_v2 = other_obj->GetCollisionVertexVelocity(other_p_obj, other_topo(1));
 				
 				double new_ttc = 
 					_ccd->EdgeEdgeCollision(
@@ -543,7 +512,7 @@ double IPCBarrierTarget::GetFullCCD(const VectorXd& p) {
 				}
             }
         }
-		cur_offset += obj->GetDOF();
+		cur_offset += _dofs[obj_id];
 		obj_id++;
     }
 
@@ -552,12 +521,12 @@ double IPCBarrierTarget::GetFullCCD(const VectorXd& p) {
 	return ttc;
 }
 
-double IPCBarrierTarget::GetVFBarrierEnergy(const Vector3d& vertex, const Vector3d& face1, const Vector3d& face2, const Vector3d& face3) const {
+double IPCHelper::GetVFBarrierEnergy(const Vector3d& vertex, const Vector3d& face1, const Vector3d& face2, const Vector3d& face3) const {
     double d = GetVFDistance(vertex, face1, face2, face3);
     return -(d - _d_hat) * (d - _d_hat) * log(d / _d_hat);
 }
 
-Vector12d IPCBarrierTarget::GetVFBarrierEnergyGradient(const Vector3d& vertex, const Vector3d& face1, const Vector3d& face2, const Vector3d& face3) const {
+Vector12d IPCHelper::GetVFBarrierEnergyGradient(const Vector3d& vertex, const Vector3d& face1, const Vector3d& face2, const Vector3d& face3) const {
     double d = GetVFDistance(vertex, face1, face2, face3);
     Vector12d pdpx = GetVFDistanceGradient(vertex, face1, face2, face3);
 
@@ -565,7 +534,7 @@ Vector12d IPCBarrierTarget::GetVFBarrierEnergyGradient(const Vector3d& vertex, c
     return  pbpd * pdpx;
 }
 
-Matrix12d IPCBarrierTarget::GetVFBarrierEnergyHessian(const Vector3d& vertex, const Vector3d& face1, const Vector3d& face2, const Vector3d& face3) const {
+Matrix12d IPCHelper::GetVFBarrierEnergyHessian(const Vector3d& vertex, const Vector3d& face1, const Vector3d& face2, const Vector3d& face3) const {
     double d = GetVFDistance(vertex, face1, face2, face3);
     Vector12d pdpx = GetVFDistanceGradient(vertex, face1, face2, face3);
     Matrix12d p2dpx2 = GetVFDistanceHessian(vertex, face1, face2, face3);
@@ -575,12 +544,12 @@ Matrix12d IPCBarrierTarget::GetVFBarrierEnergyHessian(const Vector3d& vertex, co
     return PositiveProject<12>(p2bpd2 * pdpx * pdpx.transpose() + pbpd * p2dpx2);
 }
 
-double IPCBarrierTarget::GetEEBarrierEnergy(const Vector3d& edge11, const Vector3d& edge12, const Vector3d& edge21, const Vector3d& edge22) const {
+double IPCHelper::GetEEBarrierEnergy(const Vector3d& edge11, const Vector3d& edge12, const Vector3d& edge21, const Vector3d& edge22) const {
     double d = GetEEDistance(edge11, edge12, edge21, edge22);
     return -(d - _d_hat) * (d - _d_hat) * log(d / _d_hat);
 }
 
-Vector12d IPCBarrierTarget::GetEEBarrierEnergyGradient(const Vector3d& edge11, const Vector3d& edge12, const Vector3d& edge21, const Vector3d& edge22) const {
+Vector12d IPCHelper::GetEEBarrierEnergyGradient(const Vector3d& edge11, const Vector3d& edge12, const Vector3d& edge21, const Vector3d& edge22) const {
     double d = GetEEDistance(edge11, edge12, edge21, edge22);
     Vector12d pdpx = GetEEDistanceGradient(edge11, edge12, edge21, edge22);
 
@@ -588,7 +557,7 @@ Vector12d IPCBarrierTarget::GetEEBarrierEnergyGradient(const Vector3d& edge11, c
     return  pbpd * pdpx;    
 }
 
-Matrix12d IPCBarrierTarget::GetEEBarrierEnergyHessian(const Vector3d& edge11, const Vector3d& edge12, const Vector3d& edge21, const Vector3d& edge22) const {
+Matrix12d IPCHelper::GetEEBarrierEnergyHessian(const Vector3d& edge11, const Vector3d& edge12, const Vector3d& edge21, const Vector3d& edge22) const {
     double d = GetEEDistance(edge11, edge12, edge21, edge22);
     Vector12d pdpx = GetEEDistanceGradient(edge11, edge12, edge21, edge22);
     Matrix12d p2dpx2 = GetEEDistanceHessian(edge11, edge12, edge21, edge22);
@@ -598,6 +567,6 @@ Matrix12d IPCBarrierTarget::GetEEBarrierEnergyHessian(const Vector3d& edge11, co
     return PositiveProject<12>(p2bpd2 * pdpx * pdpx.transpose() + pbpd * p2dpx2);
 }
 
-IPCBarrierTarget::~IPCBarrierTarget() {
+IPCHelper::~IPCHelper() {
     delete _ccd;
 }

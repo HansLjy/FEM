@@ -4,12 +4,13 @@
 struct GridData : public MassSpringData {
 public:
 	explicit GridData(const json& config);
+	GridData(const GridData& grid_data) = delete;
 	GridData(const std::string& filename, int proxy_IFN, double unit_length_stiffness, double unit_length_diag_stiffness, double unit_ret_stiffness, double grid_size, double grid_density);
 	GridData(const VectorXd& proxy_x, const MatrixXi& proxy_topo, int proxy_IFN, double unit_length_stiffness, double unit_length_diag_stiffness, double unit_ret_stiffness, double grid_size, double grid_density);
 	void Update();
 	void UpdateProxyPosition();
-	void AddFace(int id1, int id2, int id3);
-	void AddFace(int id1, int id2, const Vector3d& position);
+	void AddFace();
+	void AddFace(const Vector3d& position);
 
 	virtual ~GridData();
 	DynamicSampledObjectData* _proxy;

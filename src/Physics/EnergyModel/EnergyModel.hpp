@@ -20,6 +20,7 @@ template <class EnergyModelA, class EnergyModelB>
 class SumOfEnergyModel {
 public:
 	explicit SumOfEnergyModel(const json& config) : _model_a(config["model-1"]), _model_b("model-2") {}
+	SumOfEnergyModel(const EnergyModelA&& a, const EnergyModelB&& b) : _model_a(a), _model_b(b) {}
 
 	template<class Data> void Initialize(const Data* data) {
 		_model_a.Initialize(data);

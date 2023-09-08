@@ -43,7 +43,7 @@ VectorXd GenerateMass3D(const VectorXd& x, double density, const MatrixXi& topo)
 SampledObjectData::SampledObjectData(const std::string& filename, double density, int dimension) : BasicData(VectorXd(0)) {
 	auto file_io = Factory<FileIO>::GetInstance()->GetProduct(filename.substr(filename.find_last_of(".") + 1));
 	MatrixXi topo;
-	file_io->LoadFromFile(MODEL_PATH + filename, _x, topo);
+	file_io->LoadFromFile(MODEL_PATH + filename, true, _x, topo);	// TODO: make 'centered' optional
 	_v = VectorXd::Zero(_x.size());
 	_dof = _x.size();
 	_num_points = _dof / 3;
@@ -116,38 +116,50 @@ void DynamicSampledObjectData::SetIFN(int IFN) {
 	_total_mass = _mass.sum();
 }
 
+void DynamicSampledObjectData::GenerateMassIncrementals() {
+	int num_faces = _face_topo.rows();
+	_mass_incrementals.resize(num_faces);
+	for (int i = 0; i < num_faces; i++) {
+		const RowVector3i vertex_ids = _face_topo.row(i);
+		_mass_incrementals(i) = _density * (_x_rest.segment<3>(vertex_ids[1] * 3) - _x_rest.segment<3>(vertex_ids[0] * 3)).cross(_x_rest.segment<3>(vertex_ids[2] * 3) -_x_rest.segment<3>(vertex_ids[0] * 3)).norm() / 2;
+	}
+}
+
 DynamicSampledObjectData::DynamicSampledObjectData(const std::string& filename, double density, int IFN)
 : SampledObjectData(filename, density, 2), _density(density) {
 	SetIFN(IFN);
+	GenerateMassIncrementals();
 }
 DynamicSampledObjectData::DynamicSampledObjectData(const VectorXd& x, double density, const MatrixXi& topo, int IFN)
 : SampledObjectData(x, density, 2, topo), _density(density) {
 	SetIFN(IFN);
+	GenerateMassIncrementals();
 }
 
-void DynamicSampledObjectData::AddFace(int id1, int id2, const Vector3d &position) {
-	_edge_topo.row(_num_edges++) << id1, _num_points;
-	_edge_topo.row(_num_edges++) << id2, _num_points;
-	_face_topo.row(_num_faces++) << id1, id2, _num_points;
+void DynamicSampledObjectData::AddFace(const Vector3d &position) {
+	const RowVector3i vertex_ids = _face_topo.row(_num_faces);
+	const double mass_increment = _mass_incrementals[_num_faces];
+	_total_mass += mass_increment;
+	const double single_mass_increment = mass_increment / 3;
+	for (int i = 0; i < 3; i++) {
+		_mass(vertex_ids[i]) += single_mass_increment;
+	}
+	_num_faces++;
+	_num_edges += 2;
 	_x.segment<3>(_dof) = position;
 	_v.segment<3>(_dof).setZero();
 	_dof += 3;
-	const double mass_increment = _density * (_x_rest.segment<3>(id2 * 3) - _x_rest.segment<3>(id1 * 3)).cross(_x_rest.segment<3>(_num_points * 3) -_x_rest.segment<3>(id1 * 3)).norm() / 2;
-	_total_mass += mass_increment;
-	const double single_mass_increment = mass_increment / 3;
-	_mass(id1) += single_mass_increment;
-	_mass(id2) += single_mass_increment;
-	_mass(_num_points) += single_mass_increment;
 	_num_points++;
 }
 
-void DynamicSampledObjectData::AddFace(int id1, int id2, int id3) {
-	_edge_topo.row(_num_edges++) << id2, id3;
-	_face_topo.row(_num_faces++) << id1, id2, id3;
-	const double mass_increment = _density * (_x_rest.segment<3>(id2 * 3) - _x_rest.segment<3>(id1 * 3)).cross(_x_rest.segment<3>(id3 * 3) -_x_rest.segment<3>(id1 * 3)).norm() / 2;
+void DynamicSampledObjectData::AddFace() {
+	const RowVector3i vertex_ids = _face_topo.row(_num_faces);
+	const double mass_increment = _mass_incrementals[_num_faces];
 	_total_mass += mass_increment;
 	const double single_mass_increment = mass_increment / 3;
-	_mass(id1) += single_mass_increment;
-	_mass(id2) += single_mass_increment;
-	_mass(id3) += single_mass_increment;
+	for (int i = 0; i < 3; i++) {
+		_mass(vertex_ids[i]) += single_mass_increment;
+	}
+	_num_edges++;
+	_num_faces++;
 }

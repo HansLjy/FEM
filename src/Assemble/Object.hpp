@@ -86,8 +86,8 @@ public:
 template<class Data, class DataForExternalForce, class Coordinate, class MassModel, class EnergyModel, class Render, class Collision>
 class ConcreteObject : public Object, public Data, public EnergyModel, public Render, public Collision, public ExternalForceContainer<DataForExternalForce> {
 public:
-	ConcreteObject() = default;
 	ConcreteObject(const json& config) : Data(config), EnergyModel(config["energy-model"]), Render(config["render"]), Collision(config["collision"]) {}
+	ConcreteObject(const Data&& data, const EnergyModel&& energy_model, const Render&& render, const Collision&& collision) : Data(data), EnergyModel(energy_model), Render(render), Collision(collision) {}
 
 	void Initialize() override {
 		EnergyModel::Initialize(this);

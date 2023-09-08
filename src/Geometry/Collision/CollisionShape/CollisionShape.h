@@ -7,7 +7,19 @@
 #include "Pattern.h"
 #include "BlockMatrix.h"
 
-class CollisionShape {
+class CollisionShapeInterface {
+public:
+	virtual double GetMaxVelocity(const Ref<const VectorXd>& v) const = 0;
+    virtual void ComputeCollisionShape(const Ref<const VectorXd>& x) = 0;
+	virtual const BlockVector& GetVertexDerivative(int idx) const = 0;
+	virtual Vector3d GetCollisionVertexVelocity(const Ref<const VectorXd>& v, int idx) const = 0;
+    virtual const MatrixXd& GetCollisionVertices() const = 0;
+    virtual const MatrixXi& GetCollisionEdgeTopo() const = 0;
+    virtual const MatrixXi& GetCollisionFaceTopo() const = 0;
+	virtual int GetCollisionVerticeNumber() const = 0;
+};
+
+class BasicCollisionShape {
 public:
 	template<class Data> const MatrixXd& GetCollisionVertices(const Data* obj) const {return _collision_vertices;}
 	template<class Data> const MatrixXi& GetCollisionEdgeTopo(const Data* obj) const {return _collision_edge_topo;}
@@ -21,9 +33,10 @@ protected:
 	MatrixXi _collision_face_topo;
 };
 
-class SampledCollisionShape : public CollisionShape {
+class SampledCollisionShape : public BasicCollisionShape {
 public:
 	SampledCollisionShape(const json& config) {}
+	SampledCollisionShape() = default;
 	template<class Data> void Initialize(const Data* obj);
 	template<class Data> void ComputeCollisionShape(const Data* obj, const Ref<const VectorXd>& x);
 	template<class Data> const BlockVector& GetVertexDerivative(const Data* obj, int idx) const;
@@ -54,9 +67,10 @@ protected:
 // 	std::vector<int> _children_vertices_offset;	// sum of #vertices for first N child
 // };
 
-class NullCollisionShape : public CollisionShape {
+class NullCollisionShape : public BasicCollisionShape {
 public:
 	NullCollisionShape(const json& config) {}
+	NullCollisionShape() = default;
 	template<class Data> void Initialize(const Data* data) {
 		_collision_num_points = 0;
 		_collision_vertices = MatrixXd(0, 3);
@@ -73,7 +87,7 @@ protected:
 };
 
 #include "FixedShape/FixedShape.hpp"
-class FixedCollisionShape : public CollisionShape {
+class FixedCollisionShape : public BasicCollisionShape {
 public:
 	FixedCollisionShape(const json& config) : FixedCollisionShape(
 		FixedShapeFactory::Instance()->GetVertices(config["type"], config),

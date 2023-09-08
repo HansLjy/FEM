@@ -5,6 +5,7 @@
 class MassSpringEnergyModel {
 public:
 	MassSpringEnergyModel(const json& config) {}
+	MassSpringEnergyModel() = default;
 	template<class Data> void Initialize(const Data* data) {}
 	template<class Data> double GetPotential(const Data* data, const Ref<const VectorXd> &x) const;
 	template<class Data> VectorXd GetPotentialGradient(const Data* data, const Ref<const VectorXd> &x) const;

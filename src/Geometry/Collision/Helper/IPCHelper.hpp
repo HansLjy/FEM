@@ -1,19 +1,9 @@
-//
-// Created by hansljy on 12/2/22.
-//
+#pragma once
 
-#ifndef FEM_IPCBARRIERTARGET_H
-#define FEM_IPCBARRIERTARGET_H
-
+#include "EigenAll.h"
+#include "Collision/CollisionShape/CollisionShape.h"
 #include "Collision/SpatialHashing/SpatialHashing.hpp"
 #include "Collision/CCD/CCD.h"
-#include "EigenAll.h"
-#include "Object.hpp"
-#include "Target.h"
-
-#include <vector>
-
-class CollisionCulling;
 
 enum class CollisionType {
 	kVertexFace,
@@ -57,34 +47,23 @@ struct VertexPrimitiveInfo {
 	}
 };
 
-/**
- * @brief warning: this is only for sampled body
- */
-class IPCBarrierTarget : public Target {
+class IPCHelper {
 public:
-    IPCBarrierTarget(const std::vector<Object*>& objs, int begin, int end, const json& config);
-    ~IPCBarrierTarget();
+	IPCHelper(const json& config);
+	~IPCHelper();
+	template<class Object> void SetObjects(const typename std::vector<Object*>::const_iterator& begin, const typename std::vector<Object*>::const_iterator& end);
 
-    /**
-     * @note This function will actually compute the collision shape of
-     *       every object in the system, so you don't need to call other
-     *       function to do the job
-     */
-    void ComputeConstraintSet(const Eigen::VectorXd &x);
-
-    double GetPotentialEnergy(const Ref<const Eigen::VectorXd> &x) const override;
-    void GetPotentialEnergyGradient(const Ref<const Eigen::VectorXd> &x, Ref<Eigen::VectorXd> gradient) const override;
-    void GetPotentialEnergyHessian(const Ref<const Eigen::VectorXd> &x, COO &coo, int offset_x, int offset_y) const override;
-
-    double GetMaxStep(const VectorXd& p);
-
-protected:
-	double GetFullCCD(const VectorXd& p);
-
+    void ComputeConstraintSet(const VectorXd &x);
 	double GetBarrierEnergy() const;
 	VectorXd GetBarrierEnergyGradient() const;
 	void GetBarrierEnergyHessian(COO &coo, int offset_x, int offset_y) const;
 
+    double GetMaxStep(const VectorXd& p);
+	
+    std::vector<CollisionInfo> _constraint_set;
+
+protected:
+	double GetFullCCD(const VectorXd& p);
     double GetVFBarrierEnergy(const Vector3d& vertex, const Vector3d& face1, const Vector3d& face2, const Vector3d& face3) const;
     double GetEEBarrierEnergy(const Vector3d& edge11, const Vector3d& edge12, const Vector3d& edge21, const Vector3d& edge22) const;
     Vector12d GetVFBarrierEnergyGradient(const Vector3d& vertex, const Vector3d& face1, const Vector3d& face2, const Vector3d& face3) const;
@@ -92,9 +71,13 @@ protected:
     Matrix12d GetVFBarrierEnergyHessian(const Vector3d& vertex, const Vector3d& face1, const Vector3d& face2, const Vector3d& face3) const;
     Matrix12d GetEEBarrierEnergyHessian(const Vector3d& edge11, const Vector3d& edge12, const Vector3d& edge21, const Vector3d& edge22) const;
 
-    const double _d_hat;
+	int _dof;
+	std::vector<int> _dofs;
+	std::vector<int> _offsets;
+	std::vector<CollisionShapeInterface*> _objs;
+
+    double _d_hat;
 	double _kappa;
-    std::vector<CollisionInfo> _constraint_set;
     CCD* _ccd;
 	SpatialHashing<EdgePrimitiveInfo> _edge_hash_table;
 	SpatialHashing<VertexPrimitiveInfo> _vertex_hash_table;
@@ -102,4 +85,15 @@ protected:
 	unsigned int _time_stamp = 0;
 };
 
-#endif //FEM_IPCBARRIERTARGET_H
+template<class Object>
+void IPCHelper::SetObjects(const typename std::vector<Object*>::const_iterator& begin, const typename std::vector<Object*>::const_iterator& end) {
+	_objs.clear();
+	_dofs.clear();
+	_dof = 0;
+	for (auto itr = begin; itr != end; ++itr) {
+		_objs.push_back(*itr);
+		_dofs.push_back((*itr)->GetDOF());
+		_offsets.push_back(_dof);
+		_dof += (*itr)->GetDOF();
+	}
+}
