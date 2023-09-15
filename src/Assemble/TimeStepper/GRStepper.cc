@@ -31,7 +31,7 @@ void GeometryReconstructStepper::Step(double h) {
 
 	if (_nearly_stop_successive_itrs > 5) {
 		for (const auto& constraint_pair : _ipc->_helper->_constraint_set) {
-			
+			// TODO:
 		}
 	}
 }

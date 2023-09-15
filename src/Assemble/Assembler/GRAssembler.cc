@@ -104,6 +104,61 @@ void GRAssembler::GetExternalForce(Ref<VectorXd> force) const {
 	_general_assembler->GetExternalForce(force);
 }
 
+double GRAssembler::GetFlyingEnergy(const Ref<const VectorXd>& x) const {
+	double energy = 0;
+	for (int i = 0; i < 3; i++) {
+		const int attach_id = _gr_system->_attach_vertex_id[i];
+		if (attach_id != -1) {
+			Vector3d x1 = x.segment<3>(_triangle_offset + i * 3);
+			Vector3d x2 = _gr_system->_reconstructed_mesh->GetVertex(attach_id, x);
+			energy += GetSpringEnergy(x2 - x1, _gr_system->_triangle_fly_stiffness);
+		}
+	}
+	return energy;
+}
+
+void GRAssembler::GetFlyingEnergyGradient(const Ref<const VectorXd>& x, Ref<VectorXd> gradient) const {
+	for (int i = 0; i < 3; i++) {
+		const int attach_id = _gr_system->_attach_vertex_id[i];
+		if (attach_id != -1) {
+			Vector3d x1 = x.segment<3>(_triangle_offset + i * 3);
+			Vector3d x2 = _gr_system->_reconstructed_mesh->GetVertex(attach_id, x);
+			Vector3d local_gradient = GetSpringEnergyGradient(x2 - x1, _gr_system->_triangle_fly_stiffness);
+			_gr_system->_reconstructed_mesh->GetVertexDerivative(attach_id).RightProduct(local_gradient, gradient);
+			gradient.segment<3>(_triangle_offset + i * 3) -= local_gradient;
+		}
+	}
+}
+
+void GRAssembler::GetFlyingEnergyHessian(const Ref<const VectorXd>& x, COO& coo, int offset_x, int offset_y) const {
+	for (int i = 0, i3 = 0; i < 3; i++, i3 += 3) {
+		const int attach_id = _gr_system->_attach_vertex_id[i];
+		if (attach_id != -1) {
+			Vector3d x1 = x.segment<3>(_triangle_offset + i * 3);
+			Vector3d x2 = _gr_system->_reconstructed_mesh->GetVertex(attach_id, x);
+			Matrix3d local_hessian = GetSpringEnergyHessian(x2 - x1, _gr_system->_triangle_fly_stiffness);
+			Matrix6d local_hessian_full;
+			local_hessian_full.block<3, 3>(0, 0) = local_hessian_full.block<3, 3>(3, 3) = local_hessian;
+			local_hessian_full.block<3, 3>(0, 3) = local_hessian_full.block<3, 3>(3, 0) = -local_hessian;
+			local_hessian_full = PositiveProject(local_hessian_full);
+
+			const int offsets[2] = {0, _triangle_offset};
+			const BlockVector object_gradient[] = {
+				_gr_system->_reconstructed_mesh->GetVertexDerivative(attach_id),
+				_gr_system->_new_triangle->GetVertexDerivative(i)
+			};
+
+			for (int j = 0, j3 = 0; j < 2; j++, j3 += 3) {
+				for (int k = 0, k3 = 0; k < 2; k++, k3 += 3) {
+					object_gradient[j].RightProduct(local_hessian_full.block<3, 3>(j3, k3))
+					.RightTransposeProduct(object_gradient[k])
+					.ToSparse(coo, offset_x + offsets[j], offset_y + offsets[k]);
+				}
+			}
+		}
+	}
+}
+
 double GRAssembler::GetGlueingEnergy(const Ref<const VectorXd> &x) const {
 	double energy = 0;
 	for (int i = 0; i < 3; i++) {
@@ -113,14 +168,6 @@ double GRAssembler::GetGlueingEnergy(const Ref<const VectorXd> &x) const {
 			Vector3d x2 = _gr_system->_reconstructed_mesh->GetVertex(glue_id, x);
 			energy += GetSpringEnergy(x2 - x1, _gr_system->_triangle_glue_stiffness);
 		}
-	}
-	return energy;
-}
-
-double GRAssembler::GetCrawlingEnergy(const Ref<const VectorXd> &x) const {
-	double energy = 0;
-	for (int i = 0; i < 3; i++) {
-		energy += GetSpringEnergy(_gr_system->_local_target_position - x.segment<3>(_triangle_offset + i * 3), _gr_system->_triangle_crawl_stiffness);
 	}
 	return energy;
 }
@@ -135,15 +182,6 @@ void GRAssembler::GetGlueingEnergyGradient(const Ref<const VectorXd> &x, Ref<Vec
 			_gr_system->_reconstructed_mesh->GetVertexDerivative(glue_id).RightProduct(local_gradient, gradient);
 			gradient.segment<3>(_triangle_offset + i * 3) -= local_gradient;
 		}
-	}
-}
-
-void GRAssembler::GetCrawlingEnergyGradient(const Ref<const VectorXd> &x, Ref<VectorXd> gradient) const {
-	for (int i = 0, i3 = 0; i < 3; i++, i3 += 3) {
-		gradient.segment<3>(_triangle_offset + i3) += GetSpringEnergyGradient(
-			_gr_system->_local_target_position - x.segment<3>(_triangle_offset + i3),
-			_gr_system->_triangle_crawl_stiffness
-		);
 	}
 }
 
@@ -175,6 +213,24 @@ void GRAssembler::GetGlueingEnergyHessian(const Ref<const VectorXd> &x, COO &coo
 		}
 	}
 }
+
+double GRAssembler::GetCrawlingEnergy(const Ref<const VectorXd> &x) const {
+	double energy = 0;
+	for (int i = 0; i < 3; i++) {
+		energy += GetSpringEnergy(_gr_system->_local_target_position - x.segment<3>(_triangle_offset + i * 3), _gr_system->_triangle_crawl_stiffness);
+	}
+	return energy;
+}
+
+void GRAssembler::GetCrawlingEnergyGradient(const Ref<const VectorXd> &x, Ref<VectorXd> gradient) const {
+	for (int i = 0, i3 = 0; i < 3; i++, i3 += 3) {
+		gradient.segment<3>(_triangle_offset + i3) += GetSpringEnergyGradient(
+			_gr_system->_local_target_position - x.segment<3>(_triangle_offset + i3),
+			_gr_system->_triangle_crawl_stiffness
+		);
+	}
+}
+
 
 void GRAssembler::GetCrawlingEnergyHessian(const Ref<const VectorXd> &x, COO &coo, int offset_x, int offset_y) const {
 	for (int i = 0, i3 = 0; i < 3; i++, i3 += 3) {

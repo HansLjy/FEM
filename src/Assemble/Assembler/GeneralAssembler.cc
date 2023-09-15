@@ -1,5 +1,9 @@
 #include "GeneralAssembler.hpp"
 
+void GeneralAssembler::BindSystem(System &system) {
+	BindObjects(system.GetObjs());
+}
+
 void GeneralAssembler::BindObjects(
 	const typename std::vector<Object *>::const_iterator &begin,
 	const typename std::vector<Object *>::const_iterator &end) {

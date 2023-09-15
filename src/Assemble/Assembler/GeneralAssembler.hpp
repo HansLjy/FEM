@@ -25,12 +25,12 @@ public:
 
     void GetMass(COO& coo, int offset_x, int offset_y) const override;
 
-    virtual double GetPotentialEnergy(const Ref<const VectorXd>& x) const override;
-    virtual void GetPotentialEnergyGradient(const Ref<const VectorXd> &x, Ref<VectorXd> gradient) const override;
-    virtual void GetPotentialEnergyHessian(const Ref<const Eigen::VectorXd> &x, COO &coo, int offset_x, int offset_y) const override;
+    double GetPotentialEnergy(const Ref<const VectorXd>& x) const override;
+    void GetPotentialEnergyGradient(const Ref<const VectorXd> &x, Ref<VectorXd> gradient) const override;
+    void GetPotentialEnergyHessian(const Ref<const Eigen::VectorXd> &x, COO &coo, int offset_x, int offset_y) const override;
     void GetExternalForce(Ref<VectorXd> force) const override;
 
-    virtual ~GeneralAssembler() = default;
+    ~GeneralAssembler() = default;
 
 protected:
     int _dof;

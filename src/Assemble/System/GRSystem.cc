@@ -56,6 +56,19 @@ const BlockVector& CustomGrid::GetVertexDerivative(int id) const {
 	return GetCollisionVertexDerivative(id);
 }
 
+Vector3d CustomTriangle::GetVertex(int id, const Ref<const VectorXd>& x) const {
+	// TODO:
+}
+
+Vector3d CustomTriangle::GetVertex(int id) const {
+	// TODO:
+}
+
+const BlockVector& CustomTriangle::GetVertexDerivative(int id) const {
+	// TODO:
+}
+
+
 
 GeometryReconstructSystem::GeometryReconstructSystem(const json& config)
 	: _triangle_density(config["triangle-density"]),
