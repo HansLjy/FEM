@@ -8,7 +8,7 @@ class ReducedTreeTrunkCollisionShape : public CollisionShape {
 public:
 	template<class Object> void Precompute(const Object* obj);
 	template<class Object> void ComputeCollisionShape(const Object* obj, const Ref<const VectorXd>& x);
-	template<class Object> const BlockVector& GetVertexDerivative(const Object* obj, int idx) const;
+	template<class Object> const BlockVector& GetCollisionVertexDerivative(const Object* obj, int idx) const;
 	template<class Object> double GetMaxVelocity(const Object* obj, const Ref<const VectorXd> &v) const;
 	template<class Object> Vector3d GetCollisionVertexVelocity(const Object* obj, const Ref<const VectorXd>& v, int idx) const;
 
@@ -48,7 +48,7 @@ void ReducedTreeTrunkCollisionShape::ComputeCollisionShape(const Object* obj, co
 }
 
 template<class Object>
-const BlockVector& ReducedTreeTrunkCollisionShape::GetVertexDerivative(const Object* obj, int idx) const {
+const BlockVector& ReducedTreeTrunkCollisionShape::GetCollisionVertexDerivative(const Object* obj, int idx) const {
 	return _vertex_derivatives[idx];
 }
 

@@ -33,6 +33,7 @@ using MatrixX2i = Eigen::Matrix<int, Dynamic, 2>;
 using Eigen::RowVector3i;
 using Eigen::RowVector2i;
 using Eigen::RowVector4i;
+using RowVector8i = Eigen::RowVector<int, 8>;
 
 using Eigen::Ref;
 

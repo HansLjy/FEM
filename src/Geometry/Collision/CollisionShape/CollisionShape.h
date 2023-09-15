@@ -11,7 +11,7 @@ class CollisionShapeInterface {
 public:
 	virtual double GetMaxVelocity(const Ref<const VectorXd>& v) const = 0;
     virtual void ComputeCollisionShape(const Ref<const VectorXd>& x) = 0;
-	virtual const BlockVector& GetVertexDerivative(int idx) const = 0;
+	virtual const BlockVector& GetCollisionVertexDerivative(int idx) const = 0;
 	virtual Vector3d GetCollisionVertexVelocity(const Ref<const VectorXd>& v, int idx) const = 0;
     virtual const MatrixXd& GetCollisionVertices() const = 0;
     virtual const MatrixXi& GetCollisionEdgeTopo() const = 0;
@@ -39,7 +39,7 @@ public:
 	SampledCollisionShape() = default;
 	template<class Data> void Initialize(const Data* obj);
 	template<class Data> void ComputeCollisionShape(const Data* obj, const Ref<const VectorXd>& x);
-	template<class Data> const BlockVector& GetVertexDerivative(const Data* obj, int idx) const;
+	template<class Data> const BlockVector& GetCollisionVertexDerivative(const Data* obj, int idx) const;
 	template<class Data> double GetMaxVelocity(const Data* obj, const Ref<const VectorXd> &v) const;
 	template<class Data> Vector3d GetCollisionVertexVelocity(const Data* obj, const Ref<const VectorXd>& v, int idx) const;
 	template<class Data> int GetCollisionVerticeNumber(const Data* obj) const;
@@ -57,7 +57,7 @@ protected:
 // 	void ComputeCollisionShape(const Ref<const VectorXd> &x) override;
 // 	const MatrixXd & GetCollisionVertices() const override;
 // 	Vector3d GetCollisionVertexVelocity(const Ref<const VectorXd> &v, int idx) const override;
-// 	const BlockVector & GetVertexDerivative(int idx) const override;
+// 	const BlockVector & GetCollisionVertexDerivative(int idx) const override;
 
 // 	void UpdateDerivative();
 
@@ -78,7 +78,7 @@ public:
 		_collision_face_topo = MatrixXi(0, 3);
 	}
 	template<class Data> void ComputeCollisionShape(const Data* data, const Ref<const VectorXd>& x) {}
-	template<class Data> const BlockVector& GetVertexDerivative(const Data* data, int idx) const {return null_vector;}
+	template<class Data> const BlockVector& GetCollisionVertexDerivative(const Data* data, int idx) const {return null_vector;}
 	template<class Data> double GetMaxVelocity(const Data* data, const Ref<const VectorXd> &v) const {return 0;}
 	template<class Data> Vector3d GetCollisionVertexVelocity(const Data* data, const Ref<const VectorXd>& v, int idx) const {return Vector3d::Zero();}
 
@@ -103,7 +103,7 @@ public:
 	}
 	template<class FixedObject> void Initialize(const FixedObject* obj) {}
 	template<class FixedObject> void ComputeCollisionShape(const FixedObject* obj, const Ref<const VectorXd>& x) {}
-	template<class FixedObject> const BlockVector& GetVertexDerivative(const FixedObject* obj, int idx) const {return null_vector;}
+	template<class FixedObject> const BlockVector& GetCollisionVertexDerivative(const FixedObject* obj, int idx) const {return null_vector;}
 	template<class FixedObject> double GetMaxVelocity(const FixedObject* obj, const Ref<const VectorXd> &v) const {return 0;}
 	template<class FixedObject> Vector3d GetCollisionVertexVelocity(const FixedObject* obj, const Ref<const VectorXd>& v, int idx) const {return Vector3d::Zero();}
 
@@ -124,7 +124,7 @@ void SampledCollisionShape::ComputeCollisionShape(const Data* data, const Ref<co
 }
 
 template<class Data>
-const BlockVector& SampledCollisionShape::GetVertexDerivative(const Data* data, int idx) const {
+const BlockVector& SampledCollisionShape::GetCollisionVertexDerivative(const Data* data, int idx) const {
 	return _vertex_derivatives[idx];
 }
 

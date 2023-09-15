@@ -9,13 +9,14 @@
 #include "Pattern.h"
 #include "ExternalForce/ExternalForceContainer.hpp"
 #include "BlockMatrix.h"
+#include "Collision/CollisionShape/CollisionShape.h"
 
 enum class CollisionAssemblerType {
 	kNull,
 	kIndex,
 };
 
-class Object {
+class Object : public CollisionShapeInterface {
 public:
 	virtual void Initialize() = 0;
 
@@ -71,14 +72,14 @@ public:
 	virtual void GetUVCoords(MatrixXf& uv_coords) const = 0;
 
 	/* Collision Shape */
-	virtual double GetMaxVelocity(const Ref<const VectorXd>& v) const = 0;
-    virtual void ComputeCollisionShape(const Ref<const VectorXd>& x) = 0;
-	virtual const BlockVector& GetVertexDerivative(int idx) const = 0;
-	virtual Vector3d GetCollisionVertexVelocity(const Ref<const VectorXd>& v, int idx) const = 0;
-    virtual const MatrixXd& GetCollisionVertices() const = 0;
-    virtual const MatrixXi& GetCollisionEdgeTopo() const = 0;
-    virtual const MatrixXi& GetCollisionFaceTopo() const = 0;
-	virtual int GetCollisionVerticeNumber() const = 0;
+	double GetMaxVelocity(const Ref<const VectorXd> &v) const override = 0;
+	void ComputeCollisionShape(const Ref<const VectorXd> &x) override = 0;
+	const BlockVector & GetCollisionVertexDerivative(int idx) const override = 0;
+	Vector3d GetCollisionVertexVelocity(const Ref<const VectorXd> &v, int idx) const override = 0;
+	const MatrixXd & GetCollisionVertices() const override = 0;
+	const MatrixXi & GetCollisionEdgeTopo() const override = 0;
+	const MatrixXi & GetCollisionFaceTopo() const override = 0;
+	int GetCollisionVerticeNumber() const override = 0;
 
 	virtual ~Object() = default;
 };
@@ -87,7 +88,7 @@ template<class Data, class DataForExternalForce, class Coordinate, class MassMod
 class ConcreteObject : public Object, public Data, public EnergyModel, public Render, public Collision, public ExternalForceContainer<DataForExternalForce> {
 public:
 	ConcreteObject(const json& config) : Data(config), EnergyModel(config["energy-model"]), Render(config["render"]), Collision(config["collision"]) {}
-	ConcreteObject(const Data&& data, const EnergyModel&& energy_model, const Render&& render, const Collision&& collision) : Data(data), EnergyModel(energy_model), Render(render), Collision(collision) {}
+	ConcreteObject(Data&& data, EnergyModel&& energy_model, Render&& render, Collision&& collision) : Data(std::move(data)), EnergyModel(std::move(energy_model)), Render(std::move(render)), Collision(std::move(collision)) {}
 
 	void Initialize() override {
 		EnergyModel::Initialize(this);
@@ -125,7 +126,7 @@ public:
 
 	double GetMaxVelocity(const Ref<const VectorXd> &v) const override {return Collision::GetMaxVelocity(this, v);}
 	void ComputeCollisionShape(const Ref<const VectorXd> &x) override {Collision::ComputeCollisionShape(this, x);}
-	const BlockVector & GetVertexDerivative(int idx) const override {return Collision::GetVertexDerivative(this, idx);}
+	const BlockVector & GetCollisionVertexDerivative(int idx) const override {return Collision::GetCollisionVertexDerivative(this, idx);}
 	Vector3d GetCollisionVertexVelocity(const Ref<const VectorXd> &v, int idx) const override {return Collision::GetCollisionVertexVelocity(this, v, idx);}
 	const MatrixXd & GetCollisionVertices() const override {return Collision::GetCollisionVertices(this);}
 	const MatrixXi & GetCollisionEdgeTopo() const override {return Collision::GetCollisionEdgeTopo(this);}

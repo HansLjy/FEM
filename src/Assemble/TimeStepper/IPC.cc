@@ -1,5 +1,12 @@
 
 #include "IPC.hpp"
+#include "Pattern.h"
+
+namespace {
+	const bool ipc_registered = Factory<TimeStepper>::GetInstance()->Register("ipc", [](const json& config){
+		return new IPC(config);
+	});
+}
 
 IPC::IPC(const json& config)
 : _assembler(Factory<Assembler>::GetInstance()->GetProduct(config["assembler"]["type"], config["assembler"])),

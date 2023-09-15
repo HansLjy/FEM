@@ -20,7 +20,7 @@ GridData::GridData(
 	_unit_length_diag_stiffness(unit_length_diag_stiffness),
 	_unit_ret_stiffness(unit_ret_stiffness),
 	_grid_density(grid_density) {
-	Update();
+	Voxelize();
 }
 
 GridData::GridData(
@@ -39,7 +39,7 @@ GridData::GridData(
 	_unit_length_diag_stiffness(unit_length_diag_stiffness),
 	_unit_ret_stiffness(unit_ret_stiffness),
 	_grid_density(grid_density) {
-	Update();
+	Voxelize();
 }
 
 void GridData::AddFace() {
@@ -50,7 +50,7 @@ void GridData::AddFace(const Vector3d& position) {
 	_proxy->AddFace(position);
 }
 
-void GridData::Update() {
+void GridData::Voxelize() {
 	_stiffness = _grid_size * _unit_length_stiffness;
 	_diag_stiffness = _grid_size * _unit_length_diag_stiffness;
 	_ret_stiffness = _grid_size * _grid_size * _grid_size * _unit_ret_stiffness;

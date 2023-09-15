@@ -20,12 +20,12 @@ public:
     void ToSparse(COO& coo, int x_offset, int y_offset);
 
 protected:
-    const int _rows, _cols;
-    const int _num_row_blocks, _num_column_blocks;
-    const std::vector<int> _row_offsets;
-    const std::vector<int> _row_segment_lengths;
-    const std::vector<int> _column_offsets;
-    const std::vector<int> _column_segment_lengths;
+    int _rows, _cols;
+    int _num_row_blocks, _num_column_blocks;
+    std::vector<int> _row_offsets;
+    std::vector<int> _row_segment_lengths;
+    std::vector<int> _column_offsets;
+	std::vector<int> _column_segment_lengths;
 
     MatrixXd _submatrix;
 };
@@ -37,15 +37,18 @@ public:
                 const std::vector<int>& row_segment_lengths,
                 const Ref<const MatrixXd>& submatrix)
                 : _rows(rows), _num_row_blocks(num_row_blocks), _row_offsets(row_offsets), _row_segment_lengths(row_segment_lengths), _submatrix(submatrix) {}
+
+	BlockVector(const BlockVector& rhs) = default;
     
     BlockVector RightProduct(const Ref<MatrixXd>& rhs) const;
     void RightProduct(const Ref<const VectorXd>& rhs, Ref<VectorXd> result) const;
 
+	//<- this * rhs.transpose()
     BlockMatrix RightTransposeProduct(const BlockVector& rhs);
 
-    const int _rows;
-    const int _num_row_blocks;
-    const std::vector<int> _row_offsets;
-    const std::vector<int> _row_segment_lengths;
+    int _rows;
+    int _num_row_blocks;
+    std::vector<int> _row_offsets;
+    std::vector<int> _row_segment_lengths;
     MatrixXd _submatrix;
 };

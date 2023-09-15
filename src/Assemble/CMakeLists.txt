@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.22)
 file(GLOB_RECURSE ASSEMBLE_SOURCE
         TimeStepper/*.cc
 		System/*.cc
-        Target/*.cc
+        Assembler/*.cc
 		Data/*.cc
 		Objects/*.cc
         )

@@ -73,17 +73,17 @@ VectorXd IPCHelper::GetBarrierEnergyGradient() const {
         const int offset2 = _offsets[constraint_pair._obj_id2];,
 
         const Vector12d single_gradient = GetVFBarrierEnergyGradient(vertex, face1, face2, face3);
-        obj1->GetVertexDerivative(vertex_index).RightProduct(single_gradient.segment<3>(0), gradient.segment(offset1, dof1));
-        obj2->GetVertexDerivative(face_index(0)).RightProduct(single_gradient.segment<3>(3), gradient.segment(offset2, dof2));
-        obj2->GetVertexDerivative(face_index(1)).RightProduct(single_gradient.segment<3>(6), gradient.segment(offset2, dof2));
-        obj2->GetVertexDerivative(face_index(2)).RightProduct(single_gradient.segment<3>(9), gradient.segment(offset2, dof2));
+        obj1->GetCollisionVertexDerivative(vertex_index).RightProduct(single_gradient.segment<3>(0), gradient.segment(offset1, dof1));
+        obj2->GetCollisionVertexDerivative(face_index(0)).RightProduct(single_gradient.segment<3>(3), gradient.segment(offset2, dof2));
+        obj2->GetCollisionVertexDerivative(face_index(1)).RightProduct(single_gradient.segment<3>(6), gradient.segment(offset2, dof2));
+        obj2->GetCollisionVertexDerivative(face_index(2)).RightProduct(single_gradient.segment<3>(9), gradient.segment(offset2, dof2));
         ,
 
         const Vector12d single_gradient = GetEEBarrierEnergyGradient(edge11, edge12, edge21, edge22);
-        obj1->GetVertexDerivative(edge_index1(0)).RightProduct(single_gradient.segment<3>(0), gradient.segment(offset1, dof1));
-        obj1->GetVertexDerivative(edge_index1(1)).RightProduct(single_gradient.segment<3>(3), gradient.segment(offset1, dof1));
-        obj2->GetVertexDerivative(edge_index2(0)).RightProduct(single_gradient.segment<3>(6), gradient.segment(offset2, dof2));
-        obj2->GetVertexDerivative(edge_index2(1)).RightProduct(single_gradient.segment<3>(9), gradient.segment(offset2, dof2));
+        obj1->GetCollisionVertexDerivative(edge_index1(0)).RightProduct(single_gradient.segment<3>(0), gradient.segment(offset1, dof1));
+        obj1->GetCollisionVertexDerivative(edge_index1(1)).RightProduct(single_gradient.segment<3>(3), gradient.segment(offset1, dof1));
+        obj2->GetCollisionVertexDerivative(edge_index2(0)).RightProduct(single_gradient.segment<3>(6), gradient.segment(offset2, dof2));
+        obj2->GetCollisionVertexDerivative(edge_index2(1)).RightProduct(single_gradient.segment<3>(9), gradient.segment(offset2, dof2));
     )
 
     return gradient * _kappa;
@@ -118,9 +118,9 @@ void IPCHelper::GetBarrierEnergyHessian(COO &coo, int offset_x, int offset_y) co
 
 				for (int i = 0, ii = 0; i < 4; i++, ii += 3) {
 					for (int j = 0, jj = 0; j < 4; j++, jj += 3) {
-                        shape[i]->GetVertexDerivative(index[i])
+                        shape[i]->GetCollisionVertexDerivative(index[i])
                         .RightProduct(single_hessian.block<3, 3>(ii, jj))
-                        .RightTransposeProduct(shape[j]->GetVertexDerivative(index[j]))
+                        .RightTransposeProduct(shape[j]->GetCollisionVertexDerivative(index[j]))
                         .ToSparse(coo, offset[i] + offset_x, offset[j] + offset_y);
 					}
 				}
@@ -145,9 +145,9 @@ void IPCHelper::GetBarrierEnergyHessian(COO &coo, int offset_x, int offset_y) co
 
 				for (int i = 0, ii = 0; i < 4; i++, ii += 3) {
 					for (int j = 0, jj = 0; j < 4; j++, jj += 3) {
-                        shape[i]->GetVertexDerivative(index[i])
+                        shape[i]->GetCollisionVertexDerivative(index[i])
                         .RightProduct(single_hessian.block<3, 3>(ii, jj))
-                        .RightTransposeProduct(shape[j]->GetVertexDerivative(index[j]))
+                        .RightTransposeProduct(shape[j]->GetCollisionVertexDerivative(index[j]))
                         .ToSparse(coo, offset[i] + offset_x, offset[j] + offset_y);
 					}
 				}

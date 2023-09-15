@@ -27,12 +27,12 @@ public:
     virtual void SetCoordinate(const Ref<const VectorXd> &x) = 0;
     virtual void SetVelocity(const Ref<const VectorXd> &v) = 0;
 
-    virtual void GetMass(SparseMatrixXd& mass) const = 0;
+    void GetMass(SparseMatrixXd& mass) const;
     virtual void GetMass(COO& coo, int offset_x, int offset_y) const = 0;
 
     virtual double GetPotentialEnergy(const Ref<const VectorXd>& x) const = 0;
     virtual void GetPotentialEnergyGradient(const Ref<const VectorXd> &x, Ref<VectorXd> gradient) const = 0;
-	virtual void GetPotentialEnergyHessian(const Ref<const VectorXd>& x, SparseMatrixXd& hessian) const = 0;
+	void GetPotentialEnergyHessian(const Ref<const VectorXd>& x, SparseMatrixXd& hessian) const;
     virtual void GetPotentialEnergyHessian(const Ref<const Eigen::VectorXd> &x, COO &coo, int offset_x, int offset_y) const = 0;
 
     virtual void GetExternalForce(Ref<VectorXd> force) const = 0;

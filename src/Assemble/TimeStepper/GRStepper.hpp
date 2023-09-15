@@ -13,11 +13,10 @@ public:
 	~GeometryReconstructStepper();
 
 protected:
-	double _eps;
-	double _stuck_tolerance;
+	int _nearly_stop_successive_itrs = 0;
+	int _stuck_tolerance_itrs;
+	double _stuck_tolerance_velocity;
+	double _stuck_tolerance_acceleration;
 	IPC* _ipc = nullptr;
 	GeometryReconstructSystem* _gr_system = nullptr;
-
-	bool IsSteady(const Vector9d& a);
-	void UpdateTractionForce();
 };

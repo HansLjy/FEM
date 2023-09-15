@@ -62,10 +62,10 @@
 // }
 
 
-// const BlockVector & AffineDecomposedCollisionShape::GetVertexDerivative(int idx) const {
+// const BlockVector & AffineDecomposedCollisionShape::GetCollisionVertexDerivative(int idx) const {
 // 	const int proxy_vertex_number = _obj->_proxy->_collision_shape->GetCollisionVerticeNumber();
 // 	return idx < proxy_vertex_number
-// 			? _obj->_proxy->_collision_shape->GetVertexDerivative(idx)
+// 			? _obj->_proxy->_collision_shape->GetCollisionVertexDerivative(idx)
 // 			: _children_vertex_derivative[idx - proxy_vertex_number];
 // }
 

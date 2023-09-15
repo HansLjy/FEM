@@ -10,4 +10,4 @@
 #include "Render/RenderShape.hpp"
 #include "Collision/CollisionShape/CollisionShape.h"
 
-using Triangle = ConcreteObject<TriangleData, TriangleData, BasicCoordinate, SampledObjectMassModel, SumOfEnergyModel<MassSpringEnergyModel, FixtureEnergyModel>, SampledRenderShape, SampledCollisionShape>;
+using Triangle = ConcreteObject<TriangleData, TriangleData, BasicCoordinate, SampledObjectMassModel, MassSpringEnergyModel, SampledRenderShape, SampledCollisionShape>;

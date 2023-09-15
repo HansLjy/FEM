@@ -3,7 +3,6 @@
 //
 
 #include "Simulator.h"
-#include "Integrator/Integrator.h"
 #include "nlohmann/json.hpp"
 #include "JsonUtil.h"
 #include <string>
@@ -25,8 +24,7 @@ void Simulator::LoadScene(const std::string &config) {
     std::ifstream system_config_file(CONFIG_PATH + system_config_file_path);
     const json system_config = json::parse(system_config_file);
     system_config_file.close();
-    _system = new System(system_config);
-    _system->Initialize(system_config);
+	_system = Factory<System>::GetInstance()->GetProduct(system_config["type"], system_config);
 
     const auto& renderer_config_json = config_json["renderer"];
     const auto& camera_config_json = renderer_config_json["camera"];
@@ -54,7 +52,7 @@ void Simulator::Simulate(const std::string& output_dir) {
     int obj_id = 0;
 	std::ofstream topo_file(output_dir + "/topo");
 
-	for (const auto& obj : _system->_objs) {
+	for (const auto& obj : _system->GetObjs()) {
         MatrixXi topo;
         MatrixXd vertices;
 		obj->GetRenderTopos(topo);
@@ -69,7 +67,7 @@ void Simulator::Simulate(const std::string& output_dir) {
         _time_stepper->Step(_time_step);
         obj_id = 0;
 		std::ofstream itr_file(output_dir + "/itr" + std::to_string(itr_id));
-        for (const auto& obj : _system->_objs) {
+        for (const auto& obj : _system->GetObjs()) {
             MatrixXd vertices;
 			obj->GetRenderVertices(vertices);
             write_binary(itr_file, vertices);
@@ -108,7 +106,7 @@ void Simulator::InitializeScene(Scene &scene) {
         _light_Kc, _light_Kl, _light_Kq
     );
 
-    for (const auto& obj : _system->_objs) {
+    for (const auto& obj : _system->GetObjs()) {
         MatrixXd vertices;
         MatrixXi topo;
 
@@ -150,7 +148,7 @@ void Simulator::Processing(Scene &scene) {
     }
 
     int id = 0;
-    for (const auto& obj : _system->_objs) {
+    for (const auto& obj : _system->GetObjs()) {
         scene.SelectData(_obj_id2scene_id[id++]);
 
 		if (obj->IsRenderTopoUpdated()) {
