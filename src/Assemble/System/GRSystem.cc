@@ -57,15 +57,15 @@ const BlockVector& CustomGrid::GetVertexDerivative(int id) const {
 }
 
 Vector3d CustomTriangle::GetVertex(int id, const Ref<const VectorXd>& x) const {
-	// TODO:
+	return x.segment<3>(id * 3);
 }
 
 Vector3d CustomTriangle::GetVertex(int id) const {
-	// TODO:
+	return GetVertex(id, _x);
 }
 
 const BlockVector& CustomTriangle::GetVertexDerivative(int id) const {
-	// TODO:
+	return CustomTriangle::GetCollisionVertexDerivative(id);
 }
 
 

@@ -50,6 +50,10 @@ public:
 	const BlockVector& GetVertexDerivative(int id) const;
 };
 
+namespace GRSystemStatusCode {
+	const int kStuck = 1;
+};
+
 struct GeometryReconstructSystem {
 	enum class SystemStatus {
 		kFlying,		// flying to the destination
