@@ -1,13 +1,13 @@
 #pragma once
 
-#include "CollisionShape.h"
+#include "CollisionShape.hpp"
 
 class ReducedTreeTrunk;
 
 class ReducedTreeTrunkCollisionShape : public CollisionShape {
 public:
 	template<class Object> void Precompute(const Object* obj);
-	template<class Object> void ComputeCollisionShape(const Object* obj, const Ref<const VectorXd>& x);
+	template<class Object> void ComputeCollisionVertex(const Object* obj, const Ref<const VectorXd>& x);
 	template<class Object> const BlockVector& GetCollisionVertexDerivative(const Object* obj, int idx) const;
 	template<class Object> double GetMaxVelocity(const Object* obj, const Ref<const VectorXd> &v) const;
 	template<class Object> Vector3d GetCollisionVertexVelocity(const Object* obj, const Ref<const VectorXd>& v, int idx) const;
@@ -40,7 +40,7 @@ void ReducedTreeTrunkCollisionShape::Precompute(const Object* obj) {
 }
 
 template<class Object>
-void ReducedTreeTrunkCollisionShape::ComputeCollisionShape(const Object* obj, const Ref<const VectorXd> &x) {
+void ReducedTreeTrunkCollisionShape::ComputeCollisionVertex(const Object* obj, const Ref<const VectorXd> &x) {
 	_collision_vertices.row(0) = obj->_fixed_point.transpose();
 	for (int i = 1, i3 = 0; i <= 3; i++, i3 += 3) {
 		_collision_vertices.row(i) = x.segment<3>(i3).transpose();

@@ -1,6 +1,6 @@
 #include "DecomposedObject.hpp"
 #include "JsonUtil.h"
-#include "Collision/CollisionShape/CollisionShape.h"
+#include "Collision/CollisionShape/CollisionShape.hpp"
 #include "unsupported/Eigen/KroneckerProduct"
 
 void DecomposedObject::Initialize() {

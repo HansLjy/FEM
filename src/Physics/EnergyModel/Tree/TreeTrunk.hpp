@@ -4,7 +4,7 @@
 #include "SampledObject.hpp"
 #include "Render/TreeTrunkShape.hpp"
 #include "ExternalForce/ExternalForceContainer.hpp"
-#include "Collision/CollisionShape/CollisionShape.h"
+#include "Collision/CollisionShape/CollisionShape.hpp"
 
 class TreeTrunk : public SampledObject, public TreeTrunkShape, public NullCollisionShape, public ExternalForceContainer<TreeTrunk> {
 public:

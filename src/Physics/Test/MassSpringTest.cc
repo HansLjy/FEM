@@ -1,6 +1,6 @@
 #include <fstream>
 #include "DerivativeTest.h"
-#include "Model/MassSpringModel.hpp"
+#include "EnergyModel/MassSpringEnergyModel.hpp"
 #include "gtest/gtest.h"
 
 struct Grid {
@@ -37,7 +37,7 @@ TEST(MassSpringTest, GradientTest) {
 	const int num_edges = config["num-edges"];
 	const double stiffness = 1.0 * std::rand() / RAND_MAX;
 	const auto data = GenerateTestSrpingMassData(num_points, num_edges, stiffness);
-	MassSpringPhysics physics;
+	MassSpringEnergyModel physics;
 	
 	GenerateDerivative(data, physics, gradient_step, hessian_step)
 	

@@ -1,8 +1,10 @@
 #pragma once
 #include "EigenAll.h"
 #include "GeometryUtil.h"
+#include "Collision/CollisionShape/CollisionShape.hpp"
 
-struct BasicData {
+struct BasicData : public CollisionData {
+	BasicData(const BasicData& rhs) = delete;
 	BasicData(const VectorXd& x, const VectorXd& v) : _dof(x.size()), _x(x), _v(v) {}
 	BasicData(const VectorXd& x) : BasicData(x, VectorXd::Zero(x.size())) {}
 

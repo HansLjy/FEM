@@ -1,5 +1,7 @@
 #pragma once
 #include "MassSpringData.hpp"
+#include "Collision/CollisionShape/CollisionShape.hpp"
+#include "FileIO.hpp"
 
 struct GridData : public MassSpringData {
 public:
@@ -28,7 +30,6 @@ public:
 
 	void UpdateProxyPosition();
 	
-protected:
 	void Voxelize();
 	void AddFace();
 	void AddFace(const Vector3d& position);

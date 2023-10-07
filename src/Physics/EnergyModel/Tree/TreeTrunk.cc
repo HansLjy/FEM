@@ -3,7 +3,7 @@
 //
 
 #include "TreeTrunk.hpp"
-#include "Collision/CollisionShape/CollisionShape.h"
+#include "Collision/CollisionShape/CollisionShape.hpp"
 
 namespace {
     const bool treetrunk_registered = ObjectFactory::Instance()->Register("treetrunk", [](const json& config) {return new ReducedTreeTrunk(config);});

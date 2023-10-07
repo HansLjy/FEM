@@ -5,7 +5,11 @@
 MassSpringData::MassSpringData(const json& config) : MassSpringData(config["filename"], config["density"], config["stiffness"]) {}
 
 MassSpringData::MassSpringData(const std::string& filename, double density, double stiffness)
-: SampledObjectData(filename, density, 2), _stiffness(stiffness) {
+: SampledObjectData(
+	(FileIOHelper::ReadMesh(filename, false), _the_vertices),
+	density, 2,
+	(FileIOHelper::ReadMesh(filename, false), _the_topo)
+  ), _stiffness(stiffness) {
 	_x_rest = _x;
 	_rest_length.resize(_num_edges);
 	for (int i = 0; i < _num_edges; i++) {

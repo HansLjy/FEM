@@ -10,11 +10,18 @@ namespace {
 
 IPC::IPC(const json& config)
 : _assembler(Factory<Assembler>::GetInstance()->GetProduct(config["assembler"]["type"], config["assembler"])),
-  _helper(new IPCHelper(config["ipc-helper"])),
-  _max_iter(config["max-iteration"]), _tolerance(config["tolerance"]) {}
+  _max_iter(config["max-iteration"]), _tolerance(config["tolerance"]) {
+	if(config.contains("ipc-helper")) {
+		_helper = Factory<IPCHelper>::GetInstance()->GetProduct(config["ipc-helper"]["type"], config["ipc-helper"]);
+	}
+}
 
 IPC::~IPC() {
 	delete _helper;
+}
+
+void IPC::SetIPCHelper(IPCHelper *helper) {
+	_helper = helper;
 }
 
 void IPC::Step(double h) {

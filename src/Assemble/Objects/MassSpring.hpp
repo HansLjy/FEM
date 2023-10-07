@@ -6,7 +6,7 @@
 #include "MassModel/MassModel.hpp"
 #include "EnergyModel/MassSpringEnergyModel.hpp"
 #include "Render/RenderShape.hpp"
-#include "Collision/CollisionShape/CollisionShape.h"
+#include "Collision/CollisionShape/CollisionShape.hpp"
 #include "ExternalForce/SampledObjectFixtureForce.hpp"
 #include "ExternalForce/SampledObjectGravity.hpp"
 

@@ -14,7 +14,11 @@ GridData::GridData(
 	double grid_size,
 	double grid_density
 ) : MassSpringData(VectorXd(0), MatrixXi(0, 3), 0, 0),
-	_proxy(new DynamicSampledObjectData(filename, 0, proxy_IFN)),
+	_proxy(new DynamicSampledObjectData(
+		(FileIOHelper::ReadMesh(filename, true), _the_vertices),
+		(FileIOHelper::ReadMesh(filename, true), _the_topo),
+		0, proxy_IFN
+	)),
 	_grid_size(grid_size),
 	_unit_length_stiffness(unit_length_stiffness),
 	_unit_length_diag_stiffness(unit_length_diag_stiffness),
@@ -33,7 +37,7 @@ GridData::GridData(
 	double grid_size,
 	double grid_density
 ) : MassSpringData(VectorXd(0), MatrixXi(0, 3), 0, 0),
-	_proxy(new DynamicSampledObjectData(proxy_x, 0, proxy_topo, proxy_IFN)),
+	_proxy(new DynamicSampledObjectData(proxy_x, proxy_topo, 0, proxy_IFN)),
 	_grid_size(grid_size),
 	_unit_length_stiffness(unit_length_stiffness),
 	_unit_length_diag_stiffness(unit_length_diag_stiffness),

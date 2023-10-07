@@ -1,10 +1,14 @@
 #include "GeneralSystem.hpp"
 
+namespace {
+	const bool gs_registered = Factory<System>::GetInstance()->Register("general", [](const json& config) {
+		return new GeneralSystem(config);
+	});
+}
+
 std::vector<Object *>& GeneralSystem::GetObjs() {
 	return _objs;
 }
-
-
 
 GeneralSystem::GeneralSystem(const nlohmann::json &config) {
     const auto& objects_config = config["objects"];

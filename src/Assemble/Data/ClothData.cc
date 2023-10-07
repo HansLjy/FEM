@@ -23,17 +23,17 @@ VectorXd ClothData::GeneratePosition(const Eigen::Vector3d &start, const Eigen::
     return position;
 }
 
-VectorXd ClothData::GenerateUVCoord(const Eigen::Vector3d &start, const Eigen::Vector3d &u_end, const Eigen::Vector3d &v_end, int num_u_segments, int num_v_segments) {
+MatrixXd ClothData::GenerateUVCoord(const Eigen::Vector3d &start, const Eigen::Vector3d &u_end, const Eigen::Vector3d &v_end, int num_u_segments, int num_v_segments) {
     Vector3d norm = (u_end - start).cross(v_end - start);
     Vector3d u_direction = (u_end - start).normalized();
     Vector3d v_direction = norm.cross(u_end - start).normalized();
     const Vector2d delta_u = (Vector2d() << (u_end - start).dot(u_direction), (u_end - start).dot(v_direction)).finished() / num_u_segments;
     const Vector2d delta_v = (Vector2d() << (v_end - start).dot(u_direction), (v_end - start).dot(v_direction)).finished() / num_v_segments;
 
-    VectorXd uv_coord(2 * (num_u_segments + 1) * (num_v_segments + 1));
+    MatrixXd uv_coord((num_u_segments + 1) * (num_v_segments + 1), 2);
     for (int i = 0; i <= num_v_segments; i++) {
         for (int j = 0; j <= num_u_segments; j++) {
-            uv_coord.segment<2>(2 * (i * (num_u_segments + 1) + j)) = i * delta_v + j * delta_u;
+            uv_coord.row((i * (num_u_segments + 1) + j)) = i * delta_v + j * delta_u;
         }
     }
     return uv_coord;
@@ -96,9 +96,9 @@ ClothData::ClothData(
 ClothData::ClothData(
 	double rho, double thickness,
 	double k_stretch, double k_shear, double k_bend_max, double k_bend_min,
-	const Eigen::Vector2d &max_bend_dir,
-	const Eigen::VectorXd &x, const Eigen::VectorXd &uv_corrd,
-	const Eigen::MatrixXi &topo,
+	const Vector2d &max_bend_dir,
+	const VectorXd &x, const MatrixXd &uv_corrd,
+	const MatrixXi &topo,
 	double stretch_u, double stretch_v)
 	: SampledObjectData(x, GenerateMass(rho, thickness, uv_corrd, topo), 2, topo),
                _curve_num_points(x.size() / 3),
@@ -110,8 +110,8 @@ ClothData::ClothData(
     _area.resize(_num_triangles);
     for (int i = 0; i < _num_triangles; i++) {
         RowVector3i index = _face_topo.row(i);
-        Vector2d e1 = uv_corrd.segment<2>(index(1) * 2) - uv_corrd.segment<2>(index(0) * 2);
-        Vector2d e2 = uv_corrd.segment<2>(index(2) * 2) - uv_corrd.segment<2>(index(0) * 2);
+        Vector2d e1 = uv_corrd.row(index(1)) - uv_corrd.row(index(0));
+        Vector2d e2 = uv_corrd.row(index(2)) - uv_corrd.row(index(0));
         const double S = (e1(0) * e2(1) - e1(1) * e2(0)) / 2;
         if (S > 0) {
             _area(i) = S;
@@ -127,8 +127,8 @@ ClothData::ClothData(
     _pFpx.resize(_num_triangles);
     for (int i = 0; i < _num_triangles; i++) {
         RowVector3i index = _face_topo.row(i);
-        Vector2d e1 = uv_corrd.segment<2>(index(1) * 2) - uv_corrd.segment<2>(index(0) * 2);
-        Vector2d e2 = uv_corrd.segment<2>(index(2) * 2) - uv_corrd.segment<2>(index(0) * 2);
+        Vector2d e1 = uv_corrd.row(index(1)) - uv_corrd.row(index(0));
+        Vector2d e2 = uv_corrd.row(index(2)) - uv_corrd.row(index(0));
 
         Matrix2d F;
         F.col(0) = e1;
@@ -172,7 +172,7 @@ ClothData::ClothData(
                     _x.segment<3>(3 * std::get<1>(edges[i])) -
                     _x.segment<3>(3 * std::get<0>(edges[i]))
             ).norm();
-            Vector2d uv_direction = _uv_coord.segment<2>(2 * std::get<1>(edges[i])) - _uv_coord.segment<2>(2 * std::get<0>(edges[i]));
+            Vector2d uv_direction = _uv_coord.row(std::get<1>(edges[i])) - _uv_coord.row(std::get<0>(edges[i]));
             const double delta_u = uv_direction.dot(max_bend_dir);
             const double delta_v = - uv_direction(0) * max_bend_dir(1) + uv_direction(1) * max_bend_dir(0);
             _internal_edge_k_bend(_num_internal_edges) =

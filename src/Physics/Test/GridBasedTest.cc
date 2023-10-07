@@ -1,19 +1,21 @@
 #include <fstream>
 #include "DerivativeTest.h"
-#include "Model/GridBasedPhysics.hpp"
+#include "EnergyModel/GridEnergyModel.hpp"
 #include "gtest/gtest.h"
 
 struct Grid {
 	Grid(int num_points, int num_edges, double stiffness, double ret_stiffness, const MatrixXi& edge_topo, const VectorXd& rest_length, const VectorXd& x_rest)
-	: _dof(num_points * 3), _num_points(num_points), _num_edges(num_edges),
-	  _stiffness(stiffness), _ret_stiffness(ret_stiffness), _edge_topo(edge_topo),
+	: _dof(num_points * 3), _num_points(num_points), _num_edges(num_edges), _start_diag_edges(num_edges / 2),
+	  _stiffness(stiffness), _ret_stiffness(ret_stiffness), _diag_stiffness(stiffness * 10), _edge_topo(edge_topo),
 	  _rest_length(rest_length), _x_rest(x_rest) {}
 
 	int _dof;
 	int _num_points;
 	int _num_edges;
+	int _start_diag_edges;
 	double _stiffness;
 	double _ret_stiffness;
+	double _diag_stiffness;
 	MatrixXi _edge_topo;
 	VectorXd _rest_length;
 	VectorXd _x_rest;
@@ -45,7 +47,7 @@ TEST(GridTest, GradientTest) {
 	const int num_points = config["num-points"];
 	const int num_edges = config["num-edges"];
 	const auto data = GenerateTestSrpingMassData(num_points, num_edges);
-	GridBasedPhysics physics;
+	GridEnergyModel physics;
 	
 	GenerateDerivative(data, physics, gradient_step, hessian_step)
 	

@@ -8,4 +8,4 @@
 #include "ExternalForce/SampledObjectGravity.hpp"
 #include "ExternalForce/SampledObjectFixtureForce.hpp"
 
-using Grid = ConcreteObject<GridData, GridData, GridCoordinate, SampledObjectMassModel, GridEnergyModel, GridShape, GridCollisionShape>;
+using Grid = ConcreteObject<GridData, GridData, GridCoordinate, SampledObjectMassModel, GridEnergyModel, GridRenderShape, GridCollisionShape>;

@@ -40,7 +40,7 @@ public:
 
 	BlockVector(const BlockVector& rhs) = default;
     
-    BlockVector RightProduct(const Ref<MatrixXd>& rhs) const;
+    BlockVector RightProduct(const Ref<const MatrixXd>& rhs) const;
     void RightProduct(const Ref<const VectorXd>& rhs, Ref<VectorXd> result) const;
 
 	//<- this * rhs.transpose()

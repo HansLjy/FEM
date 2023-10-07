@@ -59,10 +59,11 @@ CPMAddPackage(
 	GIT_TAG v3.11.2
 )
 
+
 CPMAddPackage(
 	NAME igl
 	GIT_REPOSITORY git@github.com:libigl/libigl.git
-	GIT_TAG v2.4.0
+	GIT_TAG v2.5.0
 )
 
 set(FEM_UTILITY_SOURCE EigenAll.cc JsonUtil.cc GeometryUtil.cc)

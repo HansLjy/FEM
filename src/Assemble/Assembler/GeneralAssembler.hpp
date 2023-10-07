@@ -7,7 +7,7 @@
 
 class GeneralAssembler : public Assembler {
 public:
-	explicit GeneralAssembler(const json& config);
+	explicit GeneralAssembler(const json& config) {};
 
 	void BindSystem(System& system) override;
 	void BindObjects(const typename std::vector<Object *>::const_iterator &begin, const typename std::vector<Object *>::const_iterator &end) override;

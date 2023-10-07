@@ -5,7 +5,6 @@ VectorXd GenerateMass2D(const VectorXd& x, double density, const MatrixXi& topo)
 VectorXd GenerateMass3D(const VectorXd& x, double density, const MatrixXi& topo);
 
 struct SampledObjectData : public BasicData {
-	SampledObjectData(const std::string& filename, double density, int dimension);
 	SampledObjectData(const VectorXd& x, double density, int dimension, const MatrixXi& topo);
 	SampledObjectData(const VectorXd& x, const VectorXd& mass, int dimension, const MatrixXi& topo);
 
@@ -22,8 +21,7 @@ struct SampledObjectData : public BasicData {
 
 // TODO: Currently only support 2D objects, need 3D support
 struct DynamicSampledObjectData : public SampledObjectData {
-	DynamicSampledObjectData(const std::string& filename, double density, int IFN);
-	DynamicSampledObjectData(const VectorXd& x, double density, const MatrixXi& topo, int IFN);
+	DynamicSampledObjectData(const VectorXd& x, const MatrixXi& topo, double density, int IFN);
 
 	/**
 	 * The topos are assumed to be consistent with the order

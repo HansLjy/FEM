@@ -29,7 +29,7 @@ public:
 		FileIO* obj_io = Factory<FileIO>::GetInstance()->GetProduct("obj");
 		VectorXd vertices;
 		MatrixXi topo;
-		obj_io->LoadFromFile(GEOMETRY_TEST_DATA_PATH + _obj_file, vertices, topo);
+		obj_io->LoadFromFile(GEOMETRY_TEST_DATA_PATH + _obj_file, false, vertices, topo);
 		vertices *= 10;	// stretch it
 
 		SimpleMeshVoxelizer voxlizer;

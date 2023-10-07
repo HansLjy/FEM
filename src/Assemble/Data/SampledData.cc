@@ -40,38 +40,6 @@ VectorXd GenerateMass3D(const VectorXd& x, double density, const MatrixXi& topo)
 	return mass;
 }
 
-SampledObjectData::SampledObjectData(const std::string& filename, double density, int dimension) : BasicData(VectorXd(0)) {
-	auto file_io = Factory<FileIO>::GetInstance()->GetProduct(filename.substr(filename.find_last_of(".") + 1));
-	MatrixXi topo;
-	file_io->LoadFromFile(MODEL_PATH + filename, true, _x, topo);	// TODO: make 'centered' optional
-	_v = VectorXd::Zero(_x.size());
-	_dof = _x.size();
-	_num_points = _dof / 3;
-	
-	switch (dimension) {
-		case 3:
-			_tet_topo = topo;
-			GenerateSurfaceTopo3D(topo, _face_topo, _edge_topo);
-			_mass = GenerateMass3D(_x, density, topo);
-			break;
-		case 2:
-			_face_topo = topo;
-			GenerateSurfaceTopo2D(topo, _edge_topo);
-			_mass = GenerateMass2D(_x, density, topo);
-			break;
-		case 1:
-			_edge_topo = topo;
-			break;
-		default:
-			throw std::logic_error("Unsupported dimension!");
-	}
-	_num_edges = _edge_topo.rows();
-	_num_faces = _face_topo.rows();
-
-	_total_mass = _mass.sum();
-}
-
-
 SampledObjectData::SampledObjectData(const VectorXd& x, double density, int dimension, const MatrixXi& topo)
 	: SampledObjectData(x, dimension == 2 ? GenerateMass2D(x, density, topo) : GenerateMass3D(x, density, topo), dimension, topo) {}
 
@@ -125,12 +93,7 @@ void DynamicSampledObjectData::GenerateMassIncrementals() {
 	}
 }
 
-DynamicSampledObjectData::DynamicSampledObjectData(const std::string& filename, double density, int IFN)
-: SampledObjectData(filename, density, 2), _density(density) {
-	SetIFN(IFN);
-	GenerateMassIncrementals();
-}
-DynamicSampledObjectData::DynamicSampledObjectData(const VectorXd& x, double density, const MatrixXi& topo, int IFN)
+DynamicSampledObjectData::DynamicSampledObjectData(const VectorXd& x, const MatrixXi& topo, double density, int IFN)
 : SampledObjectData(x, density, 2, topo), _density(density) {
 	SetIFN(IFN);
 	GenerateMassIncrementals();

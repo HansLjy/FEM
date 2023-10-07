@@ -8,7 +8,7 @@
 #include "ReducedObject.hpp"
 #include "Render/RenderShape.hpp"
 #include "Render/LeafShape.hpp"
-#include "Collision/CollisionShape/CollisionShape.h"
+#include "Collision/CollisionShape/CollisionShape.hpp"
 
 class Leaf : public Cloth, public LeafRenderShape, public NullCollisionShape {
 public:

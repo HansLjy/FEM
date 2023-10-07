@@ -1,0 +1,24 @@
+{
+	"type": "general",
+	"objects": [
+		{
+			"type": "reconstructed-mesh",
+			"name": "mesh",
+			"filename": "/tet.obj",
+			"centered": true,
+			"density": 41.36,
+			"k-stretch": 100,
+			"k-shear": 100,
+			"k-bend": 100,
+			"energy-model": {},
+			"render": {
+				"have-bounding-box": false,
+				"use-texture": false,
+				"texture-path": ""
+			},
+			"collision": {}
+		}
+	],
+	"external-forces": [
+	]
+}

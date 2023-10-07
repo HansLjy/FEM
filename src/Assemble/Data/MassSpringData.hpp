@@ -2,8 +2,9 @@
 
 #include "SampledData.hpp"
 #include "JsonUtil.h"
+#include "FileIO.hpp"
 
-struct MassSpringData : public SampledObjectData {
+struct MassSpringData : public FileIOHelper, public SampledObjectData {
 	explicit MassSpringData(const json& config);
 	MassSpringData(const std::string& filename, double density, double stiffness);
 	MassSpringData(const VectorXd& x_rest, const MatrixXi& topo, double density, double stiffness);

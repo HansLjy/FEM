@@ -9,7 +9,7 @@
 #include "Pattern.h"
 #include "ExternalForce/ExternalForceContainer.hpp"
 #include "BlockMatrix.h"
-#include "Collision/CollisionShape/CollisionShape.h"
+#include "Collision/CollisionShape/CollisionShape.hpp"
 
 enum class CollisionAssemblerType {
 	kNull,
@@ -72,14 +72,13 @@ public:
 	virtual void GetUVCoords(MatrixXf& uv_coords) const = 0;
 
 	/* Collision Shape */
-	double GetMaxVelocity(const Ref<const VectorXd> &v) const override = 0;
-	void ComputeCollisionShape(const Ref<const VectorXd> &x) override = 0;
+	void ComputeCollisionVertex(const Ref<const VectorXd> &x) override = 0;
+	void ComputeCollisionVertexVelocity(const Ref<const VectorXd> &v) override = 0;
 	const BlockVector & GetCollisionVertexDerivative(int idx) const override = 0;
-	Vector3d GetCollisionVertexVelocity(const Ref<const VectorXd> &v, int idx) const override = 0;
+	Vector3d GetCollisionVertexVelocity(int idx) const override = 0;
 	const MatrixXd & GetCollisionVertices() const override = 0;
 	const MatrixXi & GetCollisionEdgeTopo() const override = 0;
 	const MatrixXi & GetCollisionFaceTopo() const override = 0;
-	int GetCollisionVerticeNumber() const override = 0;
 
 	virtual ~Object() = default;
 };
@@ -124,14 +123,13 @@ public:
 	bool IsRenderTopoUpdated() override {return Render::IsTopoUpdated(this);}
 	bool IsFrameTopoUpdated() override {return Render::IsBBTopoUpdated(this);}
 
-	double GetMaxVelocity(const Ref<const VectorXd> &v) const override {return Collision::GetMaxVelocity(this, v);}
-	void ComputeCollisionShape(const Ref<const VectorXd> &x) override {Collision::ComputeCollisionShape(this, x);}
+	void ComputeCollisionVertex(const Ref<const VectorXd> &x) override {Collision::ComputeCollisionVertex(this, x);}
+	void ComputeCollisionVertexVelocity(const Ref<const VectorXd> &v) override {Collision::ComputeCollisionVertex(this, v);}
 	const BlockVector & GetCollisionVertexDerivative(int idx) const override {return Collision::GetCollisionVertexDerivative(this, idx);}
-	Vector3d GetCollisionVertexVelocity(const Ref<const VectorXd> &v, int idx) const override {return Collision::GetCollisionVertexVelocity(this, v, idx);}
+	Vector3d GetCollisionVertexVelocity(int idx) const override {return Collision::GetCollisionVertexVelocity(this, idx);}
 	const MatrixXd & GetCollisionVertices() const override {return Collision::GetCollisionVertices(this);}
 	const MatrixXi & GetCollisionEdgeTopo() const override {return Collision::GetCollisionEdgeTopo(this);}
 	const MatrixXi & GetCollisionFaceTopo() const override {return Collision::GetCollisionFaceTopo(this);}
-	int GetCollisionVerticeNumber() const override {return Collision::GetCollisionVerticeNumber(this);}
 
     void AddExternalForce(const std::string& type, const json& config) override {ExternalForceContainer<DataForExternalForce>::AddExternalForce(type, config);}
 	VectorXd GetExternalForce() const override {return ExternalForceContainer<DataForExternalForce>::GetExternalForce(this);}

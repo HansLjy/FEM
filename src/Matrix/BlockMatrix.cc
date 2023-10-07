@@ -19,7 +19,7 @@ void BlockMatrix::ToSparse(COO& coo, int x_offset, int y_offset) {
     }
 }
 
-BlockVector BlockVector::RightProduct(const Ref<MatrixXd>& rhs) const {
+BlockVector BlockVector::RightProduct(const Ref<const MatrixXd>& rhs) const {
     return BlockVector(_rows, _num_row_blocks, _row_offsets, _row_segment_lengths, _submatrix * rhs);
 }
 

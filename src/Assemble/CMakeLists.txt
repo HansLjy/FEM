@@ -18,3 +18,7 @@ target_link_libraries(Assemble PUBLIC FileIO)
 target_link_libraries(Assemble PUBLIC Geometry)
 target_link_libraries(Assemble PUBLIC FEMUtility)
 target_link_libraries(Assemble PUBLIC Renderer)
+
+if(BUILD_TEST)
+	add_subdirectory(Test)
+endif(BUILD_TEST)

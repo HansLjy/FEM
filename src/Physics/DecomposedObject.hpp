@@ -2,7 +2,7 @@
 
 #include "Object.hpp"
 #include "Render/RenderShape.hpp"
-#include "Collision/CollisionShape/CollisionShape.h"
+#include "Collision/CollisionShape/CollisionShape.hpp"
 
 class DecomposedObject : public Object {
 public:
