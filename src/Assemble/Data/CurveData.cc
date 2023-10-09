@@ -9,7 +9,7 @@ CurveData::CurveData(double rho, double alpha_max, double alpha_min, const Vecto
 
 CurveData::CurveData(double rho, double alpha_max, double alpha_min, const VectorXd &x)
     : SampledObjectData(x, GenerateMass(rho, x), 1, GenerateTopo(x.size() / 3)),
-      _k(100 * alpha_min), _curve_num_points(x.size() / 3) {
+      _stiffness(100 * alpha_min), _curve_num_points(x.size() / 3) {
     _alpha.resize(_curve_num_points - 1);
     if (_curve_num_points > 2) {
         const double delta_alpha = (alpha_min - alpha_max) / (_curve_num_points - 3);

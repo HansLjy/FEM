@@ -7,8 +7,12 @@ public:
 	GridEnergyModel() = default;
 	explicit GridEnergyModel(const json& config) {}
 
-	template<class Data> void Initialize(const Data* data) {}
-	template<class Data> double GetPotential(const Data* data, const Ref<const VectorXd> &x) const;
+	template<class Derived>	double GetPotential(Derived* obj, const Ref<const VectorXd> &x) const;
+	template<class Derived> VectorXd GetPotentialGradient(Derived* obj, const Ref<const VectorXd> &x) const;
+	template<class Derived> void GetPotentialHessian(Derived* obj, const Ref<const VectorXd> &x, COO &coo, int x_offset, int y_offset) const;
+};
+
+namespace GridEnergyFunction {
 	double GetPotential(
 		const Ref<const VectorXd> &x,
 		int num_edges, int start_diag_edges, int num_points,
@@ -16,8 +20,7 @@ public:
 		const Ref<const MatrixXi>& edge_topo,
 		const Ref<const VectorXd>& rest_length,
 		const Ref<const VectorXd>& x_rest
-	) const;
-	template<class Data> VectorXd GetPotentialGradient(const Data* data, const Ref<const VectorXd> &x) const;
+	);
 	VectorXd GetPotentialGradient(
 		const Ref<const VectorXd>& x,
 		int num_edges, int start_diag_edges, int num_points,
@@ -25,9 +28,7 @@ public:
 		const Ref<const MatrixXi>& edge_topo,
 		const Ref<const VectorXd>& rest_length,
 		const Ref<const VectorXd>& x_rest
-	) const;
-	template<class Data> void GetPotentialHessian(const Data* data, const Ref<const VectorXd> &x, COO &coo, int x_offset, int y_offset) const;
-
+	);
 	void GetPotentialHessian(
 		const Ref<const VectorXd> &x,
 		int dof,
@@ -37,36 +38,36 @@ public:
 		const Ref<const VectorXd>& rest_length,
 		const Ref<const VectorXd>& x_rest,
 		COO &coo, int x_offset, int y_offset
-	) const;
-};
-
-template<class Data>
-double GridEnergyModel::GetPotential(const Data *data, const Ref<const VectorXd> &x) const {
-	return GetPotential(
-		x,
-		data->_num_edges, data->_start_diag_edges, data->_num_points,
-		data->_stiffness, data->_diag_stiffness, data->_ret_stiffness,
-		data->_edge_topo, data->_rest_length, data->_x_rest
 	);
 }
 
-template<class Data>
-VectorXd GridEnergyModel::GetPotentialGradient(const Data* data, const Ref<const VectorXd> &x) const {
-	return GetPotentialGradient(
+template<class Derived>
+double GridEnergyModel::GetPotential(Derived* obj, const Ref<const VectorXd> &x) const {
+	return GridEnergyFunction::GetPotential(
 		x,
-		data->_num_edges, data->_start_diag_edges, data->_num_points,
-		data->_stiffness, data->_diag_stiffness, data->_ret_stiffness,
-		data->_edge_topo, data->_rest_length, data->_x_rest
+		obj->_num_edges, obj->_start_diag_edges, obj->_num_points,
+		obj->_stiffness, obj->_diag_stiffness, obj->_ret_stiffness,
+		obj->_edge_topo, obj->_rest_length, obj->_x_rest
 	);
 }
 
-template<class Data>
-void GridEnergyModel::GetPotentialHessian(const Data* data, const Ref<const VectorXd> &x, COO &coo, int x_offset, int y_offset) const {
-	GridEnergyModel::GetPotentialHessian(
-		x, data->_dof,
-		data->_num_edges, data->_start_diag_edges, data->_num_points,
-		data->_stiffness, data->_diag_stiffness, data->_ret_stiffness,
-		data->_edge_topo, data->_rest_length, data->_x_rest,
+template<class Derived>
+VectorXd GridEnergyModel::GetPotentialGradient(Derived* obj, const Ref<const VectorXd> &x) const {
+	return GridEnergyFunction::GetPotentialGradient(
+		x,
+		obj->_num_edges, obj->_start_diag_edges, obj->_num_points,
+		obj->_stiffness, obj->_diag_stiffness, obj->_ret_stiffness,
+		obj->_edge_topo, obj->_rest_length, obj->_x_rest
+	);
+}
+
+template<class Derived>
+void GridEnergyModel::GetPotentialHessian(Derived* obj, const Ref<const VectorXd> &x, COO &coo, int x_offset, int y_offset) const {
+	GridEnergyFunction::GetPotentialHessian(
+		x, obj->_dof,
+		obj->_num_edges, obj->_start_diag_edges, obj->_num_points,
+		obj->_stiffness, obj->_diag_stiffness, obj->_ret_stiffness,
+		obj->_edge_topo, obj->_rest_length, obj->_x_rest,
 		coo, x_offset, y_offset
 	);
 }

@@ -13,7 +13,7 @@ struct CurveData : public SampledObjectData {
     static VectorXd GenerateMass(double rho, const VectorXd &x);
 	static MatrixXi GenerateTopo(int n);
 
-    const double _k;      		// stiffness of the curve
+    const double _stiffness;	// stiffness of the curve
     int _curve_num_points;      // number of sampled points (end points included)
     VectorXd _alpha;
     VectorXd _x_rest;           // rest shape of the curve

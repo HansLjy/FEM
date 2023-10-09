@@ -76,4 +76,47 @@ private:
 
 #define HAS_MEMBER(CLASS_NAME, MEMBER_NAME) (has_member_##MEMBER_NAME<CLASS_NAME>::value)
 
+
+/* Concept-Model idiom */
+#define CONCEPT_MODEL_IDIOM_BEGIN(InterfaceName) \
+class InterfaceName {\
+public:\
+	template<class T>\
+	InterfaceName(T* model) : _concept(new Model<T>(model)) {}
+
+#define CONCEPT_MODEL_IDIOM_CONCEPT\
+	class Concept {\
+	public:
+
+#define CONCEPT_MODEL_IDIOM_MODEL\
+		virtual ~Concept() = default;\
+	};\
+	\
+	template<class T>\
+	class Model : public Concept {\
+	public:\
+		Model(T* obj) : _obj(obj) {}
+
+
+#define CONCEPT_MODEL_IDIOM_END\
+	private:\
+		T* _obj;\
+	};\
+	\
+	std::shared_ptr<Concept> _concept;\
+};
+
+#define ADD_INTERFACE_FUNCTION(FUNCTION_SIGNATURE, FUNCTION_CALL)\
+	FUNCTION_SIGNATURE {\
+		return _concept->FUNCTION_CALL;\
+	}
+
+#define ADD_MODEL_FUNCTION(FUNCTION_SIGNATURE, FUNCTION_CALL)\
+	FUNCTION_SIGNATURE override { \
+		return _obj->FUNCTION_CALL;\
+	}
+
+#define ADD_CONCEPT_FUNCTION(FUNCTION_SIGNATURE)\
+	virtual FUNCTION_SIGNATURE = 0;
+
 #endif //FEM_PATTERN_H

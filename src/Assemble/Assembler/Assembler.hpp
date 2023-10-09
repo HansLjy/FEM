@@ -6,39 +6,100 @@
 
 #include "EigenAll.h"
 #include "Pattern.h"
-#include "System/System.hpp"
+#include "Object.hpp"
 
-// Assemble the bunch of objects
-class Assembler {
+CONCEPT_MODEL_IDIOM_BEGIN(Coordinated)
+	ADD_INTERFACE_FUNCTION(int GetDOF() const, GetDOF())
+	ADD_INTERFACE_FUNCTION(void GetCoordinate(Ref<VectorXd> x) const, GetCoordinate(x))
+	ADD_INTERFACE_FUNCTION(void GetVelocity(Ref<VectorXd> v) const, GetVelocity(v))
+	ADD_INTERFACE_FUNCTION(void SetCoordinate(const Ref<const VectorXd> &x) const, SetCoordinate(x))
+	ADD_INTERFACE_FUNCTION(void SetVelocity(const Ref<const VectorXd> &v) const, SetVelocity(v))
+CONCEPT_MODEL_IDIOM_CONCEPT
+	ADD_CONCEPT_FUNCTION(int GetDOF() const)
+	ADD_CONCEPT_FUNCTION(void GetCoordinate(Ref<VectorXd> x) const)
+	ADD_CONCEPT_FUNCTION(void GetVelocity(Ref<VectorXd> v) const)
+	ADD_CONCEPT_FUNCTION(void SetCoordinate(const Ref<const VectorXd> &x) const)
+	ADD_CONCEPT_FUNCTION(void SetVelocity(const Ref<const VectorXd> &v) const)
+CONCEPT_MODEL_IDIOM_MODEL
+	ADD_MODEL_FUNCTION(int GetDOF() const, GetDOF())
+	ADD_MODEL_FUNCTION(void GetCoordinate(Ref<VectorXd> x) const, GetCoordinate(x))
+	ADD_MODEL_FUNCTION(void GetVelocity(Ref<VectorXd> v) const, GetVelocity(v))
+	ADD_MODEL_FUNCTION(void SetCoordinate(const Ref<const VectorXd> &x) const, SetCoordinate(x))
+	ADD_MODEL_FUNCTION(void SetVelocity(const Ref<const VectorXd> &v) const, SetVelocity(v))
+CONCEPT_MODEL_IDIOM_END
+
+CONCEPT_MODEL_IDIOM_BEGIN(Massed)
+	ADD_INTERFACE_FUNCTION(int GetDOF() const, GetDOF())
+	ADD_INTERFACE_FUNCTION(void GetMass(COO& coo, int offset_x, int offset_y) const, GetMass(coo, offset_x, offset_y))
+CONCEPT_MODEL_IDIOM_CONCEPT
+	ADD_CONCEPT_FUNCTION(int GetDOF() const)
+	ADD_CONCEPT_FUNCTION(void GetMass(COO& coo, int offset_x, int offset_y) const)
+CONCEPT_MODEL_IDIOM_MODEL
+	ADD_MODEL_FUNCTION(int GetDOF() const, GetDOF())
+	ADD_MODEL_FUNCTION(void GetMass(COO& coo, int offset_x, int offset_y) const, GetMass(coo, offset_x, offset_y))
+CONCEPT_MODEL_IDIOM_END
+
+CONCEPT_MODEL_IDIOM_BEGIN(Energied)
+	ADD_INTERFACE_FUNCTION(int GetDOF() const, GetDOF())
+	ADD_INTERFACE_FUNCTION(double GetPotentialEnergy(const Ref<const VectorXd>& x) const, GetPotentialEnergy(x))
+	ADD_INTERFACE_FUNCTION(VectorXd GetPotentialGradient(const Ref<const VectorXd> &x) const, GetPotentialGradient(x))
+	ADD_INTERFACE_FUNCTION(
+		void GetPotentialHessian(const Ref<const VectorXd> &x, COO &coo, int x_offset, int y_offset) const,
+		GetPotentialHessian(x, coo, x_offset, y_offset)
+	)
+CONCEPT_MODEL_IDIOM_CONCEPT
+	ADD_CONCEPT_FUNCTION(int GetDOF() const)
+	ADD_CONCEPT_FUNCTION(double GetPotentialEnergy(const Ref<const VectorXd>& x) const)
+	ADD_CONCEPT_FUNCTION(VectorXd GetPotentialGradient(const Ref<const VectorXd> &x) const)
+	ADD_CONCEPT_FUNCTION(void GetPotentialHessian(const Ref<const VectorXd> &x, COO &coo, int x_offset, int y_offset) const)
+CONCEPT_MODEL_IDIOM_MODEL
+	ADD_MODEL_FUNCTION(int GetDOF() const, GetDOF())
+	ADD_MODEL_FUNCTION(double GetPotentialEnergy(const Ref<const VectorXd>& x) const, GetPotentialEnergy(x))
+	ADD_MODEL_FUNCTION(VectorXd GetPotentialGradient(const Ref<const VectorXd> &x) const, GetPotentialGradient(x))
+	ADD_MODEL_FUNCTION(
+		void GetPotentialHessian(const Ref<const VectorXd> &x, COO &coo, int x_offset, int y_offset) const,
+		GetPotentialHessian(x, coo, x_offset, y_offset)
+	)
+CONCEPT_MODEL_IDIOM_END
+
+
+
+// virtual void GetExternalForce(Ref<VectorXd> force) const = 0;
+
+class CoordinateAssembler : public InterfaceContainer<Coordinated> {
 public:
-	virtual void BindSystem(System& system);
+    int GetDOF() const;
 
-	virtual void BindObjects (
-		const typename std::vector<Object*>::const_iterator& begin,
-		const typename std::vector<Object*>::const_iterator& end
-	);
-	virtual void BindObjects(const std::vector<Object*>& objs);
+    void GetCoordinate(Ref<VectorXd> x) const;
+    void GetVelocity(Ref<VectorXd> v) const;
 
-    virtual int GetDOF() const = 0;
+    void SetCoordinate(const Ref<const VectorXd> &x) const;
+    void SetVelocity(const Ref<const VectorXd> &v) const;
+};
 
-    virtual void GetCoordinate(Ref<VectorXd> x) const = 0;
-    virtual void GetVelocity(Ref<VectorXd> v) const = 0;
-
-    virtual void SetCoordinate(const Ref<const VectorXd> &x) = 0;
-    virtual void SetVelocity(const Ref<const VectorXd> &v) = 0;
-
-    void GetMass(SparseMatrixXd& mass) const;
-    virtual void GetMass(COO& coo, int offset_x, int offset_y) const = 0;
-
-    virtual double GetPotentialEnergy(const Ref<const VectorXd>& x) const = 0;
-    virtual void GetPotentialEnergyGradient(const Ref<const VectorXd> &x, Ref<VectorXd> gradient) const = 0;
-	void GetPotentialEnergyHessian(const Ref<const VectorXd>& x, SparseMatrixXd& hessian) const;
-    virtual void GetPotentialEnergyHessian(const Ref<const Eigen::VectorXd> &x, COO &coo, int offset_x, int offset_y) const = 0;
-
-    virtual void GetExternalForce(Ref<VectorXd> force) const = 0;
-
-    virtual ~Assembler() = default;
+class MassAssembler : public InterfaceContainer<Massed> {
+public:
+	void BindObjects(
+		const typename std::vector<Object>::const_iterator& begin,
+		const typename std::vector<Object>::const_iterator& end
+	) override;
+	void GetMass(SparseMatrixXd& mass) const;
+	void GetMass(COO& coo, int offset_x, int offset_y) const;
 
 protected:
-	std::vector<Object*> _objs;
+	int _total_dof;
 };
+
+class EnergyAssembler : public InterfaceContainer<Energied> {
+public:
+	double GetPotentialEnergy(const Ref<const VectorXd>& x) const;
+	void GetPotentialEnergyGradient(const Ref<const VectorXd> &x, Ref<VectorXd> gradient) const;
+	void GetPotentialEnergyHessian(const Ref<const VectorXd>& x, SparseMatrixXd& hessian) const;
+	void GetPotentialEnergyHessian(const Ref<const Eigen::VectorXd> &x, COO &coo, int offset_x, int offset_y) const;
+};
+
+
+
+// virtual void GetExternalForce(Ref<VectorXd> force) const = 0;
+
+// virtual ~Assembler() = default;

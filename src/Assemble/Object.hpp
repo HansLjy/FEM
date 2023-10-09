@@ -1,142 +1,134 @@
-//
-// Created by hansljy on 10/7/22.
-//
+#pragma once
 
-#ifndef FEM_OBJECT_H
-#define FEM_OBJECT_H
+#include <string>
+#include <memory>
+#include <vector>
+#include <functional>
+#include <iostream>
+#include <map>
+#include "JsonUtil.h"
 
-#include "EigenAll.h"
-#include "Pattern.h"
-#include "ExternalForce/ExternalForceContainer.hpp"
-#include "BlockMatrix.h"
-#include "Collision/CollisionShape/CollisionShape.hpp"
+struct Object final {
+	std::string _type;
+	std::shared_ptr<void> _ptr;
 
-enum class CollisionAssemblerType {
-	kNull,
-	kIndex,
+	friend class Creator;
+private:
+	Object(const std::string& type, void* ptr);
 };
 
-class Object : public CollisionShapeInterface {
+class Deleter {
 public:
-	virtual void Initialize() = 0;
+	using ProductDeleter = std::function<void(void*)>;
 
-	virtual int GetDOF() const = 0;
-	virtual void GetCoordinate(Ref<VectorXd> x) const = 0;
-	virtual void GetVelocity(Ref<VectorXd> v) const = 0;
-	virtual void SetCoordinate(const Ref<const VectorXd>& x) = 0;
-	virtual void SetVelocity(const Ref<const VectorXd>& v) = 0;
-
-	virtual Vector3d GetFrameX() const {
-		return Vector3d::Zero();
-	}
-	virtual Matrix3d GetFrameRotation() const {
-		return Matrix3d::Identity();
-	}
-	virtual bool IsDecomposed() const {
-		return false;
+	static Deleter* GetInstance() {
+		if (!_the_deletor) {
+			_the_deletor = new Deleter;
+		}
+		return _the_deletor;
 	}
 
-	/* Mass */
-    virtual void GetMass(COO& coo, int x_offset, int y_offset) const = 0;
-	virtual double GetTotalMass() const = 0;
-	virtual Vector3d GetUnnormalizedMassCenter() const = 0;
-	virtual Matrix3d GetInertialTensor() const = 0;
-	virtual VectorXd GetInertialForce(const Vector3d &v, const Vector3d &a, const Vector3d &omega, const Vector3d &alpha, const Matrix3d &rotation) const = 0;
-	// The inertial force in **local coordinate**
-	virtual VectorXd GetInertialForce(const Vector3d &v, const Vector3d &a, const Matrix3d &affine, const Matrix3d& affine_velocity, const Matrix3d& affine_acceleration) const = 0;
+	bool Register(const std::string& name, const ProductDeleter& deleter) {
+		std::cerr << name << " deleter registered" << std::endl;
+		return _deleter_map.insert(std::make_pair(name, deleter)).second;
+	}
 
-	/* Internal Energy */
-    virtual double GetPotential(const Ref<const VectorXd>& x) const = 0;
-    virtual VectorXd GetPotentialGradient(const Ref<const VectorXd>& x) const = 0;
-    virtual void GetPotentialHessian(const Ref<const VectorXd>& x, COO& coo, int x_offset, int y_offset) const = 0;
+	void Delete(const std::string& name, void* ptr) {
+		return _deleter_map[name](ptr);
+	}
 
-	/* External Force */
-
-    virtual void AddExternalForce(const std::string& type, const json& config) = 0;
-    virtual VectorXd GetExternalForce() const = 0;
-
-	virtual VectorXd GetExternalForceWithFrame(const Matrix3d &rotation, const Vector3d &position) const = 0;
-	virtual Vector3d GetTotalExternalForce(const Matrix3d &rotation, const Vector3d &position) const = 0;
-	virtual Matrix3d GetTotalExternalForceTorque(const Matrix3d &rotation, const Vector3d &position) const = 0;
-
-	/* Render Shape */
-	virtual void GetRenderVertices(MatrixXd& vertices) const = 0;
-	virtual bool IsRenderTopoUpdated() = 0;
-	virtual void GetRenderTopos(MatrixXi& topos) const = 0;
-	virtual bool HasOuterFrame() const = 0;
-	virtual void GetFrameVertices(MatrixXd& vertices) const = 0;
-	virtual bool IsFrameTopoUpdated() = 0;
-	virtual void GetFrameTopo(MatrixXi& topo) const = 0;
-	virtual bool IsUsingTexture() const = 0;
-	virtual const std::string& GetTexturePath() const = 0;
-	virtual void GetUVCoords(MatrixXf& uv_coords) const = 0;
-
-	/* Collision Shape */
-	void ComputeCollisionVertex(const Ref<const VectorXd> &x) override = 0;
-	void ComputeCollisionVertexVelocity(const Ref<const VectorXd> &v) override = 0;
-	const BlockVector & GetCollisionVertexDerivative(int idx) const override = 0;
-	Vector3d GetCollisionVertexVelocity(int idx) const override = 0;
-	const MatrixXd & GetCollisionVertices() const override = 0;
-	const MatrixXi & GetCollisionEdgeTopo() const override = 0;
-	const MatrixXi & GetCollisionFaceTopo() const override = 0;
-
-	virtual ~Object() = default;
+private:
+	static Deleter* _the_deletor;
+	std::map<std::string, ProductDeleter> _deleter_map;
 };
 
-template<class Data, class DataForExternalForce, class Coordinate, class MassModel, class EnergyModel, class Render, class Collision>
-class ConcreteObject : public Object, public Data, public EnergyModel, public Render, public Collision, public ExternalForceContainer<DataForExternalForce> {
+class Creator {
 public:
-	ConcreteObject(const json& config) : Data(config), EnergyModel(config["energy-model"]), Render(config["render"]), Collision(config["collision"]) {}
-	ConcreteObject(Data&& data, EnergyModel&& energy_model, Render&& render, Collision&& collision) : Data(std::move(data)), EnergyModel(std::move(energy_model)), Render(std::move(render)), Collision(std::move(collision)) {}
+	using ProductCreator = std::function<void*(const json& config)>;
 
-	void Initialize() override {
-		EnergyModel::Initialize(this);
-		Render::Initialize(this);
-		Collision::Initialize(this);
+	static Creator* GetInstance() {
+		if (!_the_creator) {
+			_the_creator = new Creator;
+		}
+		return _the_creator;
 	}
 
-	int GetDOF() const override {return Coordinate::GetDOF(this);}
-	void GetCoordinate(Ref<VectorXd> x) const override {Coordinate::GetCoordinate(this, x);}
-	void GetVelocity(Ref<VectorXd> v) const override {Coordinate::GetVelocity(this, v);}
-	void SetCoordinate(const Ref<const VectorXd> &x) override {Coordinate::SetCoordinate(this, x);}
-	void SetVelocity(const Ref<const VectorXd> &v) override {Coordinate::SetVelocity(this, v);}
+	bool Register(const std::string& name, const ProductCreator& creator) {
+		std::cerr << name << " creator registered" << std::endl;
+		return _creator_map.insert(std::make_pair(name, creator)).second;
+	}
 
-	void GetMass(COO &coo, int x_offset, int y_offset) const override {MassModel::GetMass(this, coo, x_offset, y_offset);}
-	double GetTotalMass() const override {return MassModel::GetTotalMass(this);}
-	Vector3d GetUnnormalizedMassCenter() const override {return MassModel::GetUnnormalizedMassCenter(this);}
-	Matrix3d GetInertialTensor() const override {return MassModel::GetInertialTensor(this);}
-	VectorXd GetInertialForce(const Vector3d &v, const Vector3d &a, const Vector3d &omega, const Vector3d &alpha, const Matrix3d &rotation) const override {return MassModel::GetInertialForce(this, v, a, omega, alpha, rotation);}
-	VectorXd GetInertialForce(const Vector3d &v, const Vector3d &a, const Matrix3d &affine, const Matrix3d &affine_velocity, const Matrix3d &affine_acceleration) const override {return MassModel::GetInertialForce(this, v, a, affine, affine_velocity, affine_acceleration);}
+	Object GetProduct(const std::string& type, const json& config) {
+		return {
+			type,
+			_creator_map[type](config)
+		};
+	}
 
-	double GetPotential(const Ref<const VectorXd> &x) const override {return EnergyModel::GetPotential(this, x);}
-	VectorXd GetPotentialGradient(const Ref<const VectorXd> &x) const override {return EnergyModel::GetPotentialGradient(this, x);}
-	void GetPotentialHessian(const Ref<const VectorXd> &x, COO &coo, int x_offset, int y_offset) const override {EnergyModel::GetPotentialHessian(this, x, coo, x_offset, y_offset);}
-
-	void GetRenderVertices(MatrixXd &vertices) const override {Render::GetRenderVertices(this, vertices);}
-	void GetRenderTopos(MatrixXi &topos) const override {Render::GetRenderTopos(this, topos);}
-	bool HasOuterFrame() const override {return Render::HasOuterFrame(this);}
-	void GetFrameVertices(MatrixXd &vertices) const override {Render::GetFrameVertices(this, vertices);}
-	void GetFrameTopo(MatrixXi &topo) const override {Render::GetFrameTopo(this, topo);};
-	bool IsUsingTexture() const override {return Render::IsUsingTexture(this);}
-	const std::string & GetTexturePath() const override {return Render::GetTexturePath(this);}
-	void GetUVCoords(MatrixXf &uv_coords) const override {Render::GetUVCoords(this, uv_coords);}
-	bool IsRenderTopoUpdated() override {return Render::IsTopoUpdated(this);}
-	bool IsFrameTopoUpdated() override {return Render::IsBBTopoUpdated(this);}
-
-	void ComputeCollisionVertex(const Ref<const VectorXd> &x) override {Collision::ComputeCollisionVertex(this, x);}
-	void ComputeCollisionVertexVelocity(const Ref<const VectorXd> &v) override {Collision::ComputeCollisionVertex(this, v);}
-	const BlockVector & GetCollisionVertexDerivative(int idx) const override {return Collision::GetCollisionVertexDerivative(this, idx);}
-	Vector3d GetCollisionVertexVelocity(int idx) const override {return Collision::GetCollisionVertexVelocity(this, idx);}
-	const MatrixXd & GetCollisionVertices() const override {return Collision::GetCollisionVertices(this);}
-	const MatrixXi & GetCollisionEdgeTopo() const override {return Collision::GetCollisionEdgeTopo(this);}
-	const MatrixXi & GetCollisionFaceTopo() const override {return Collision::GetCollisionFaceTopo(this);}
-
-    void AddExternalForce(const std::string& type, const json& config) override {ExternalForceContainer<DataForExternalForce>::AddExternalForce(type, config);}
-	VectorXd GetExternalForce() const override {return ExternalForceContainer<DataForExternalForce>::GetExternalForce(this);}
-
-	VectorXd GetExternalForceWithFrame(const Matrix3d &rotation, const Vector3d &position) const override {return ExternalForceContainer<DataForExternalForce>::GetExternalForceWithFrame(this, rotation, position);}
-	Vector3d GetTotalExternalForce(const Matrix3d &rotation, const Vector3d &position) const override {return ExternalForceContainer<DataForExternalForce>::GetTotalExternalForce(this, rotation, position);}
-	Matrix3d GetTotalExternalForceTorque(const Matrix3d &rotation, const Vector3d &position) const override {return ExternalForceContainer<DataForExternalForce>::GetTotalExternalForceTorque(this, rotation, position);}
+private:
+	static Creator* _the_creator;
+	std::map<std::string, ProductCreator> _creator_map;
 };
 
-#endif //FEM_OBJECT_H
+template <class Product>
+class Caster {
+public:
+	using ProductCaster = std::function<Product(void*)>;
+
+	static Caster* GetInstance() {
+		if (!_the_factory) {
+			_the_factory = new Caster;
+		}
+		return _the_factory;
+	}
+
+	bool Register(const std::string& name, const ProductCaster& creator) {
+		std::cerr << name << " registered" << std::endl;
+		return _creator_map.insert(std::make_pair(name, creator)).second;
+	}
+
+	Product Cast(const Object& obj) {
+		return _creator_map[obj._type](obj._ptr.get());
+	}
+
+private:
+	static Caster* _the_factory;
+	std::map<std::string, ProductCaster> _creator_map;
+};
+
+template<class Interface>
+void Cast2Interface(
+	const typename std::vector<Object>::const_iterator& begin,
+	const typename std::vector<Object>::const_iterator& end,
+	std::vector<Interface>& out
+) {
+	for (auto itr = begin; itr != end; itr++) {
+		out.emplace_back(Caster<Interface>::GetInstance()->Cast(*itr));
+	}
+}
+
+inline void ReadObjects(const json& config, std::vector<Object>& objs) {
+	const auto& objects_config = config["objects"];
+    for (const auto& object_config : objects_config) {
+		objs.push_back(Creator::GetInstance()->GetProduct(object_config["type"], object_config));
+    }
+}
+
+template<class Interface>
+class InterfaceContainer {
+public:
+	virtual void BindObjects (
+		const typename std::vector<Object>::const_iterator& begin,
+		const typename std::vector<Object>::const_iterator& end
+	) {
+		_objs.clear();
+		Cast2Interface(begin, end, _objs);
+	}
+
+	void BindObjects(const std::vector<Object>& objs) {
+		BindObjects(objs.begin(), objs.end());
+	}
+
+protected:
+	std::vector<Interface> _objs;
+};

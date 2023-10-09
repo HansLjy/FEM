@@ -37,16 +37,14 @@ struct ClothData : public SampledObjectData {
 		double stretch_u = 1, double stretch_v = 1
 	);
 	
-    const int _curve_num_points;
-    const int _num_triangles;
     int _num_internal_edges;
     const double _k_stretch;
     const double _k_shear;
     const double _stretch_u, _stretch_v;
     MatrixXd _uv_coord;
     VectorXd _area;             // area of each triangle
-    VectorX<Matrix2d> _inv;     // inverse of (Delta u, Delta v) for every triangle
-    VectorX<Matrix6d> _pFpx;    // derivative of F(deform gradient) against xj, xk for every triangle
+    std::vector<Matrix2d> _inv;     // inverse of (Delta u, Delta v) for every triangle
+    std::vector<Matrix6d> _pFpx;    // derivative of F(deform gradient) against xj, xk for every triangle
 
     MatrixXi _internal_edge;    // edges that lie inside the cloth
                                 // _internal_edge[i] stores the indices of the two nodes

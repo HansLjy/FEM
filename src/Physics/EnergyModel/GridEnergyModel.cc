@@ -1,13 +1,13 @@
 #include "GridEnergyModel.hpp"
 
-double GridEnergyModel::GetPotential(
+double GridEnergyFunction::GetPotential(
 	const Ref<const VectorXd> &x,
 	int num_edges, int start_diag_edges, int num_points,
 	double stiffness, double diag_stiffness, double ret_stiffness,
 	const Ref<const MatrixXi>& edge_topo,
 	const Ref<const VectorXd>& rest_length,
 	const Ref<const VectorXd>& x_rest
-) const {
+) {
 	double energy = 0;
 	for (int i = 0; i < start_diag_edges; i++) {
 		const auto& indices = edge_topo.row(i);
@@ -33,14 +33,14 @@ double GridEnergyModel::GetPotential(
 
 }
 
-VectorXd GridEnergyModel::GetPotentialGradient(
+VectorXd GridEnergyFunction::GetPotentialGradient(
 	const Ref<const VectorXd>& x,
 	int num_edges, int start_diag_edges, int num_points,
 	double stiffness, double diag_stiffness, double ret_stiffness,
 	const Ref<const MatrixXi>& edge_topo,
 	const Ref<const VectorXd>& rest_length,
 	const Ref<const VectorXd>& x_rest
-) const {
+) {
 	VectorXd gradient = VectorXd::Zero(x.size());
 	for (int i = 0; i < start_diag_edges; i++) {
 		const auto& indices = edge_topo.row(i);
@@ -68,7 +68,7 @@ VectorXd GridEnergyModel::GetPotentialGradient(
 	return gradient;
 }
 
-void GridEnergyModel::GetPotentialHessian(
+void GridEnergyFunction::GetPotentialHessian(
 	const Ref<const VectorXd> &x,
 	int dof,
 	int num_edges, int start_diag_edges, int num_points,
@@ -77,7 +77,7 @@ void GridEnergyModel::GetPotentialHessian(
 	const Ref<const VectorXd>& rest_length,
 	const Ref<const VectorXd>& x_rest,
 	COO &coo, int x_offset, int y_offset
-) const {
+) {
 	for (int i = 0; i < num_edges; i++) {
 		const auto& indices = edge_topo.row(i);
 		const int id1 = indices[0], id2 = indices[1];

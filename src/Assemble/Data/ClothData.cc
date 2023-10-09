@@ -101,14 +101,12 @@ ClothData::ClothData(
 	const MatrixXi &topo,
 	double stretch_u, double stretch_v)
 	: SampledObjectData(x, GenerateMass(rho, thickness, uv_corrd, topo), 2, topo),
-               _curve_num_points(x.size() / 3),
-               _num_triangles(topo.rows()),
                _k_stretch(k_stretch), _k_shear(k_shear),
                _stretch_u(stretch_u), _stretch_v(stretch_v),
                _uv_coord(uv_corrd)
                {
-    _area.resize(_num_triangles);
-    for (int i = 0; i < _num_triangles; i++) {
+    _area.resize(_num_faces);
+    for (int i = 0; i < _num_faces; i++) {
         RowVector3i index = _face_topo.row(i);
         Vector2d e1 = uv_corrd.row(index(1)) - uv_corrd.row(index(0));
         Vector2d e2 = uv_corrd.row(index(2)) - uv_corrd.row(index(0));
@@ -123,9 +121,9 @@ ClothData::ClothData(
 
     std::vector<std::tuple<int, int, int>> edges;
 
-    _inv.resize(_num_triangles);
-    _pFpx.resize(_num_triangles);
-    for (int i = 0; i < _num_triangles; i++) {
+    _inv.reserve(_num_faces);
+    _pFpx.reserve(_num_faces);
+    for (int i = 0; i < _num_faces; i++) {
         RowVector3i index = _face_topo.row(i);
         Vector2d e1 = uv_corrd.row(index(1)) - uv_corrd.row(index(0));
         Vector2d e2 = uv_corrd.row(index(2)) - uv_corrd.row(index(0));
@@ -134,8 +132,8 @@ ClothData::ClothData(
         F.col(0) = e1;
         F.col(1) = e2;
 
-        _inv(i) = F.inverse();
-        _pFpx(i) = Eigen::KroneckerProduct<Matrix2d, Matrix3d>(_inv(i), Matrix3d::Identity());
+        _inv.emplace_back(F.inverse());
+        _pFpx.emplace_back(Eigen::KroneckerProduct<Matrix2d, Matrix3d>(_inv[i], Matrix3d::Identity()));
 
         for (int j = 0; j < 3; j++) {
             edges.push_back(

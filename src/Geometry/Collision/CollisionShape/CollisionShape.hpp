@@ -15,17 +15,6 @@ struct CollisionData {
 	std::vector<BlockVector> _vertex_derivatives;
 };
 
-class CollisionShapeInterface {
-public:
-    virtual void ComputeCollisionVertex(const Ref<const VectorXd>& x) = 0;
-    virtual void ComputeCollisionVertexVelocity(const Ref<const VectorXd>& v) = 0;
-	virtual const BlockVector& GetCollisionVertexDerivative(int idx) const = 0;
-	virtual Vector3d GetCollisionVertexVelocity(int idx) const = 0;
-    virtual const MatrixXd& GetCollisionVertices() const = 0;
-    virtual const MatrixXi& GetCollisionEdgeTopo() const = 0;
-    virtual const MatrixXi& GetCollisionFaceTopo() const = 0;
-};
-
 class BasicCollisionShape {
 public:
 	template<class Data> Vector3d GetCollisionVertexVelocity(const Data* data, int idx) const {return data->_collision_vertex_velocity.row(idx);}
