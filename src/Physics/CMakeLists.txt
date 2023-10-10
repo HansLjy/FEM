@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.22)
 
 file(GLOB PHYSICS_SOURCE_FILE
 	EnergyModel/*.cc
+    MassModel/*.cc
 )
 add_library(Physics ${PHYSICS_SOURCE_FILE})
 

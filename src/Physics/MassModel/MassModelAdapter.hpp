@@ -3,7 +3,7 @@
 #include "EigenAll.h"
 
 template<class MassModel, class Derived>
-class MassModelImplementation {
+class MassModelAdapter {
 public:
 	void GetMass(COO& coo, int x_offset, int y_offset) {
 		MassModel::GetMass(static_cast<Derived*>(this), coo, x_offset, y_offset);

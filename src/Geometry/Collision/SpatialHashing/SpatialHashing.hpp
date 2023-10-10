@@ -11,8 +11,6 @@
 template <typename NodeInfo>
 class SpatialHashing {
 public:
-    explicit SpatialHashing(const json& config) : SpatialHashing(config["grid-length"], config["hash-table-size"]) {}
-
     SpatialHashing(double grid_length, unsigned int hash_table_size)
         : _grid_length(grid_length), _hash_table_size(hash_table_size), _hash_table(hash_table_size) {}
 

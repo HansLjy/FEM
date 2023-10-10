@@ -1,6 +1,32 @@
 #include "Assembler.hpp"
 #include "Pattern.h"
 
+template<>
+Caster<Energied>* Caster<Energied>::_the_factory = nullptr;
+
+template<>
+Caster<Massed>* Caster<Massed>::_the_factory = nullptr;
+
+template<>
+Caster<Coordinated>* Caster<Coordinated>::_the_factory = nullptr;
+
+template<>
+Caster<ExternalForced>* Caster<ExternalForced>::_the_factory = nullptr;
+
+void CoordinateAssembler::BindObjects(
+    const typename std::vector<Object>::const_iterator &begin,
+    const typename std::vector<Object>::const_iterator &end
+) {
+    InterfaceContainer::BindObjects(begin, end);
+    _total_dof = 0;
+    for (const auto& obj : _objs) {
+        _total_dof += obj.GetDOF();
+    }
+}
+
+int CoordinateAssembler::GetDOF() const {
+    return _total_dof;
+}
 
 #define ASSEMBLE_1D(FuncName, var)										\
     int cur_offset = 0;													\
@@ -36,14 +62,6 @@ void CoordinateAssembler::SetVelocity(const Ref<const Eigen::VectorXd> &v) const
 
 #undef DISPERSE_1D
 
-#define ASSEMBLE_2D(FuncName)														\
-    int current_row = 0;                                                            \
-    for (const auto& obj : this->_objs) {											\
-        obj.Get##FuncName(coo, current_row + offset_x, current_row + offset_y);     \
-        current_row += obj.GetDOF();                                                \
-    }                                                                               \
-
-
 void MassAssembler::BindObjects(
 	const typename std::vector<Object>::const_iterator& begin,
 	const typename std::vector<Object>::const_iterator& end
@@ -63,7 +81,22 @@ void MassAssembler::GetMass(SparseMatrixXd& mass) const {
 }
 
 void MassAssembler::GetMass(COO &coo, int offset_x, int offset_y) const {
-    ASSEMBLE_2D(Mass)
+    int current_row = 0;
+    for (const auto& obj : _objs) {
+        obj.GetMass(coo, current_row + offset_x, current_row + offset_y);
+        current_row += obj.GetDOF();
+    } 
+}
+
+void EnergyAssembler::BindObjects(
+    const typename std::vector<Object>::const_iterator &begin,
+    const typename std::vector<Object>::const_iterator &end
+) {
+    InterfaceContainer::BindObjects(begin, end);
+    _total_dof = 0;
+    for (const auto& obj : _objs) {
+        _total_dof += obj.GetDOF();
+    }
 }
 
 double EnergyAssembler::GetPotentialEnergy(const Ref<const Eigen::VectorXd> &x) const {
@@ -76,50 +109,38 @@ double EnergyAssembler::GetPotentialEnergy(const Ref<const Eigen::VectorXd> &x) 
     return energy;
 }
 
-#undef ASSEMBLE_2D
-
-#define ASSEMBLE_1D_ELSEWHERE(FuncName, X, var) \
-    int cur_offset = 0;             \
-    for (const auto& obj : this->_objs) { \
-        var.segment(cur_offset, obj->GetDOF()) = obj->Get##FuncName(X.segment(cur_offset, obj->GetDOF())); \
-        cur_offset += obj->GetDOF();                                   \
-    }
-
-void GeneralAssembler::GetPotentialEnergyGradient(const Ref<const Eigen::VectorXd> &x, Ref<Eigen::VectorXd> gradient) const {
-    ASSEMBLE_1D_ELSEWHERE(PotentialGradient, x, gradient)
+void EnergyAssembler::GetPotentialHessian(const Ref<const VectorXd>& x, SparseMatrixXd& hessian) const {
+	COO coo;
+	GetPotentialHessian(x, coo, 0, 0);
+	hessian.resize(_total_dof, _total_dof);
+	hessian.setFromTriplets(coo.begin(), coo.end());
 }
 
-#undef ASSEMBLE_1D_ELSEWHERE
-
-#define ASSEMBLE_2D_ELSEWHERE(FuncName, X) \
-    int current_row = 0;                                                            \
-    for (const auto& obj : this->_objs) {                                                 \
-        obj->Get##FuncName(X.segment(current_row, obj->GetDOF()), coo, current_row + offset_x, current_row + offset_y);    \
-        current_row += obj->GetDOF();                                               \
+void EnergyAssembler::GetPotentialGradient(const Ref<const Eigen::VectorXd> &x, Ref<Eigen::VectorXd> gradient) const {
+    int cur_offset = 0;
+    for (const auto& obj : _objs) {
+        gradient.segment(cur_offset, obj.GetDOF()) = obj.GetPotentialGradient(x.segment(cur_offset, obj.GetDOF()));
+        cur_offset += obj.GetDOF();
     }
-
-void GeneralAssembler::GetPotentialEnergyHessian(const Ref<const Eigen::VectorXd> &x, COO &coo, int offset_x, int offset_y) const {
-    ASSEMBLE_2D_ELSEWHERE(PotentialHessian, x)
 }
 
-void GeneralAssembler::GetExternalForce(Ref<Eigen::VectorXd> force) const {
+void EnergyAssembler::GetPotentialHessian(const Ref<const Eigen::VectorXd> &x, COO &coo, int offset_x, int offset_y) const {
+    int current_row = 0;
+    for (const auto& obj : _objs) {
+        obj.GetPotentialHessian(
+            x.segment(current_row, obj.GetDOF()),
+            coo,
+            current_row + offset_x,
+            current_row + offset_y
+        );
+        current_row += obj.GetDOF();
+    }
+}
+
+void ExternalForceAssembler::GetExternalForce(Ref<Eigen::VectorXd> force) const {
     int cur_offset = 0;
     for (const auto& obj : this->_objs) {
-        force.segment(cur_offset, obj->GetDOF()) = obj->GetExternalForce();
-        cur_offset += obj->GetDOF();
+        force.segment(cur_offset, obj.GetDOF()) = obj.GetExternalForce();
+        cur_offset += obj.GetDOF();
     }
-}
-
-#undef ASSEMBLE_2D_ELSEWHERE
-
-template<>
-Factory<Assembler>* Factory<Assembler>::_the_factory = nullptr;
-
-
-
-void Assembler::GetPotentialEnergyHessian(const Ref<const VectorXd>& x, SparseMatrixXd& hessian) const {
-	COO coo;
-	GetPotentialEnergyHessian(x, coo, 0, 0);
-	hessian.resize(GetDOF(), GetDOF());
-	hessian.setFromTriplets(coo.begin(), coo.end());
 }

@@ -4,18 +4,18 @@
 #include "JsonUtil.h"
 
 template<class Coordinate, class Derived>
-class CoordinateImplementation {
+class CoordinateAdapter {
 public:
-	int GetDOF() {
-		return Coordinate::GetDOF(static_cast<Derived*>(this));
+	int GetDOF() const {
+		return Coordinate::GetDOF(static_cast<const Derived*>(this));
 	}
 
-	void GetCoordinate(Ref<VectorXd> x) {
-		Coordinate::GetCoordinate(static_cast<Derived*>(this), x);
+	void GetCoordinate(Ref<VectorXd> x) const {
+		Coordinate::GetCoordinate(static_cast<const Derived*>(this), x);
 	}
 
-	void GetVelocity(Ref<VectorXd> v) {
-		Coordinate::GetVelocity(static_cast<Derived*>(this), v);
+	void GetVelocity(Ref<VectorXd> v) const {
+		Coordinate::GetVelocity(static_cast<const Derived*>(this), v);
 	}
 
 	void SetCoordinate(const Ref<const VectorXd>& x) {

@@ -29,14 +29,14 @@ public:
 
 class SampledObjectMassModel {
 public:
-	template<class Derived> void GetMass(Derived* obj, COO& coo, int x_offset, int y_offset);
-	template<class Derived> double GetTotalMass(Derived* obj);
+	template<class Derived> static void GetMass(Derived* obj, COO& coo, int x_offset, int y_offset);
+	template<class Derived> static double GetTotalMass(Derived* obj);
 
-	template<class Derived> Vector3d GetUnnormalizedMassCenter(Derived* obj);
-	template<class Derived> Matrix3d GetInertialTensor(Derived* obj);
-	template<class Derived> VectorXd GetInertialForce(Derived* obj, const Vector3d &v, const Vector3d &a, const Vector3d &omega, const Vector3d &alpha, const Matrix3d &rotation);
+	template<class Derived> static Vector3d GetUnnormalizedMassCenter(Derived* obj);
+	template<class Derived> static Matrix3d GetInertialTensor(Derived* obj);
+	template<class Derived> static VectorXd GetInertialForce(Derived* obj, const Vector3d &v, const Vector3d &a, const Vector3d &omega, const Vector3d &alpha, const Matrix3d &rotation);
 	// The inertial force in **local coordinate**
-	template<class Derived> VectorXd GetInertialForce(Derived* obj, const Vector3d &v, const Vector3d &a, const Matrix3d &affine, const Matrix3d& affine_velocity, const Matrix3d& affine_acceleration);
+	template<class Derived> static VectorXd GetInertialForce(Derived* obj, const Vector3d &v, const Vector3d &a, const Matrix3d &affine, const Matrix3d& affine_velocity, const Matrix3d& affine_acceleration);
 };
 
 template <class ProxyMassModel>

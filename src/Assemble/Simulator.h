@@ -1,14 +1,10 @@
-//
-// Created by hansljy on 10/13/22.
-//
+#pragma once
 
-#ifndef FEM_SIMULATOR_H
-#define FEM_SIMULATOR_H
-
+#include "Pattern.h"
 #include "GUI/GUI.hpp"
 #include "TimeStepper/TimeStepper.hpp"
-
 #include <string>
+#include "Render/RenderInterface.hpp"
 
 glm::vec3 Json2GlmVec3(const json& vec);
 
@@ -19,7 +15,7 @@ public:
     void InitializeScene(Scene &scene) override;
     void Processing(Scene &scene) override;
 
-    virtual void LoadScene(const std::string& config);
+    void LoadScene(const std::string& config);
     void Simulate(const std::string& output_dir);
 
     ~Simulator() override;
@@ -27,8 +23,9 @@ public:
 protected:
     double _duration;
     double _time_step;
-    System *_system;
     TimeStepper* _time_stepper;
+    std::vector<Object> _objs;
+    std::vector<Renderable> _objs_render;
 
     std::vector<int> _obj_id2scene_id; // from id in system to id in scene
 
@@ -37,4 +34,7 @@ protected:
     float _light_Kc, _light_Kl, _light_Kq;
 };
 
-#endif //FEM_SIMULATOR_H
+template<class T>
+bool RegisterForRenderer(const std::string &type) {
+    return RegisterForCaster<Renderable, T>(type);
+}

@@ -1,26 +1,16 @@
-//
-// Created by hansljy on 11/28/22.
-//
+#pragma once
 
-#ifndef FEM_TIMESTEPPER_H
-#define FEM_TIMESTEPPER_H
-
-#include "System/System.hpp"
+#include "Object.hpp"
 
 class TimeStepper {
 public:
 	TimeStepper() = default;
 	TimeStepper(const TimeStepper& rhs) = delete;
 
-	virtual void Bind(System* system) {
-		_system = system;
-	}
-
+	virtual void BindObjects(
+		const typename std::vector<Object>::const_iterator& begin,
+		const typename std::vector<Object>::const_iterator& end
+	) = 0;
     virtual void Step(double h) = 0;
     virtual ~TimeStepper() = default;
-
-protected:
-    System* _system = nullptr;
 };
-
-#endif //FEM_TIMESTEPPER_H

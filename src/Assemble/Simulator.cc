@@ -3,9 +3,12 @@
 //
 
 #include "Simulator.h"
-#include "nlohmann/json.hpp"
 #include "JsonUtil.h"
+#include "Pattern.h"
 #include <string>
+
+template<>
+Caster<Renderable>* Caster<Renderable>::_the_factory = nullptr;
 
 using nlohmann::json;
 
@@ -18,13 +21,18 @@ void Simulator::LoadScene(const std::string &config) {
     _time_step = simulation_config["time-step"];
 
     const auto& time_stepper_config = config_json["time-stepper"];
-    _time_stepper = Factory<TimeStepper>::GetInstance()->GetProduct(time_stepper_config["type"], time_stepper_config);
+    _time_stepper = Factory<TimeStepper>::GetInstance()->GetProduct(
+        time_stepper_config["type"],
+        time_stepper_config
+    );
 
     const std::string system_config_file_path = config_json["system-config"];
     std::ifstream system_config_file(CONFIG_PATH + system_config_file_path);
     const json system_config = json::parse(system_config_file);
     system_config_file.close();
-	_system = Factory<System>::GetInstance()->GetProduct(system_config["type"], system_config);
+
+    ReadObjects(system_config, _objs);
+    Cast2Interface(_objs.begin(), _objs.end(), _objs_render);
 
     const auto& renderer_config_json = config_json["renderer"];
     const auto& camera_config_json = renderer_config_json["camera"];
@@ -41,7 +49,7 @@ void Simulator::LoadScene(const std::string &config) {
     _light_Kl = light_config_json["Kl"];
     _light_Kq = light_config_json["Kq"];
 
-    _time_stepper->Bind(_system);
+    _time_stepper->BindObjects(_objs.begin(), _objs.end());
 
     spdlog::info("Scene loaded");
 }
@@ -52,11 +60,11 @@ void Simulator::Simulate(const std::string& output_dir) {
     int obj_id = 0;
 	std::ofstream topo_file(output_dir + "/topo");
 
-	for (const auto& obj : _system->GetObjs()) {
+	for (const auto& obj : _objs_render) {
         MatrixXi topo;
         MatrixXd vertices;
-		obj->GetRenderTopos(topo);
-		obj->GetRenderVertices(vertices);
+		obj.GetRenderTopos(topo);
+		obj.GetRenderVertices(vertices);
         write_binary(topo_file, topo);
 	}
 
@@ -67,12 +75,12 @@ void Simulator::Simulate(const std::string& output_dir) {
         _time_stepper->Step(_time_step);
         obj_id = 0;
 		std::ofstream itr_file(output_dir + "/itr" + std::to_string(itr_id));
-        for (const auto& obj : _system->GetObjs()) {
+        for (const auto& obj : _objs_render) {
             MatrixXd vertices;
-			obj->GetRenderVertices(vertices);
+			obj.GetRenderVertices(vertices);
             write_binary(itr_file, vertices);
-            write_binary(itr_file, obj->GetFrameRotation());
-            write_binary(itr_file, obj->GetFrameX());
+            // write_binary(itr_file, obj->GetFrameRotation());
+            // write_binary(itr_file, obj->GetFrameX());
         }
 		itr_file.close();
         current_time += _time_step;
@@ -89,7 +97,6 @@ void Simulator::Simulate(const std::string& output_dir) {
 
 Simulator::~Simulator() {
     delete _time_stepper;
-    delete _system;
 }
 
 void Simulator::InitializeScene(Scene &scene) {
@@ -106,25 +113,25 @@ void Simulator::InitializeScene(Scene &scene) {
         _light_Kc, _light_Kl, _light_Kq
     );
 
-    for (const auto& obj : _system->GetObjs()) {
-        MatrixXd vertices;
-        MatrixXi topo;
+    for (const auto& obj : _objs_render) {
+        MatrixXd vertices(obj.GetRenderVertexNum(), 3);
+        MatrixXi topo(obj.GetRenderFaceNum(), 3);
 
-		obj->GetRenderTopos(topo);
-		obj->GetRenderVertices(vertices);
+		obj.GetRenderTopos(topo);
+		obj.GetRenderVertices(vertices);
 
-        _obj_id2scene_id.push_back(scene.AddMesh(vertices, topo, obj->GetFrameRotation(), obj->GetFrameX()));
-        if (obj->IsUsingTexture()) {
+        _obj_id2scene_id.push_back(scene.AddMesh(vertices, topo, Matrix3d::Identity(), Vector3d::Zero()));
+        if (obj.IsUsingTexture()) {
             MatrixXf uv_coords;
-            obj->GetUVCoords(uv_coords);
-            scene.SetTexture(obj->GetTexturePath(), uv_coords);
+            obj.GetUVCoords(uv_coords);
+            scene.SetTexture(obj.GetTexturePath(), uv_coords);
         }
-		if (_draw_bounding_box && obj->HasOuterFrame()) {
-			MatrixXd bounding_box_vertices;
-			MatrixXi bounding_box_topo;
-			obj->GetFrameTopo(bounding_box_topo);
-			obj->GetFrameVertices(bounding_box_vertices);
-		}
+		// if (_draw_bounding_box && obj.HasOuterFrame()) {
+		// 	MatrixXd bounding_box_vertices;
+		// 	MatrixXi bounding_box_topo;
+		// 	obj->GetFrameTopo(bounding_box_topo);
+		// 	obj->GetFrameVertices(bounding_box_vertices);
+		// }
     }
 }
 
@@ -148,31 +155,31 @@ void Simulator::Processing(Scene &scene) {
     }
 
     int id = 0;
-    for (const auto& obj : _system->GetObjs()) {
+    for (const auto& obj : _objs_render) {
         scene.SelectData(_obj_id2scene_id[id++]);
 
-		if (obj->IsRenderTopoUpdated()) {
+		if (obj.IsRenderTopoUpdated()) {
 			spdlog::info("render topo updated");
-			MatrixXi topo;
-			obj->GetRenderTopos(topo);
+			MatrixXi topo(obj.GetRenderFaceNum(), 3);
+			obj.GetRenderTopos(topo);
 			scene.SetTopo(topo);
 		}
-        MatrixXd vertices;
-		obj->GetRenderVertices(vertices);
-        scene.SetMesh(vertices, obj->GetFrameRotation(), obj->GetFrameX());
+        MatrixXd vertices(obj.GetRenderVertexNum(), 3);
+		obj.GetRenderVertices(vertices);
+        scene.SetMesh(vertices, Matrix3d::Identity(), Vector3d::Zero());
 
-		if (_draw_bounding_box && obj->HasOuterFrame()) {
-			if (obj->IsFrameTopoUpdated()) {
-				spdlog::info("bb topo updated");
-				MatrixXi topo;
-				obj->GetFrameTopo(topo);
-				scene.SetBoundingBoxTopo(topo);
-				// std::cerr << "BB topo" << std::endl << topo << std::endl;
-			}
-			MatrixXd bb_vertices;
-			obj->GetFrameVertices(bb_vertices);
-			scene.SetBoundingBoxMesh(bb_vertices, obj->GetFrameRotation(), obj->GetFrameX());
-			// std::cerr << "BB vertices" << std::endl << bb_vertices << std::endl;
-		}
+		// if (_draw_bounding_box && obj.HasOuterFrame()) {
+		// 	if (obj->IsFrameTopoUpdated()) {
+		// 		spdlog::info("bb topo updated");
+		// 		MatrixXi topo;
+		// 		obj->GetFrameTopo(topo);
+		// 		scene.SetBoundingBoxTopo(topo);
+		// 		// std::cerr << "BB topo" << std::endl << topo << std::endl;
+		// 	}
+		// 	MatrixXd bb_vertices;
+		// 	obj->GetFrameVertices(bb_vertices);
+		// 	scene.SetBoundingBoxMesh(bb_vertices, obj->GetFrameRotation(), obj->GetFrameX());
+		// 	// std::cerr << "BB vertices" << std::endl << bb_vertices << std::endl;
+		// }
     }
 }

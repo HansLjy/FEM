@@ -1,6 +1,10 @@
 #include "ClothData.hpp"
 #include "ReducedDataUtils.hpp"
 #include "unsupported/Eigen/KroneckerProduct"
+#include "ExternalForce/ExternalForce.hpp"
+
+template<>
+Factory<ExternalForce<ClothData>>* Factory<ExternalForce<ClothData>>::_the_factory = nullptr;
 
 VectorXd ClothData::GeneratePosition(const Eigen::Vector3d &start, const Eigen::Vector3d &u_end, const Eigen::Vector3d &v_end, int num_u_segments, int num_v_segments) {
     Vector3d delta_u = (u_end - start) / num_u_segments;
@@ -54,15 +58,15 @@ MatrixXi ClothData::GenerateTopo(int num_u_segments, int num_v_segments) {
     return topo;
 }
 
-VectorXd ClothData::GenerateMass(double rho, double thickness, const VectorXd &uv_coord, const MatrixXi &topo) {
+VectorXd ClothData::GenerateMass(double rho, double thickness, const MatrixXd &uv_coord, const MatrixXi &topo) {
     int num_triangles = topo.rows();
     int num_points = uv_coord.size() / 2;
     VectorXd mass(num_points);
     mass.setZero();
     for (int i = 0; i < num_triangles; i++) {
         RowVector3i index = topo.row(i);
-        Vector2d e1 = uv_coord.segment<2>(index(1) * 2) - uv_coord.segment<2>(index(0) * 2);
-        Vector2d e2 = uv_coord.segment<2>(index(2) * 2) - uv_coord.segment<2>(index(0) * 2);
+        Vector2d e1 = uv_coord.row(index(1)) - uv_coord.row(index(0));
+        Vector2d e2 = uv_coord.row(index(2)) - uv_coord.row(index(0));
         const double S = abs(e1(0) * e2(1) - e1(1) * e2(0)) / 2;
         for (int j = 0; j < 3; j++) {
             mass(index(j)) += S * rho * thickness / 3;

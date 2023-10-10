@@ -193,14 +193,14 @@ void ClothEnergyFunction::GetPotentialHessian(
                                  + k_shear * local_area * local_area * F1F1T
                                  + k_stretch * local_area * local_area * stretch_v / F2_norm3 * F2F2T;
 #else
-        p2EpX2.block<3, 3>(0, 0) = (data->_k_stretch * area * area * (1 - data->_stretch_u / F1_norm) + 0.5 * data->_k_shear * C[2] * area) * Matrix3d::Identity()
-                                   + data->_k_shear * area * area * F2F2T
-                                   + data->_k_stretch * area * area * data->_stretch_u / F1_norm3 * F1F1T;
-        p2EpX2.block<3, 3>(0, 3) = data->_k_shear * area * area * F1F2T.transpose() + 0.5 * data->_k_shear * C[2] * area * Matrix3d::Identity();
-        p2EpX2.block<3, 3>(3, 0) = data->_k_shear * area * area * F1F2T + 0.5 * data->_k_shear * C[2] * area * Matrix3d::Identity();
-        p2EpX2.block<3, 3>(3, 3) = (data->_k_stretch * area * area * (1 - data->_stretch_v / F2_norm) + 0.5 * data->_k_shear * C[2] * area) * Matrix3d::Identity()
-                                   + data->_k_shear * area * area * F1F1T
-                                   + data->_k_stretch * area * area * data->_stretch_v / F2_norm3 * F2F2T;
+        p2EpX2.block<3, 3>(0, 0) = (k_stretch * local_area * local_area * (1 - stretch_u / F1_norm) + 0.5 * k_shear * C[2] * local_area) * Matrix3d::Identity()
+                                   + k_shear * local_area * local_area * F2F2T
+                                   + k_stretch * local_area * local_area * stretch_u / F1_norm3 * F1F1T;
+        p2EpX2.block<3, 3>(0, 3) = k_shear * local_area * local_area * F1F2T.transpose() + 0.5 * k_shear * C[2] * local_area * Matrix3d::Identity();
+        p2EpX2.block<3, 3>(3, 0) = k_shear * local_area * local_area * F1F2T + 0.5 * k_shear * C[2] * local_area * Matrix3d::Identity();
+        p2EpX2.block<3, 3>(3, 3) = (k_stretch * local_area * local_area * (1 - stretch_v / F2_norm) + 0.5 * k_shear * C[2] * local_area) * Matrix3d::Identity()
+                                   + k_shear * local_area * local_area * F1F1T
+                                   + k_stretch * local_area * local_area * stretch_v / F2_norm3 * F2F2T;
 #endif
         p2EpX2 = pFpx[i] * p2EpX2 * pFpx[i].transpose();
 

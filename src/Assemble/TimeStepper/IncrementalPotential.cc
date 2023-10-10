@@ -8,35 +8,41 @@ namespace {
 
 IncrementalPotentialTimeStepper::~IncrementalPotentialTimeStepper() {
 	delete _optimizer;
-	delete _assembler;
 }
 
 IncrementalPotentialTimeStepper::IncrementalPotentialTimeStepper(const json& config)
-: _optimizer(Factory<Optimizer>::GetInstance()->GetProduct(config["optimizer"]["type"], config["optimizer"])),
-  _assembler(Factory<Assembler>::GetInstance()->GetProduct(config["assembler"]["type"], config["assembler"])),
-  _damping_enabled(config["damping-enabled"]) {
+: _damping_enabled(config["damping-enabled"]),
+  _optimizer(Factory<Optimizer>::GetInstance()->GetProduct(config["optimizer"]["type"], config["optimizer"])) {
 	if (_damping_enabled) {
 		_rayleigh_coef_mass = config["rayleigh-coef-mass"];
 		_rayleigh_coef_stiffness = config["rayleigh-coef-stiffness"];
 	}
 }
 
-void IncrementalPotentialTimeStepper::Step(double h) {
-	_assembler->BindSystem(*_system);
+void IncrementalPotentialTimeStepper::BindObjects(
+	const typename std::vector<Object>::const_iterator &begin,
+	const typename std::vector<Object>::const_iterator &end
+) {
+	_coord_assembler.BindObjects(begin, end);
+	_mass_assembler.BindObjects(begin, end);
+	_energy_assembler.BindObjects(begin, end);
+	_external_force_assembler.BindObjects(begin, end);
+}
 
-    const int dof = _assembler->GetDOF();
+void IncrementalPotentialTimeStepper::Step(double h) {
+    const int dof = _coord_assembler.GetDOF();
     VectorXd x(dof), v(dof), force(dof);
-    _assembler->GetCoordinate(x);
-    _assembler->GetVelocity(v);
-    _assembler->GetExternalForce(force);
+    _coord_assembler.GetCoordinate(x);
+    _coord_assembler.GetVelocity(v);
+    _external_force_assembler.GetExternalForce(force);
     SparseMatrixXd mass;
-    _assembler->GetMass(mass);
+    _mass_assembler.GetMass(mass);
 
 	VectorXd x_hat(x.size());
 
 	if (_damping_enabled) {
 		SparseMatrixXd energy_hessian;
-		_assembler->GetPotentialEnergyHessian(x, energy_hessian);
+		_energy_assembler.GetPotentialHessian(x, energy_hessian);
 		VectorXd Mv = mass * v;
 		mass += h * (_rayleigh_coef_mass * mass + _rayleigh_coef_stiffness * energy_hessian);
 		Eigen::SimplicialLDLT<SparseMatrixXd> LDLT_solver(mass);
@@ -55,22 +61,21 @@ void IncrementalPotentialTimeStepper::Step(double h) {
 	}
 
     auto func = [&x_hat, &mass, &h, this] (const VectorXd& x) -> double {
-        return 0.5 * (x - x_hat).transpose() * mass * (x - x_hat) + h * h * _assembler->GetPotentialEnergy(x);
+        return 0.5 * (x - x_hat).transpose() * mass * (x - x_hat) + h * h * _energy_assembler.GetPotentialEnergy(x);
     };
 
     auto grad = [&x_hat, &mass, &h, &dof, this] (const VectorXd& x, VectorXd& gradient) -> void {
         if (gradient.size() != dof) {
             gradient.resize(dof);
         }
-        _assembler->GetPotentialEnergyGradient(x, gradient);
+        _energy_assembler.GetPotentialGradient(x, gradient);
         gradient = h * h * gradient + mass * (x - x_hat);
     };
 
     auto hes = [&mass, &h, this] (const VectorXd& x, SparseMatrixXd& hessian) -> void {
-        _assembler->GetPotentialEnergyHessian(x, hessian);
+        _energy_assembler.GetPotentialHessian(x, hessian);
         hessian = h * h * hessian + mass;
     };
-
 
     VectorXd x_next = x;
     _optimizer->Optimize(func, grad, hes, x_next);
@@ -81,7 +86,7 @@ void IncrementalPotentialTimeStepper::Step(double h) {
 
     VectorXd v_next = (x_next - x) / h;
 
-    _assembler->SetCoordinate(x_next);
-    _assembler->SetVelocity(v_next);
+    _coord_assembler.SetCoordinate(x_next);
+    _coord_assembler.SetVelocity(v_next);
 
 }

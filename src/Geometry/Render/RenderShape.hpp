@@ -29,7 +29,7 @@ public:
 	template<class Data> void GetFrameVertices(const Data* obj, Ref<MatrixXd> vertices) const {}
 	template<class Data> void GetFrameTopo(const Data* obj, Ref<MatrixXi> topo) const {}
 
-	template<class Data> bool IsTopoUpdated(Data* data) const {return false;}
+	template<class Data> bool IsRenderTopoUpdated(Data* data) const {return false;}
 	template<class Data> bool IsBBTopoUpdated(Data* data) const {return false;}
 
 
@@ -45,7 +45,9 @@ public:
 	SampledRenderShape() : RenderShape(false, false) {}
 	SampledRenderShape(bool have_bounding_box, bool use_texture, const std::string& texture_path = "") : RenderShape(have_bounding_box, use_texture, texture_path) {}
 	explicit SampledRenderShape(const json& config) : RenderShape(config) {}
+	template<class Data> int GetRenderVertexNum(const Data *obj) const;
 	template<class Data> void GetRenderVertices(const Data *obj, Ref<MatrixXd> vertices) const;
+	template<class Data> int GetRenderFaceNum(const Data* obj) const;
 	template<class Data> void GetRenderTopos(const Data *obj, Ref<MatrixXi> topos) const;
 };
 
@@ -85,6 +87,17 @@ protected:
     MatrixXd _vertices;
     MatrixXi _topos;
 };
+
+
+template<class Data>
+int SampledRenderShape::GetRenderVertexNum(const Data *obj) const {
+	return obj->_num_points;
+}
+
+template<class Data>
+int SampledRenderShape::GetRenderFaceNum(const Data* obj) const {
+	return obj->_num_faces;
+}
 
 template<class Data>
 void SampledRenderShape::GetRenderVertices(const Data *obj, Ref<MatrixXd> vertices) const {

@@ -4,7 +4,7 @@
 
 class SpatialHashingCulling : public CCDCulling {
 public:
-	void GetCCDSet(double d_hat, const std::vector<CollisionShapeInterface *> &objs, const std::vector<int> &offsets, const std::vector<int> &dofs, std::vector<PrimitivePair> &ccd_set) override;
+	void GetCCDSet(double d_hat, const std::vector<CollisionInterface> &objs, const std::vector<int> &offsets, std::vector<PrimitivePair> &ccd_set) override;
 
 protected:
 	SpatialHashing<EdgePrimitiveInfo> _edge_hash_table;

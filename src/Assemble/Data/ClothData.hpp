@@ -55,7 +55,7 @@ struct ClothData : public SampledObjectData {
 	static VectorXd GeneratePosition(const Eigen::Vector3d &start, const Eigen::Vector3d &u_end, const Eigen::Vector3d &v_end, int num_u_segments, int num_v_segments);
 	static MatrixXd GenerateUVCoord(const Eigen::Vector3d &start, const Eigen::Vector3d &u_end, const Eigen::Vector3d &v_end, int num_u_segments, int num_v_segments);
 	static MatrixXi GenerateTopo(int num_u_segments, int num_v_segments);
-	static VectorXd GenerateMass(double rho, double thickness, const VectorXd &uv_coord, const MatrixXi &topo);
+	static VectorXd GenerateMass(double rho, double thickness, const MatrixXd &uv_coord, const MatrixXi &topo);
 
 };
 

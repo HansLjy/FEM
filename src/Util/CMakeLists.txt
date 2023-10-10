@@ -66,7 +66,7 @@ CPMAddPackage(
 	GIT_TAG v2.5.0
 )
 
-set(FEM_UTILITY_SOURCE EigenAll.cc JsonUtil.cc GeometryUtil.cc)
+set(FEM_UTILITY_SOURCE EigenAll.cc JsonUtil.cc GeometryUtil.cc Object.cc)
 
 if (BUILD_TEST)
 	add_subdirectory(TestUtility)

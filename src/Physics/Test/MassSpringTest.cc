@@ -37,7 +37,7 @@ TEST(MassSpringTest, GradientTest) {
 	const int num_edges = config["num-edges"];
 	const double stiffness = 1.0 * std::rand() / RAND_MAX;
 	const auto data = GenerateTestSrpingMassData(num_points, num_edges, stiffness);
-	MassSpringEnergyModel physics;
+	MassSpringEnergyModel physics("{}");
 	
 	GenerateDerivative(data, physics, gradient_step, hessian_step)
 	

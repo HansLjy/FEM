@@ -8,36 +8,39 @@ namespace {
 	});
 }
 
-IPC::IPC(const json& config)
-: _assembler(Factory<Assembler>::GetInstance()->GetProduct(config["assembler"]["type"], config["assembler"])),
-  _max_iter(config["max-iteration"]), _tolerance(config["tolerance"]) {
-	if(config.contains("ipc-helper")) {
-		_helper = Factory<IPCHelper>::GetInstance()->GetProduct(config["ipc-helper"]["type"], config["ipc-helper"]);
-	}
+IPC::IPC(const json& config) :
+    _max_iter(config["max-iteration"]),
+    _tolerance(config["tolerance"]),
+    _ipc_energy(config["d-hat"], config["kappa"]),
+    _max_step_estimator(config["d-hat"]),
+    _constraint_set_generator(config["d-hat"], config["grid-length"], config["hash-table-size"]) {
+
 }
 
-IPC::~IPC() {
-	delete _helper;
-}
+void IPC::BindObjects(
+    const typename std::vector<Object>::const_iterator &begin,
+    const typename std::vector<Object>::const_iterator &end
+) {
+    _coord_assembler.BindObjects(begin, end);
+    _mass_assembler.BindObjects(begin, end);
+    _energy_assembler.BindObjects(begin, end);
+    _external_force_assembler.BindObjects(begin, end);
 
-void IPC::SetIPCHelper(IPCHelper *helper) {
-	_helper = helper;
+    _ipc_energy.BindObjects(begin, end);
+    _max_step_estimator.BindObjects(begin, end);
+    _constraint_set_generator.BindObjects(begin, end);
 }
 
 void IPC::Step(double h) {
-	_assembler->BindSystem(*(this->_system));
-
-	const int dof = _assembler->GetDOF();
-	const auto& objs = _system->GetObjs();
-	_helper->SetObjects<Object>(objs.begin(), objs.end());
+	const int dof = _coord_assembler.GetDOF();
 
     VectorXd x(dof), v(dof), force(dof);
-    _assembler->GetCoordinate(x);
-    _assembler->GetVelocity(v);
-    _assembler->GetExternalForce(force);
+    _coord_assembler.GetCoordinate(x);
+    _coord_assembler.GetVelocity(v);
+    _external_force_assembler.GetExternalForce(force);
 
     SparseMatrixXd mass;
-    _assembler->GetMass(mass);
+    _mass_assembler.GetMass(mass);
 
     Eigen::SimplicialLDLT<SparseMatrixXd> LDLT_solver(mass);
     VectorXd a = LDLT_solver.solve(force);
@@ -50,18 +53,22 @@ void IPC::Step(double h) {
     VectorXd gradient(dof), x_prev(x);
 	static int fuck_itr = 0;
     fuck_itr++;
+
+    std::vector<PrimitivePair> constraint_set;
     while(step++ < _max_iter) {
-        _helper->ComputeConstraintSet(x);
+        _constraint_set_generator.ComputeConstraintSet(x, constraint_set);
 
 		COO coo;
 		hessian.resize(dof, dof);
-        _assembler->GetPotentialEnergyHessian(x, coo, 0, 0);
-		_helper->GetBarrierEnergyHessian(coo, 0, 0);
+        _energy_assembler.GetPotentialHessian(x, coo, 0, 0);
+		_ipc_energy.GetBarrierEnergyHessian(constraint_set, coo, 0, 0);
 		hessian.setFromTriplets(coo.begin(), coo.end());
 
-        _assembler->GetPotentialEnergyGradient(x, gradient);
-		gradient += _helper->GetBarrierEnergyGradient();
-        double prev_energy = h * h * (_assembler->GetPotentialEnergy(x) + _helper->GetBarrierEnergy()) + 0.5 * (x - x_hat).transpose() * mass * (x - x_hat);
+        _energy_assembler.GetPotentialGradient(x, gradient);
+		gradient += _ipc_energy.GetBarrierEnergyGradient(constraint_set);
+        double prev_energy =
+            h * h * (_energy_assembler.GetPotentialEnergy(x) + _ipc_energy.GetBarrierEnergy(constraint_set))
+            + 0.5 * (x - x_hat).transpose() * mass * (x - x_hat);
 
         LDLT_solver.compute(mass + h * h * hessian);
         VectorXd p = - LDLT_solver.solve(mass * (x - x_hat) + h * h * gradient);
@@ -71,13 +78,13 @@ void IPC::Step(double h) {
         }
 
         /* contact aware line search */
-        double alpha = _helper->GetMaxStep(p);
+        double alpha = _max_step_estimator.GetMaxStep(p);
         // spdlog::info("Max step: {}", alpha);
         VectorXd x_next;
         while (true) {
             x_next = x + alpha * p;
-            _helper->ComputeConstraintSet(x_next);
-            auto current_energy = h * h * (_assembler->GetPotentialEnergy(x_next) + _helper->GetBarrierEnergy()) + 0.5 * (x_next - x_hat).transpose() * mass * (x_next - x_hat);
+            _constraint_set_generator.ComputeConstraintSet(x_next, constraint_set);
+            auto current_energy = h * h * (_energy_assembler.GetPotentialEnergy(x_next) + _ipc_energy.GetBarrierEnergy(constraint_set)) + 0.5 * (x_next - x_hat).transpose() * mass * (x_next - x_hat);
             // spdlog::info("Current energy: {}, Previous energy: {}", current_energy, prev_energy);
             if (current_energy <= prev_energy) {
                 break;
@@ -96,6 +103,6 @@ void IPC::Step(double h) {
     }
 
 	// std::cerr << x.transpose() << std::endl;
-    _assembler->SetCoordinate(x);
-    _assembler->SetVelocity((x - x_prev) / h);
+    _coord_assembler.SetCoordinate(x);
+    _coord_assembler.SetVelocity((x - x_prev) / h);
 }

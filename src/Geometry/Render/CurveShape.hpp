@@ -6,10 +6,10 @@
 
 #include "RenderShape.hpp"
 
-class CurveShape : public RenderShape {
+class CurveRenderShape : public RenderShape {
 public:
-    explicit CurveShape(double radius) : RenderShape(false), _radius(radius) {}
-	explicit CurveShape(const json& config) : CurveShape((double)config["radius"]) {}
+    explicit CurveRenderShape(double radius) : RenderShape(false), _radius(radius) {}
+	explicit CurveRenderShape(const json& config) : CurveRenderShape((double)config["radius"]) {}
     template<class Data> void GetRenderVertices(const Data* data, Ref<MatrixXd> vertices) const;
     template<class Data> void GetRenderTopos(const Data* data, Ref<MatrixXi> topos) const;
 
@@ -18,7 +18,7 @@ public:
 };
 
 template<class Data>
-void CurveShape::GetRenderTopos(const Data *data, Ref<MatrixXi> topos) const {
+void CurveRenderShape::GetRenderTopos(const Data *data, Ref<MatrixXi> topos) const {
     int num_points = data->_x.size() / 3;
     topos.resize(12 * (num_points - 1), 3);
 
@@ -37,7 +37,7 @@ void CurveShape::GetRenderTopos(const Data *data, Ref<MatrixXi> topos) const {
 }
 
 template<class Data>
-void CurveShape::GetRenderVertices(const Data* data, Ref<MatrixXd> vertices) const {
+void CurveRenderShape::GetRenderVertices(const Data* data, Ref<MatrixXd> vertices) const {
     const VectorXd& x_curve = data->_x;
     int num_points = x_curve.size() / 3;
     vertices.resize(8 * (num_points - 1), 3);

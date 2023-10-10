@@ -7,9 +7,8 @@ enum class CollisionType {
 	kEdgeEdge
 };
 
-struct CollisionInfo {
+struct PrimitivePair {
 	CollisionType _type;
-	double _distance;
 	int _obj_id1;
 	int _obj_id2;
 	int _primitive_id1;

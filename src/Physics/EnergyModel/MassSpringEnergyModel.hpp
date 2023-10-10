@@ -11,9 +11,9 @@ public:
 };
 
 namespace MassSpringEnergyFunction {
-	inline double GetPotential(int num_edges, double stiffness, const MatrixXi& edge_topo, const VectorXd& rest_length, const Ref<const VectorXd> &x);
-	inline VectorXd GetPotentialGradient(int num_edges, double stiffness, const MatrixXi& edge_topo, const VectorXd& rest_length, const Ref<const VectorXd> &x);
-	inline void GetPotentialHessian(
+	double GetPotential(int num_edges, double stiffness, const MatrixXi& edge_topo, const VectorXd& rest_length, const Ref<const VectorXd> &x);
+	VectorXd GetPotentialGradient(int num_edges, double stiffness, const MatrixXi& edge_topo, const VectorXd& rest_length, const Ref<const VectorXd> &x);
+	void GetPotentialHessian(
 		int num_edges, double stiffness, const MatrixXi& edge_topo, const VectorXd& rest_length,
 		const Ref<const VectorXd> &x, COO &coo, int x_offset, int y_offset
 	);

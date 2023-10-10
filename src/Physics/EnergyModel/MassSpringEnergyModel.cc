@@ -1,6 +1,6 @@
 #include "MassSpringEnergyModel.hpp"
 
-inline double MassSpringEnergyFunction::GetPotential(
+double MassSpringEnergyFunction::GetPotential(
 	int num_edges, double stiffness, const MatrixXi& edge_topo, const VectorXd& rest_length,
 	const Ref<const VectorXd> &x
 ) {
@@ -15,7 +15,7 @@ inline double MassSpringEnergyFunction::GetPotential(
 	return energy;
 }
 
-inline VectorXd MassSpringEnergyFunction::GetPotentialGradient(
+VectorXd MassSpringEnergyFunction::GetPotentialGradient(
 	int num_edges, double stiffness, const MatrixXi& edge_topo, const VectorXd& rest_length,
 	const Ref<const VectorXd> &x
 ) {
@@ -32,7 +32,7 @@ inline VectorXd MassSpringEnergyFunction::GetPotentialGradient(
 }
 
 
-inline void MassSpringEnergyFunction::GetPotentialHessian(
+void MassSpringEnergyFunction::GetPotentialHessian(
 	int num_edges, double stiffness, const MatrixXi& edge_topo, const VectorXd& rest_length,
 	const Ref<const VectorXd> &x, COO &coo, int x_offset, int y_offset
 ) {

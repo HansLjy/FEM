@@ -1,5 +1,9 @@
 #include "CurveData.hpp"
 #include "ReducedDataUtils.hpp"
+#include "ExternalForce/ExternalForce.hpp"
+
+template<>
+Factory<ExternalForce<CurveData>>* Factory<ExternalForce<CurveData>>::_the_factory = nullptr;
 
 CurveData::CurveData(const json& config)
 : CurveData (config["density"], config["alpha-max"], config["alpha-min"], Json2Vec(config["start"]), Json2Vec(config["end"]), config["segments"]) {}

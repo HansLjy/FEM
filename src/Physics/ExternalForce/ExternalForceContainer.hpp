@@ -106,3 +106,38 @@ public:
 
 	ExternalForceContainer<ProxyData> _proxy_container;
 };
+
+template<class Data, class Derived>
+class ExternalForceContainerAdapter {
+public:
+	ExternalForceContainerAdapter(const json& config) {
+		for (const auto& external_force_config : config) {
+			_container.AddExternalForce(external_force_config["type"], external_force_config);
+		}
+	}
+
+	VectorXd GetExternalForce() const {
+		return _container.GetExternalForce(static_cast<const Derived*>(this));
+	}
+
+	VectorXd GetExternalForceWithFrame(const Matrix3d &rotation, const Vector3d &position) const {
+		return _container.GetExternalForceWithFrame(static_cast<const Derived*>(this), rotation, position);
+	}
+
+	Vector3d GetTotalExternalForce(const Matrix3d &rotation, const Vector3d &position) const {
+		return _container.GetTotalExternalForce(static_cast<const Derived*>(this), rotation, position);
+	}
+
+	Matrix3d GetTotalExternalForceTorque(const Matrix3d &rotation, const Vector3d &position) const {
+		return _container.GetTotalExternalForceTorque(static_cast<const Derived*>(this), rotation, position);
+	}
+
+	ExternalForceContainer<Data> _container;
+};
+
+template <template<class> class ConcreteExternalForce, class Data>
+bool RegisterExternalForce(const std::string& name) {
+	return Factory<ExternalForce<Data>>::GetInstance()->Register(name, [](const json& config) {
+		return new ConcreteExternalForce<Data>(config);
+	});
+}

@@ -45,7 +45,7 @@ VectorXd ReducedDataUtils::BezierSurface::GenerateSamplePoints(const VectorXd &c
     return base * control_points;
 }
 
-VectorXd ReducedDataUtils::BezierSurface::GenerateUVCoord(const VectorXd &control_points, int num_u_segments, int num_v_segments) {
+MatrixXd ReducedDataUtils::BezierSurface::GenerateUVCoord(const VectorXd &control_points, int num_u_segments, int num_v_segments) {
     VectorXd x = GenerateSamplePoints(control_points, num_u_segments, num_v_segments);
     Vector3d lower_left = x.segment<3>(0);
     Vector3d u_dir = (x.segment<3>(3) - lower_left).normalized();
@@ -53,10 +53,10 @@ VectorXd ReducedDataUtils::BezierSurface::GenerateUVCoord(const VectorXd &contro
     Vector3d v_dir = (v_dir_unnormalized - v_dir_unnormalized.dot(u_dir) * u_dir).normalized();
 
     const int num_sample_points = (num_u_segments + 1) * (num_v_segments + 1);
-    VectorXd uv_coord(2 * num_sample_points);
-    for (int i = 0, i2 = 0, i3 = 0; i < num_sample_points; i++, i2 += 2, i3 += 3) {
+    VectorXd uv_coord(num_sample_points, 2);
+    for (int i = 0, i3 = 0; i < num_sample_points; i++, i3 += 3) {
         Vector3d cur_x = x.segment<3>(i3) - lower_left;
-        uv_coord.segment<2>(i2) << cur_x.dot(u_dir), cur_x.dot(v_dir);
+        uv_coord.row(i) << cur_x.dot(u_dir), cur_x.dot(v_dir);
     }
     return uv_coord;
 }
