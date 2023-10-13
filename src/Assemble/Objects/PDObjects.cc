@@ -36,7 +36,7 @@ public:
         ExternalForceContainerAdapter(ExternalForceContainer<PDClothData>::CreateFromConfig(config["external-forces"])),
         RenderShapeAdapter(SampledRenderShape::CreateFromConfig(config["render"])),
 		CollisionShapeAdapter(config["collision"]){
-		// PDEnergyModelAdapter::Initialize();
+		PDEnergyModelAdapter::Initialize();
 		CollisionShapeAdapter::Initialize();
     }
 

@@ -44,7 +44,6 @@ void ProjectiveDynamics::Step(double h) {
     _mass_assembler.GetMass(M);
     _pd_assembler.GetGlobalMatrix(G);
     SparseMatrixXd M_h2 = M / (h * h);
-    SparseMatrixXd global_matrix = M_h2 + G;
 
     VectorXd f_ext(total_dof);
     _ext_force_assembler.GetExternalForce(f_ext);
@@ -70,6 +69,7 @@ void ProjectiveDynamics::Step(double h) {
 		_pd_collision_handler.GetGlobalMatrix(coo, 0, 0);
 		SparseMatrixXd global_matrix(total_dof, total_dof);
 		global_matrix.setFromTriplets(coo.begin(), coo.end());
+		global_matrix += M_h2;
 		LDLT_solver.compute(global_matrix);
         x_next = LDLT_solver.solve(Mx_hat_h2 + y);
 		
