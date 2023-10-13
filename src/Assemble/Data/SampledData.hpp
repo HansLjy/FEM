@@ -5,6 +5,8 @@ struct SampledObjectData : public BasicData {
 	SampledObjectData(const SampledObjectData& rhs) = delete;
 	SampledObjectData(SampledObjectData&& rhs) = default;
 
+	static SampledObjectData GetSampledObjectData(const VectorXd& x, const VectorXd& mass, const MatrixXi& topo, int codimension);
+
 	int _num_points;
 	int _num_edges;
 	int _num_faces;
@@ -16,5 +18,11 @@ struct SampledObjectData : public BasicData {
 	VectorXd _mass;
 
 protected:
-	SampledObjectData(const VectorXd& x, const VectorXd& mass, int dimension, const MatrixXi& topo);
+	SampledObjectData(
+		const VectorXd& x,
+		const VectorXd& mass,
+		const MatrixXi& tet_topo,
+		const MatrixXi& face_topo,
+		const MatrixXi& edge_topo
+	);
 };

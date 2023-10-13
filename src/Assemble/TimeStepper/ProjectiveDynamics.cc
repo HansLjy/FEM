@@ -44,8 +44,9 @@ void ProjectiveDynamics::Step(double h) {
         x_prev = x_next;
         VectorXd y = VectorXd::Zero(total_dof);
         _pd_assembler.LocalProject(x_next, y, 0);
-        x_next = LDLT_solver.solve(Mx_hat_h2 * x_hat + y);
-    } while ((x_prev - x_next).lpNorm<1>() > _conv_tolerance && ++itr <= _max_step);
+        x_next = LDLT_solver.solve(Mx_hat_h2 + y);
+		itr++;
+    } while ((x_prev - x_next).lpNorm<1>() > _conv_tolerance && itr <= _max_step);
 
     if (itr > _max_step) {
         spdlog::error("Projective Dynamics not converge");

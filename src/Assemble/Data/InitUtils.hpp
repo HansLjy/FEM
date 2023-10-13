@@ -6,8 +6,11 @@ namespace InitializationUtils {
     VectorXd GenerateMass2D(const VectorXd& x, double density, const MatrixXi& topo);
     VectorXd GenerateMass3D(const VectorXd& x, double density, const MatrixXi& topo);
     VectorXd GenerateMass1D(const VectorXd& x, double density);
+
     VectorXd LinSpace(const Vector3d &start, const Vector3d &end, int num_segments);
     VectorXd LinSpace(double start, double end, int num_segments);
+
+	std::vector<double> GetRestLength(const VectorXd& x_rest, const MatrixXi& edge_topo);
 
     namespace Curve {
         MatrixXi GenerateCurveEdgeTopo(int num_segments);

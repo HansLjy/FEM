@@ -16,7 +16,7 @@ ClothData::ClothData(
     const Vector2d& max_bend_dir,
     const MatrixXd& uv_coord,
     double stretch_u, double stretch_v) :
-    SampledObjectData(x, mass, 2, topo),
+    SampledObjectData(GetSampledObjectData(x, mass, topo, 2)),
     _k_stretch(k_stretch), _k_shear(k_shear),
     _stretch_u(stretch_u), _stretch_v(stretch_v),
     _uv_coord(uv_coord),

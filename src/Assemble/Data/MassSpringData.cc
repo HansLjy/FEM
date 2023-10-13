@@ -9,7 +9,7 @@ MassSpringData::MassSpringData(
 	const MatrixXi& topo,
 	const VectorXd& mass,
 	double stiffness) :
-	SampledObjectData(x_rest, mass, 2, topo),
+	SampledObjectData(GetSampledObjectData(x_rest, mass, topo, 2)),
 	_x_rest(x_rest), _stiffness(stiffness) {
 	_rest_length.resize(_num_edges);
 	for (int i = 0; i < _num_edges; i++) {

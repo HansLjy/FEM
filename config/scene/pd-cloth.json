@@ -2,7 +2,7 @@
     "objects": [
         {
             "type": "cloth",
-            "filename": "/cloth.obj",
+            "filename": "/plane.obj",
             "centered": true,
             "density": 1,
             "spring-stiffness": 1,

@@ -338,3 +338,13 @@ std::vector<Matrix6d> InitializationUtils::Surface::CalculatePFPX(
     return pFpx;
 }
 
+std::vector<double> InitializationUtils::GetRestLength(const VectorXd& x, const MatrixXi& edge_topo) {
+	const int num_edges = edge_topo.rows();
+	std::vector<double> rest_length;
+	rest_length.reserve(num_edges);
+	for (int i = 0; i < num_edges; i++) {
+		const RowVector2i indices = edge_topo.row(i);
+		rest_length.emplace_back((x.segment<3>(indices[0] * 3) - x.segment<3>(indices[1] * 3)).norm());
+	}
+	return rest_length;
+}

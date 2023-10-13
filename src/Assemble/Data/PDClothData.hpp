@@ -15,7 +15,12 @@ struct PDClothData : public SampledObjectData {
 
 protected:
     PDClothData(
-        const VectorXd& x, const MatrixXi& topo, const MatrixXd& mass,
+        const VectorXd& x,
+		const VectorXd& mass,
+		const MatrixXi& tet_topo,
+		const MatrixXi& face_topo,
+		const MatrixXi& edge_topo,
+		const std::vector<double>& rest_length,
         double spring_stiffness, double bending_stiffness
     );
 };

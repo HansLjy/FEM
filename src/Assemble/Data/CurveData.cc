@@ -11,7 +11,11 @@ CurveData::CurveData(
     const VectorXd& mass,
     const VectorXd& alpha,
     double stiffness) :
-    SampledObjectData(x, mass, 1, InitializationUtils::Curve::GenerateCurveEdgeTopo(x.size() / 3)),
+    SampledObjectData(GetSampledObjectData(
+		x, mass,
+		InitializationUtils::Curve::GenerateCurveEdgeTopo(x.size() / 3),
+		1
+	)),
     _stiffness(stiffness) {
 
     _x_rest = x;
