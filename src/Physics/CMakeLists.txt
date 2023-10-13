@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.22)
 
 file(GLOB PHYSICS_SOURCE_FILE
+    PDEnergyModel/*.cc
 	EnergyModel/*.cc
     MassModel/*.cc
 )

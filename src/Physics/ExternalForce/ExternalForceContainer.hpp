@@ -8,6 +8,17 @@ DEFINE_HAS_MEMBER(_frame_x)
 template<class Data>
 class ExternalForceContainer {
 public:
+	static ExternalForceContainer CreateFromConfig(const json& config) {
+		std::vector<ExternalForce<Data>*> external_forces;
+		for (const auto& force_config : config) {
+			external_forces.push_back(Factory<ExternalForce<Data>>::GetInstance()->GetProduct(force_config["type"], force_config));
+		}
+		return {external_forces};
+	}
+	
+	ExternalForceContainer(const ExternalForceContainer<Data>& rhs) = delete;
+	ExternalForceContainer(ExternalForceContainer<Data>&& rhs) = default;
+
 	void AddExternalForce(const std::string &type, const json &config) {
 		_external_forces.push_back(Factory<ExternalForce<Data>>::GetInstance()->GetProduct(type, config));
 	}
@@ -60,11 +71,10 @@ public:
 		}
 	}
 
-	ExternalForceContainer() = default;
-    ExternalForceContainer(const ExternalForceContainer<Data>& rhs) = delete;
     ExternalForceContainer<Data>& operator=(const ExternalForceContainer<Data>& rhs) = delete;
 
-private:
+protected:
+	ExternalForceContainer(const std::vector<ExternalForce<Data>*>& rhs) : _external_forces(rhs) {}
     std::vector<ExternalForce<Data>*> _external_forces;
 };
 
@@ -110,11 +120,8 @@ public:
 template<class Data, class Derived>
 class ExternalForceContainerAdapter {
 public:
-	ExternalForceContainerAdapter(const json& config) {
-		for (const auto& external_force_config : config) {
-			_container.AddExternalForce(external_force_config["type"], external_force_config);
-		}
-	}
+	ExternalForceContainerAdapter(const ExternalForceContainerAdapter<Data, Derived>& rhs) = delete;
+	ExternalForceContainerAdapter(ExternalForceContainer<Data>&& rhs) : _container(std::move(rhs)) {}
 
 	VectorXd GetExternalForce() const {
 		return _container.GetExternalForce(static_cast<const Derived*>(this));
@@ -135,9 +142,12 @@ public:
 	ExternalForceContainer<Data> _container;
 };
 
-template <template<class> class ConcreteExternalForce, class Data>
-bool RegisterExternalForce(const std::string& name) {
-	return Factory<ExternalForce<Data>>::GetInstance()->Register(name, [](const json& config) {
-		return new ConcreteExternalForce<Data>(config);
-	});
+namespace ExternalForceRegistration {
+	template <template<class> class ConcreteExternalForce, class Data>
+	bool RegisterExternalForce(const std::string& name) {
+		return Factory<ExternalForce<Data>>::GetInstance()->Register(name, [](const json& config) {
+			return new ConcreteExternalForce<Data>(config);
+		});
+	}
 }
+

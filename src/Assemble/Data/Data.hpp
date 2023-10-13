@@ -1,15 +1,18 @@
 #pragma once
 #include "EigenAll.h"
-#include "GeometryUtil.h"
+#include "TopoUtil.hpp"
 #include "Collision/CollisionShape/CollisionShape.hpp"
 
 struct BasicData : public CollisionData {
 	BasicData(const BasicData& rhs) = delete;
-	BasicData(const VectorXd& x, const VectorXd& v) : _dof(x.size()), _x(x), _v(v) {}
-	BasicData(const VectorXd& x) : BasicData(x, VectorXd::Zero(x.size())) {}
+	BasicData(BasicData&& rhs) = default;
 
 	int _dof;
 	VectorXd _x, _v;
+
+protected:
+	BasicData(const VectorXd& x, const VectorXd& v) : _dof(x.size()), _x(x), _v(v) {}
+	BasicData(const VectorXd& x) : BasicData(x, VectorXd::Zero(x.size())) {}
 };
 
 template<class ProxyData>

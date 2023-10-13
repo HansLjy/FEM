@@ -30,43 +30,43 @@
 
 
 
-class Cloth :
-    public ClothData,
-    public CoordinateAdapter<BasicCoordinate, Cloth>,
-    public EnergyModelAdapter<ClothEnergyModel, Cloth>,
-    public MassModelAdapter<SampledObjectMassModel, Cloth>,
-    public ExternalForceContainerAdapter<ClothData, Cloth>,
-    public RenderShapeAdapter<SampledRenderShape, Cloth> {
+// class Cloth :
+//     public ClothData,
+//     public CoordinateAdapter<BasicCoordinate, Cloth>,
+//     public EnergyModelAdapter<ClothEnergyModel, Cloth>,
+//     public MassModelAdapter<SampledObjectMassModel, Cloth>,
+//     public ExternalForceContainerAdapter<ClothData, Cloth>,
+//     public RenderShapeAdapter<SampledRenderShape, Cloth> {
 
-public:
-    Cloth(const json& config) :
-        ClothData(config),
-        EnergyModelAdapter(config["energy"]),
-        ExternalForceContainerAdapter(config["external-forces"]),
-        RenderShapeAdapter(config["render"]) {}
-};
+// public:
+//     Cloth(const json& config) :
+//         ClothData(config),
+//         EnergyModelAdapter(config["energy"]),
+//         ExternalForceContainerAdapter(config["external-forces"]),
+//         RenderShapeAdapter(config["render"]) {}
+// };
 
-const bool cloth_gravity_registered = RegisterExternalForce<SampledObjectGravity, ClothData>("gravity");
-const bool cloth_fix_force_registered = RegisterExternalForce<SampledObjecFixtureForce, ClothData>("fixture-force");
-const bool cloth_object_registered = RegisterForCreator<Cloth>("cloth");
-const bool cloth_render_object_registered = RegisterForCaster<Renderable, Cloth>("cloth");
-const bool cloth_registered = RegisterForIP<Cloth>("cloth");
+// const bool cloth_gravity_registered = RegisterExternalForce<SampledObjectGravity, ClothData>("gravity");
+// const bool cloth_fix_force_registered = RegisterExternalForce<SampledObjecFixtureForce, ClothData>("fixture-force");
+// const bool cloth_object_registered = RegisterForCreator<Cloth>("cloth");
+// const bool cloth_render_object_registered = RegisterForCaster<Renderable, Cloth>("cloth");
+// const bool cloth_registered = RegisterForIP<Cloth>("cloth");
 
-class Curve :
-    public CurveData,
-    public CoordinateAdapter<BasicCoordinate, Curve>,
-    public MassModelAdapter<SampledObjectMassModel, Curve>,
-    public EnergyModelAdapter<CurveEnergyModel, Curve>,
-    public ExternalForceContainerAdapter<CurveData, Curve>,
-    public RenderShapeAdapter<CurveRenderShape, Curve> {
+// class Curve :
+//     public CurveData,
+//     public CoordinateAdapter<BasicCoordinate, Curve>,
+//     public MassModelAdapter<SampledObjectMassModel, Curve>,
+//     public EnergyModelAdapter<CurveEnergyModel, Curve>,
+//     public ExternalForceContainerAdapter<CurveData, Curve>,
+//     public RenderShapeAdapter<CurveRenderShape, Curve> {
 
-public:
-    Curve(const json& config) :
-        CurveData(config),
-        EnergyModelAdapter(config["energy"]),
-        ExternalForceContainerAdapter(config["external-forces"]),
-        RenderShapeAdapter(config["render"]) {}
-};
+// public:
+//     Curve(const json& config) :
+//         CurveData(config),
+//         EnergyModelAdapter(config["energy"]),
+//         ExternalForceContainerAdapter(config["external-forces"]),
+//         RenderShapeAdapter(config["render"]) {}
+// };
 
-const bool curve_object_registered = RegisterForCreator<Curve>("curve");
-const bool curve_registered = RegisterForIP<Curve>("curve");
+// const bool curve_object_registered = RegisterForCreator<Curve>("curve");
+// const bool curve_registered = RegisterForIP<Curve>("curve");

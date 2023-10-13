@@ -43,7 +43,7 @@ namespace CurveEnergyFunction {
 template<class Derived>
 double CurveEnergyModel::GetPotential(Derived* obj, const Ref<const VectorXd> &x) const {
 	return CurveEnergyFunction::GetPotential(
-		obj->_curve_num_points,
+		obj->_num_points,
 		obj->_stiffness, obj->_alpha,
 		obj->_rest_length, obj->_voronoi_length,
 		x
@@ -53,7 +53,7 @@ double CurveEnergyModel::GetPotential(Derived* obj, const Ref<const VectorXd> &x
 template<class Derived>
 VectorXd CurveEnergyModel::GetPotentialGradient(Derived* obj, const Ref<const VectorXd> &x) const {
 	return CurveEnergyFunction::GetPotentialGradient(
-		obj->_curve_num_points,
+		obj->_num_points,
 		obj->_stiffness, obj->_alpha,
 		obj->_rest_length, obj->_voronoi_length,
 		x
@@ -63,7 +63,7 @@ VectorXd CurveEnergyModel::GetPotentialGradient(Derived* obj, const Ref<const Ve
 template<class Derived>
 void CurveEnergyModel::GetPotentialHessian(Derived* obj, const Ref<const VectorXd> &x, COO &coo, int x_offset, int y_offset) const {
 	return CurveEnergyFunction::GetPotentialHessian(
-		obj->_curve_num_points,
+		obj->_num_points,
 		obj->_stiffness, obj->_alpha,
 		obj->_rest_length, obj->_voronoi_length,
 		x, coo, x_offset, y_offset

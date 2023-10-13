@@ -4,11 +4,16 @@
     "time-step": 0.01
   },
   "time-stepper": {
-    "type": "projective-dynamics",
-    "max-step": 10,
-    "tolerance": 1e-3
+    "type": "incremental-potential",
+    "optimizer": {
+      "type": "newton",
+      "tolerance": 1e-8,
+      "max-iteration": 10,
+      "wolfe-condition": 0.1
+    },
+	  "damping-enabled": false
   },
-  "system-config": "/scene/pd-cloth.json",
+  "system-config": "/scene/mass-spring.json",
   "renderer": {
     "camera":  {
       "position": [3, 0, 0],

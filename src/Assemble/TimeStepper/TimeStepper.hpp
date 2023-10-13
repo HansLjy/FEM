@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Object.hpp"
+#include "Pattern.h"
 
 class TimeStepper {
 public:
@@ -14,3 +15,12 @@ public:
     virtual void Step(double h) = 0;
     virtual ~TimeStepper() = default;
 };
+
+namespace TimeStepperRegistration {
+	template<class T>
+	bool RegisterTimeStepper(const std::string& type) {
+		return Factory<TimeStepper>::GetInstance()->Register(type, [](const json& config){
+			return new T(config);
+		});
+	}
+}

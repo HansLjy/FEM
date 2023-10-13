@@ -31,9 +31,9 @@ private:
 
 template<class T>
 bool RegisterForIP(const std::string& type) {
-	RegisterForCaster<Coordinated, T>(type);
-	RegisterForCaster<Massed, T>(type);
-	RegisterForCaster<Energied, T>(type);
-	RegisterForCaster<ExternalForced, T>(type);
+	CasterRegistration::RegisterForCaster<Coordinated, T>(type);
+	CasterRegistration::RegisterForCaster<Massed, T>(type);
+	CasterRegistration::RegisterForCaster<Energied, T>(type);
+	CasterRegistration::RegisterForCaster<ExternalForced, T>(type);
 	return true;
 }

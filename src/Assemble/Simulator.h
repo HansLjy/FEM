@@ -36,5 +36,5 @@ protected:
 
 template<class T>
 bool RegisterForRenderer(const std::string &type) {
-    return RegisterForCaster<Renderable, T>(type);
+    return CasterRegistration::RegisterForCaster<Renderable, T>(type);
 }

@@ -11,13 +11,9 @@
 /* Render Shape Policy */
 class RenderShape {
 public:
-	explicit RenderShape(const json& config) : RenderShape(config["have-bounding-box"], config["use-texture"], config["texture-path"]) {}
-	RenderShape(bool have_bounding_box, bool use_texture, const std::string& texture_path = "")
-	: _have_bounding_box(have_bounding_box), _use_texture(use_texture) {
-		if (use_texture) {
-			_texture_path = std::string(TEXTURE_PATH) + "/" + texture_path;
-		}
-	}
+
+	RenderShape(const RenderShape& rhs) = delete;
+	RenderShape(RenderShape&& rhs) = default;
 	template<class Data> void Initialize(Data* data) {}
 
 	// <- precompute uv coords
@@ -38,13 +34,25 @@ protected:
 	bool _use_texture = false;
 	std::string _texture_path;
 	Matrix<float, Dynamic, 2> _uv_coords;
+	
+	RenderShape(bool have_bounding_box, bool use_texture, const std::string& texture_path)
+	: _have_bounding_box(have_bounding_box), _use_texture(use_texture) {
+		if (use_texture) {
+			_texture_path = std::string(TEXTURE_PATH) + "/" + texture_path;
+		}
+	}
 };
 
 class SampledRenderShape : public RenderShape {
 public:
-	SampledRenderShape() : RenderShape(false, false) {}
-	SampledRenderShape(bool have_bounding_box, bool use_texture, const std::string& texture_path = "") : RenderShape(have_bounding_box, use_texture, texture_path) {}
-	explicit SampledRenderShape(const json& config) : RenderShape(config) {}
+	SampledRenderShape(bool have_bounding_box, bool use_texture, const std::string& texture_path) :
+		RenderShape(have_bounding_box, use_texture, texture_path) {}
+
+	SampledRenderShape(const SampledRenderShape& rhs) = delete;
+	SampledRenderShape(SampledRenderShape&& rhs) = default;
+
+	static inline SampledRenderShape CreateFromConfig(const json& config);
+
 	template<class Data> int GetRenderVertexNum(const Data *obj) const;
 	template<class Data> void GetRenderVertices(const Data *obj, Ref<MatrixXd> vertices) const;
 	template<class Data> int GetRenderFaceNum(const Data* obj) const;
@@ -54,7 +62,6 @@ public:
 template<class ProxyRenderShape>
 class ProxiedRenderShape {
 public:
-	ProxiedRenderShape(const json& config) : _proxy_render_shape(config) {}
 	template<class Data> void Initialize(Data* data) {}
 	template<class Data> void GetRenderVertices(const Data *data, Ref<MatrixXd> vertices) const;
 	template<class Data> void GetRenderTopos(const Data *data, Ref<MatrixXi> topos) const;
@@ -75,17 +82,18 @@ protected:
 #include "FixedShape/FixedShape.hpp"
 class FixedRenderShape : public RenderShape {
 public:
-	FixedRenderShape(const json& config)
-		: RenderShape(config),
-		  _vertices(FixedShapeFactory::Instance()->GetVertices(config["type"], config)),
-		  _topos(FixedShapeFactory::Instance()->GetFaceTopo(config["type"], config)) {}
-
+	FixedRenderShape(const MatrixXd& vertices, const MatrixXi& topo) :
+		RenderShape(false, false, ""), _vertices(vertices), _topo(topo) {}
+	
+	FixedRenderShape(const FixedRenderShape& rhs) = delete;
+	FixedRenderShape(FixedRenderShape&& rhs) = default;
+	
 	template<class Data> void GetRenderVertices(const Data *obj, MatrixXd &vertices) const { vertices = _vertices; }
-	template<class Data> void GetRenderTopos(const Data *obj, MatrixXi &topos) const { topos = _topos; }
+	template<class Data> void GetRenderTopos(const Data *obj, MatrixXi &topo) const { topo = _topo; }
 
 protected:
     MatrixXd _vertices;
-    MatrixXi _topos;
+    MatrixXi _topo;
 };
 
 
@@ -108,6 +116,15 @@ template<class Data>
 void SampledRenderShape::GetRenderTopos(const Data *obj, Ref<MatrixXi> topos) const {
 	topos = obj->_face_topo.topRows(obj->_num_faces);
 }
+
+SampledRenderShape SampledRenderShape::CreateFromConfig(const json& config) {
+	return {
+		config["have-bounding-box"],
+		config["use-texture"],
+		config["texture-path"]
+	};
+}
+
 
 template<class ProxyRenderShape>
 template<class Data> void ProxiedRenderShape<ProxyRenderShape>::GetRenderVertices(const Data *data, Ref<MatrixXd> vertices) const {

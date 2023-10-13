@@ -3,11 +3,9 @@
 #include "ClothData.hpp"
 #include "FileIO.hpp"
 
-struct ReconstructedMeshData : public FileIOHelper, public ClothData {
-	ReconstructedMeshData(const json& config);
-
+struct ReconstructedMeshData : public ClothData {
 	ReconstructedMeshData(
-		double rho,
+		double density,
 		double k_stretch, double k_shear, double k_bend,
 		const VectorXd &x,
         const MatrixXi &topo

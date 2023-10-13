@@ -70,12 +70,15 @@ private:
 	std::map<std::string, ProductCreator> _creator_map;
 };
 
-template<class T>
-bool RegisterForCreator(const std::string& type) {
-	return Creator::GetInstance()->Register(type, [](const json& config) {
-		return new T(config);
-	});
+namespace CreatorRegistration {
+	template<class T>
+	bool RegisterForCreator(const std::string& type) {
+		return Creator::GetInstance()->Register(type, [](const json& config) {
+			return new T(config);
+		});
+	}
 }
+
 
 template <class Product>
 class Caster {
@@ -103,12 +106,15 @@ private:
 	std::map<std::string, ProductCaster> _creator_map;
 };
 
-template<class Interface, class T>
-bool RegisterForCaster(const std::string& type) {
-	return Caster<Interface>::GetInstance()->Register(type, [](void* ptr) {
-		return Interface(static_cast<T*>(ptr));
-	});
+namespace CasterRegistration {
+	template<class Interface, class T>
+	bool RegisterForCaster(const std::string& type) {
+		return Caster<Interface>::GetInstance()->Register(type, [](void* ptr) {
+			return Interface(static_cast<T*>(ptr));
+		});
+	}
 }
+
 
 template<class Interface>
 void Cast2Interface(

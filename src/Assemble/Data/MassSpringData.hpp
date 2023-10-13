@@ -2,16 +2,16 @@
 
 #include "SampledData.hpp"
 #include "JsonUtil.h"
-#include "FileIO.hpp"
 
-struct MassSpringData : public FileIOHelper, public SampledObjectData {
-	explicit MassSpringData(const json& config);
-	MassSpringData(const std::string& filename, double density, double stiffness);
-	MassSpringData(const VectorXd& x_rest, const MatrixXi& topo, double density, double stiffness);
-	MassSpringData(const VectorXd& x_rest, const MatrixXi& topo, const VectorXd& mass, double stiffness);
-	
+struct MassSpringData : public SampledObjectData {
+public:
+	MassSpringData(const MassSpringData& rhs) = delete;
+	MassSpringData(MassSpringData&& rhs) = default;
 
 	double _stiffness;	// stiffness matrix
 	VectorXd _x_rest;
 	VectorXd _rest_length;
+
+protected:
+	MassSpringData(const VectorXd& x_rest, const MatrixXi& topo, const VectorXd& mass, double stiffness);
 };

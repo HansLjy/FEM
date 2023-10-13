@@ -17,12 +17,6 @@ public:
 	virtual ~FileIO() = default;
 };
 
-class FileIOHelper {
-public:
-	FileIOHelper() {_already_read = false;}
-	static void ReadMesh(const std::string& filename, bool centered);
-
-	static bool _already_read;
-	static VectorXd _the_vertices;
-	static MatrixXi _the_topo;
-};
+namespace FileIOUtils {
+	void ReadMesh(const std::string& filename, bool centered, VectorXd& x, MatrixXi& topo);
+}

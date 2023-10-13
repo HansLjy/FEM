@@ -6,7 +6,8 @@
 template<class RenderShape, class Derived>
 class RenderShapeAdapter : public RenderShape {
 public:
-    RenderShapeAdapter(const json& config) : RenderShape(config) {}
+    using RenderShape::RenderShape;
+    RenderShapeAdapter(RenderShape&& rhs) : RenderShape(std::move(rhs)) {} 
 
     bool IsUsingTexture() const {
         return RenderShape::IsUsingTexture(static_cast<const Derived*>(this));
