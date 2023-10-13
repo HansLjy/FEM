@@ -42,6 +42,15 @@ private:
 	std::map<std::string, ProductDeleter> _deleter_map;
 };
 
+namespace TypeErasure {
+	template<class T>
+	bool RegisterForDeleter(const std::string& type) {
+		return Deleter::GetInstance()->Register(type, [](void* ptr) {
+			delete static_cast<T*>(ptr);
+		});
+	}
+}
+
 class Creator {
 public:
 	using ProductCreator = std::function<void*(const json& config)>;
@@ -116,22 +125,25 @@ namespace CasterRegistration {
 }
 
 
-template<class Interface>
-void Cast2Interface(
-	const typename std::vector<Object>::const_iterator& begin,
-	const typename std::vector<Object>::const_iterator& end,
-	std::vector<Interface>& out
-) {
-	for (auto itr = begin; itr != end; itr++) {
-		out.emplace_back(Caster<Interface>::GetInstance()->Cast(*itr));
+namespace TypeErasure {
+	template<class Interface>
+	void Cast2Interface(
+		const typename std::vector<Object>::const_iterator& begin,
+		const typename std::vector<Object>::const_iterator& end,
+		std::vector<Interface>& out
+	) {
+		for (auto itr = begin; itr != end; itr++) {
+			out.emplace_back(Caster<Interface>::GetInstance()->Cast(*itr));
+		}
 	}
 }
 
-inline void ReadObjects(const json& config, std::vector<Object>& objs) {
-	const auto& objects_config = config["objects"];
-    for (const auto& object_config : objects_config) {
-		objs.push_back(Creator::GetInstance()->GetProduct(object_config["type"], object_config));
-    }
+namespace TypeErasure {
+	inline void ReadObjects(const json& config, std::vector<Object>& objs) {
+		for (const auto& object_config : config) {
+			objs.push_back(Creator::GetInstance()->GetProduct(object_config["type"], object_config));
+		}
+	}
 }
 
 template<class Interface>
@@ -142,13 +154,12 @@ public:
 		const typename std::vector<Object>::const_iterator& end
 	) {
 		_objs.clear();
-		Cast2Interface(begin, end, _objs);
+		TypeErasure::Cast2Interface(begin, end, _objs);
 	}
 
 	void BindObjects(const std::vector<Object>& objs) {
 		BindObjects(objs.begin(), objs.end());
 	}
 
-protected:
 	std::vector<Interface> _objs;
 };

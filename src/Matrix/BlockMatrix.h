@@ -18,6 +18,7 @@ public:
                   _submatrix(submatrix) {}
 
     void ToSparse(COO& coo, int x_offset, int y_offset);
+	void ToSparse(double c, COO& coo, int x_offset, int y_offset);
 
 protected:
     int _rows, _cols;
@@ -44,7 +45,7 @@ public:
     void RightProduct(const Ref<const VectorXd>& rhs, Ref<VectorXd> result) const;
 
 	//<- this * rhs.transpose()
-    BlockMatrix RightTransposeProduct(const BlockVector& rhs);
+    BlockMatrix RightTransposeProduct(const BlockVector& rhs) const;
 
     int _rows;
     int _num_row_blocks;

@@ -1,4 +1,4 @@
-#include "Collision/SpatialHashing/SpatialHashing.hpp"
+#include "SpatialQuery/SpatialHashing.hpp"
 #include "gtest/gtest.h"
 #include "spdlog/spdlog.h"
 

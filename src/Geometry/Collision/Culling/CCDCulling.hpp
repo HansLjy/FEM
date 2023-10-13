@@ -4,7 +4,6 @@
 #include "Collision/CollisionInfo.hpp"
 #include "Collision/CollisionInterface.hpp"
 #include "Collision/CollisionShape/CollisionShape.hpp"
-#include "Collision/SpatialHashing/SpatialHashing.hpp"
 
 class CCDCulling {
 public:

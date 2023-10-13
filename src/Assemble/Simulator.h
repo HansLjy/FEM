@@ -24,8 +24,6 @@ protected:
     double _duration;
     double _time_step;
     TimeStepper* _time_stepper;
-    std::vector<Object> _objs;
-    std::vector<Renderable> _objs_render;
 
     std::vector<int> _obj_id2scene_id; // from id in system to id in scene
 

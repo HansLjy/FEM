@@ -7,6 +7,7 @@
 template<class CollisionShape, class Derived>
 class CollisionShapeAdapter : public CollisionShape {
 public:
+	void Initialize();
     CollisionShapeAdapter(const json& config) : CollisionShape(config) {}
 	void ComputeCollisionVertex(const Ref<const VectorXd>& x);
 	void ComputeCollisionVertexVelocity(const Ref<const VectorXd>& v);
@@ -17,6 +18,10 @@ public:
 	const MatrixXi& GetCollisionFaceTopo() const;
 };
 
+template<class CollisionShape, class Derived>
+void CollisionShapeAdapter<CollisionShape, Derived>::Initialize() {
+	CollisionShape::Initialize(static_cast<Derived*>(this));
+}
 template<class CollisionShape, class Derived>
 void CollisionShapeAdapter<CollisionShape, Derived>::ComputeCollisionVertex(const Ref<const VectorXd> &x) {
     CollisionShape::ComputeCollisionVertex(static_cast<Derived*>(this), x);
@@ -30,25 +35,25 @@ void CollisionShapeAdapter<CollisionShape, Derived>::ComputeCollisionVertexVeloc
 
 template<class CollisionShape, class Derived>
 Vector3d CollisionShapeAdapter<CollisionShape, Derived>::GetCollisionVertexVelocity(int idx) const {
-    return CollisionShape::GetCollisionVertexVelocity(static_cast<Derived*>(this), idx);
+    return CollisionShape::GetCollisionVertexVelocity(static_cast<const Derived*>(this), idx);
 }
 
 template<class CollisionShape, class Derived>
 const BlockVector& CollisionShapeAdapter<CollisionShape, Derived>::GetCollisionVertexDerivative(int idx) const {
-    return CollisionShape::GetCollisionVertexDerivative(static_cast<Derived*>(this), idx);
+    return CollisionShape::GetCollisionVertexDerivative(static_cast<const Derived*>(this), idx);
 }
 
 template<class CollisionShape, class Derived>
 const MatrixXd& CollisionShapeAdapter<CollisionShape, Derived>::GetCollisionVertices() const {
-    return CollisionShape::GetCollisionVertices(static_cast<Derived*>(this));
+    return CollisionShape::GetCollisionVertices(static_cast<const Derived*>(this));
 }
 
 template<class CollisionShape, class Derived>
 const MatrixXi& CollisionShapeAdapter<CollisionShape, Derived>::GetCollisionEdgeTopo() const {
-    return CollisionShape::GetCollisionEdgeTopo(static_cast<Derived*>(this));
+    return CollisionShape::GetCollisionEdgeTopo(static_cast<const Derived*>(this));
 }
 
 template<class CollisionShape, class Derived>
 const MatrixXi& CollisionShapeAdapter<CollisionShape, Derived>::GetCollisionFaceTopo() const {
-    return CollisionShape::GetCollisionFaceTopo(static_cast<Derived*>(this));
+    return CollisionShape::GetCollisionFaceTopo(static_cast<const Derived*>(this));
 }

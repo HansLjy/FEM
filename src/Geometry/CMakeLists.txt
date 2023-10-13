@@ -6,6 +6,7 @@ file(GLOB_RECURSE GEOMETRY_SOURCE_FILE
         Shape/*.cc
 		Voxelizer/*.cc
 		Embedding/*.cc
+		SpatialQuery/*.cc
     )
 
 if(BUILD_TEST)

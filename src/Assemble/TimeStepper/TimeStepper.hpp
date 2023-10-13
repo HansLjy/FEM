@@ -2,17 +2,16 @@
 
 #include "Object.hpp"
 #include "Pattern.h"
+#include "Render/RenderInterface.hpp"
 
 class TimeStepper {
 public:
 	TimeStepper() = default;
 	TimeStepper(const TimeStepper& rhs) = delete;
 
-	virtual void BindObjects(
-		const typename std::vector<Object>::const_iterator& begin,
-		const typename std::vector<Object>::const_iterator& end
-	) = 0;
+	virtual void BindSystem(const json& config) = 0;
     virtual void Step(double h) = 0;
+	virtual const std::vector<Renderable>& GetRenderObjects() const = 0;
     virtual ~TimeStepper() = default;
 };
 

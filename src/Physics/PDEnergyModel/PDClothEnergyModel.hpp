@@ -68,7 +68,7 @@ void PDClothEnergyModel::LocalProject(const Data* data, const Ref<const VectorXd
 template<class Data>
 void PDClothEnergyModel::Initialize(Data* data) {
     MatrixXi internal_edge_topo;
-    TopoUtil::GetInternalEdge(data->_face_topo, internal_edge_topo);
+    internal_edge_topo = TopoUtil::GetInternalEdge(data->_face_topo);
     PDEnergyModelFunction::InitQuadraticBendingMatrix(
         data->_x,
         internal_edge_topo,

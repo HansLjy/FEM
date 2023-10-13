@@ -31,8 +31,7 @@ void Simulator::LoadScene(const std::string &config) {
     const json system_config = json::parse(system_config_file);
     system_config_file.close();
 
-    ReadObjects(system_config, _objs);
-    Cast2Interface(_objs.begin(), _objs.end(), _objs_render);
+	_time_stepper->BindSystem(system_config);
 
     const auto& renderer_config_json = config_json["renderer"];
     const auto& camera_config_json = renderer_config_json["camera"];
@@ -49,8 +48,6 @@ void Simulator::LoadScene(const std::string &config) {
     _light_Kl = light_config_json["Kl"];
     _light_Kq = light_config_json["Kq"];
 
-    _time_stepper->BindObjects(_objs.begin(), _objs.end());
-
     spdlog::info("Scene loaded");
 }
 
@@ -60,7 +57,9 @@ void Simulator::Simulate(const std::string& output_dir) {
     int obj_id = 0;
 	std::ofstream topo_file(output_dir + "/topo");
 
-	for (const auto& obj : _objs_render) {
+	const auto& renderable_object = _time_stepper->GetRenderObjects();
+
+	for (const auto& obj : renderable_object) {
         MatrixXi topo;
         MatrixXd vertices;
 		obj.GetRenderTopos(topo);
@@ -75,7 +74,7 @@ void Simulator::Simulate(const std::string& output_dir) {
         _time_stepper->Step(_time_step);
         obj_id = 0;
 		std::ofstream itr_file(output_dir + "/itr" + std::to_string(itr_id));
-        for (const auto& obj : _objs_render) {
+        for (const auto& obj : renderable_object) {
             MatrixXd vertices;
 			obj.GetRenderVertices(vertices);
             write_binary(itr_file, vertices);
@@ -113,7 +112,8 @@ void Simulator::InitializeScene(Scene &scene) {
         _light_Kc, _light_Kl, _light_Kq
     );
 
-    for (const auto& obj : _objs_render) {
+	const auto& renderable_object = _time_stepper->GetRenderObjects();
+    for (const auto& obj : renderable_object) {
         MatrixXd vertices(obj.GetRenderVertexNum(), 3);
         MatrixXi topo(obj.GetRenderFaceNum(), 3);
 
@@ -155,7 +155,8 @@ void Simulator::Processing(Scene &scene) {
     }
 
     int id = 0;
-    for (const auto& obj : _objs_render) {
+	const auto& renderable_object = _time_stepper->GetRenderObjects();
+    for (const auto& obj : renderable_object) {
         scene.SelectData(_obj_id2scene_id[id++]);
 
 		if (obj.IsRenderTopoUpdated()) {

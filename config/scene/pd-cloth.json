@@ -18,7 +18,13 @@
                 "have-bounding-box": false,
                 "use-texture": false,
                 "texture-path": ""
-            }
+            },
+			"collision": {
+				
+			}
         }
-    ]
+    ],
+	"colliders": [
+		
+	]
 }

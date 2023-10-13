@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CCDCulling.hpp"
+#include "SpatialQuery/SpatialHashing.hpp"
 
 class SpatialHashingCulling : public CCDCulling {
 public:

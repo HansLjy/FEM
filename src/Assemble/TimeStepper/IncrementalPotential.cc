@@ -19,6 +19,13 @@ IncrementalPotentialTimeStepper::IncrementalPotentialTimeStepper(const json& con
 	}
 }
 
+void IncrementalPotentialTimeStepper::BindSystem(const json &config) {
+	std::vector<Object> objs;
+	TypeErasure::ReadObjects(config["obj"], objs);
+	BindObjects(objs.begin(), objs.end());
+	TypeErasure::Cast2Interface(objs.begin(), objs.end(), _render_objects);
+}
+
 void IncrementalPotentialTimeStepper::BindObjects(
 	const typename std::vector<Object>::const_iterator &begin,
 	const typename std::vector<Object>::const_iterator &end
@@ -89,4 +96,8 @@ void IncrementalPotentialTimeStepper::Step(double h) {
     _coord_assembler.SetCoordinate(x_next);
     _coord_assembler.SetVelocity(v_next);
 
+}
+
+const std::vector<Renderable>& IncrementalPotentialTimeStepper::GetRenderObjects() const {
+	return _render_objects;
 }

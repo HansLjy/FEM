@@ -4,8 +4,8 @@
 #include "Collision/CollisionShape/CollisionShape.hpp"
 #include "Collision/CollisionInfo.hpp"
 #include "Collision/CollisionInterface.hpp"
+#include "SpatialQuery/SpatialHashing.hpp"
 #include "Object.hpp"
-
 #include "Collision/CCD/CCD.h"
 #include "Collision/Culling/CCDCulling.hpp"
 

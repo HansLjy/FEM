@@ -6,7 +6,8 @@
   "time-stepper": {
     "type": "projective-dynamics",
     "max-step": 10,
-    "tolerance": 1e-3
+    "tolerance": 1e-3,
+	"collision-stiffness": 10
   },
   "system-config": "/scene/pd-cloth.json",
   "renderer": {
