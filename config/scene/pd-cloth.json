@@ -25,6 +25,10 @@
         }
     ],
 	"colliders": [
-		
+		{
+            "type": "sphere",
+            "center": [0, 0, -0.5],
+            "radius": 0.5
+        }
 	]
 }

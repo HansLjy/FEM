@@ -1,5 +1,6 @@
 #include "PDClothEnergyModel.hpp"
 #include "GeometryUtil.hpp"
+#include <iostream>
 
 void PDEnergyModelFunction::GetPDSpringEnergyLHSMatrix(
     const Ref<const MatrixXi> &edge_topo,

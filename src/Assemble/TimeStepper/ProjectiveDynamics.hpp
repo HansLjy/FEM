@@ -50,4 +50,10 @@ namespace ObjectRegistration {
 		CasterRegistration::RegisterForCaster<CollisionInterface, T>(type);
         return true;
     }
+
+    template<class T>
+    bool RegisterForPDCollider(const std::string& type) {
+        CasterRegistration::RegisterForCaster<Collider, T>(type);
+        return true;
+    }
 }

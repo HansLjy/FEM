@@ -19,6 +19,8 @@
 #include "Collision/CollisionShape/CollisionShape.hpp"
 #include "Collision/CollisionShape/CollisionShapeAdapter.hpp"
 
+#include "Collision/CollisionShape/ImplicitShape/ImplicitSphere.hpp"
+
 #include "TimeStepper/ProjectiveDynamics.hpp"
 
 class PDCloth :
@@ -47,3 +49,12 @@ const bool pd_cloth_registered = CreatorRegistration::RegisterForCreator<PDCloth
 const bool pd_cloth_caster_registered = ObjectRegistration::RegisterForPD<PDCloth>("cloth");
 const bool pd_cloth_deleter_registered = TypeErasure::RegisterForDeleter<PDCloth>("cloth");
 const bool pd_cloth_render_object_registered = CasterRegistration::RegisterForCaster<Renderable, PDCloth>("cloth");
+
+class SphereCollider : public ImplicitSphere {
+public:
+    SphereCollider(const json& config) : ImplicitSphere(CreateFromConfig(config)) {}
+};
+
+const bool sphere_collider_registered = CreatorRegistration::RegisterForCreator<SphereCollider>("sphere");
+const bool sphere_collider_caster_registered = ObjectRegistration::RegisterForPDCollider<SphereCollider>("sphere");
+const bool sphere_collider_deleter_registered = TypeErasure::RegisterForDeleter<SphereCollider>("sphere");
