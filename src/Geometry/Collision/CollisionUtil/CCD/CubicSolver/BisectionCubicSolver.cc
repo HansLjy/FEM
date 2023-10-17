@@ -5,14 +5,6 @@
 #include "BisectionCubicSolver.h"
 #include "cmath"
 
-namespace {
-	const bool bisection_solver_registered = Factory<CubicSolver>::GetInstance()->Register("bisection-solver",
-		[](const json& config) {
-			return new BisectionCubicSolver(config);
-		}
-	);
-}
-
 double BisectionCubicSolver::Solve(double A, double B, double C, double D, double l, double r) {
     if (A < 0) {
         A = -A; B = -B; C = -C; D = -D;

@@ -1,10 +1,12 @@
 {
 	"type": "PDIPC",
-	"outer-tolerance": 1e-2,
-	"inner-tolerance": 1e-2,
+	"outer-tolerance": 1e-4,
+	"inner-tolerance": 1e-4,
+	"outer-max-iterations": 10,
+	"inner-max-iterations": 10,
 	"culling": {
 		"type": "spatial-hashing",
-		"grid-length": 1e-3,
+		"grid-length": 1e-1,
 		"hash-table-size": 4096
 	},
 	"collision-handler": {

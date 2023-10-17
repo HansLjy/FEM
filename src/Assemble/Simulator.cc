@@ -37,7 +37,7 @@ void Simulator::LoadScene(const std::string &filename) {
 
 	_time_stepper->BindSystem(scene_config);
 
-	const std::string renderer_config_filepath = std::string(CONFIG_PATH) + "/renderer" + std::string(config["render-config"]);
+	const std::string renderer_config_filepath = std::string(CONFIG_PATH) + "/renderer" + std::string(config["renderer-config"]);
 	std::ifstream renderer_config_file(renderer_config_filepath);
 	const json renderer_config = json::parse(renderer_config_file);
     const auto& camera_config_json = renderer_config["camera"];

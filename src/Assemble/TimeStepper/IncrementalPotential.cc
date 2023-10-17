@@ -1,11 +1,5 @@
 #include "IncrementalPotential.hpp"
 
-namespace {
-	const bool ip_registered = Factory<TimeStepper>::GetInstance()->Register("incremental-potential", [](const json& config){
-		return new IncrementalPotentialTimeStepper(config);
-	});
-}
-
 IncrementalPotentialTimeStepper::~IncrementalPotentialTimeStepper() {
 	delete _optimizer;
 }

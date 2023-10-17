@@ -1,7 +1,5 @@
 #include "SpatialHashingCulling.hpp"
 
-const bool SpatialHashingCulling::registered = FactoryRegistration::RegisterForFactory<CCDCulling, SpatialHashingCulling>("spatial-hashing");
-
 SpatialHashingCulling::SpatialHashingCulling(const json& config):
 	_edge_hash_table(config["grid-length"], config["hash-table-size"]),
 	_vertex_hash_table(config["grid-length"], config["hash-table-size"]) {
@@ -11,7 +9,6 @@ void SpatialHashingCulling::GetCCDSet(
 	const std::vector<CollisionInterface> &objs,
 	const std::vector<int> &offsets,
 	std::vector<PrimitivePair> &ccd_set) {
-	std::cerr << registered;
 
 	ccd_set.clear();
 	_time_stamp++;
@@ -58,6 +55,8 @@ void SpatialHashingCulling::GetCCDSet(
         obj_id++;
     }
 
+	std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
+
     /* find in hash table */
 
 	cur_offset = 0;
@@ -100,28 +99,30 @@ void SpatialHashingCulling::GetCCDSet(
             }
         }
 
+		std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
         /* edge edge collision */
         for (int edge_id = 0; edge_id < num_edges; edge_id++) {
-            const auto topo = edge_topo.row(edge_id);
+            const RowVector2i indices = edge_topo.row(edge_id);
 
-            Vector3d edge_vertex1 = vertices.row(topo(0)).transpose();
-			Vector3d edge_vertex_v1 = obj.GetCollisionVertexVelocity(topo(0));
+            Vector3d edge_vertex1 = vertices.row(indices(0)).transpose();
+			Vector3d edge_vertex_v1 = obj.GetCollisionVertexVelocity(indices(0));
 			Vector3d edge_vertex_next1 = edge_vertex1 + edge_vertex_v1;
-            Vector3d edge_vertex2 = vertices.row(topo(1)).transpose();
-			Vector3d edge_vertex_v2 = obj.GetCollisionVertexVelocity(topo(1));
+            Vector3d edge_vertex2 = vertices.row(indices(1)).transpose();
+			Vector3d edge_vertex_v2 = obj.GetCollisionVertexVelocity(indices(1));
 			Vector3d edge_vertex_next2 = edge_vertex2 + edge_vertex_v2;
 			
             Vector3d bb_min = edge_vertex1.cwiseMin(edge_vertex_next1).cwiseMin(edge_vertex2.cwiseMin(edge_vertex_next2));
             Vector3d bb_max = edge_vertex1.cwiseMax(edge_vertex_next1).cwiseMax(edge_vertex2.cwiseMax(edge_vertex_next2));
 
             auto candidates = _edge_hash_table.Find(bb_min, bb_max, _time_stamp);
+			std::cerr << candidates.size() << std::endl;
             for (const auto& candidate : candidates) {
 				if (candidate._obj_id > obj_id) {
 					continue;
 				}
 				if (candidate._obj_id == obj_id) {
 					RowVector2i other_topo = objs[candidate._obj_id].GetCollisionEdgeTopo().row(candidate._primitive_id);
-					if (other_topo(0) == topo(0) || other_topo(0) == topo(1) || other_topo(1) == topo(0) || other_topo(1) == topo(1)) {
+					if (other_topo(0) == indices(0) || other_topo(0) == indices(1) || other_topo(1) == indices(0) || other_topo(1) == indices(1)) {
 						continue;
 					}
 				}

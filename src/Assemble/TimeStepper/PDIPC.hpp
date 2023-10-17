@@ -30,7 +30,11 @@ protected:
 	double _outer_tolerance;
 	double _inner_tolerance;
 
+	int _outer_max_itrs;
+	int _inner_max_itrs;
+
 	std::vector<int> _offsets;
+	std::vector<Object> _objs;
 	std::vector<Renderable> _render_objs;
 	std::vector<CollisionInterface> _collision_objs;
 	std::vector<MassedCollisionInterface> _massed_collision_objs;
@@ -52,6 +56,10 @@ namespace ObjectRegistration {
 	template<class T>
 	bool RegisterForPDIPC(const std::string& type) {
 		CasterRegistration::RegisterForCaster<Renderable, T>(type);
+		CasterRegistration::RegisterForCaster<Coordinated, T>(type);
+		CasterRegistration::RegisterForCaster<Massed, T>(type);
+		CasterRegistration::RegisterForCaster<ExternalForced, T>(type);
+		CasterRegistration::RegisterForCaster<PDObject, T>(type);
 		CasterRegistration::RegisterForCaster<CollisionInterface, T>(type);
 		CasterRegistration::RegisterForCaster<MassedCollisionInterface, T>(type);
 		CasterRegistration::RegisterForCaster<MassedCollisionInterface, T>(type);

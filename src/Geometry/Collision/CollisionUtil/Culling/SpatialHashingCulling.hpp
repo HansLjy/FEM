@@ -13,6 +13,4 @@ protected:
 	SpatialHashing<VertexPrimitiveInfo> _vertex_hash_table;
 
 	unsigned int _time_stamp = 0;
-
-	static const bool registered;
 };

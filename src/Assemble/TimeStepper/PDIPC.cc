@@ -1,10 +1,10 @@
 #include "PDIPC.hpp"
 
-bool pdipc_registered = TimeStepperRegistration::RegisterTimeStepper<PDIPC>("PDIPC");
-
 PDIPC::PDIPC(const json& config):
 	_outer_tolerance(config["outer-tolerance"]),
 	_inner_tolerance(config["inner-tolerance"]),
+	_outer_max_itrs(config["outer-max-iterations"]),
+	_inner_max_itrs(config["inner-max-iterations"]),
 	_culling(Factory<CCDCulling>::GetInstance()->GetProduct(config["culling"]["type"], config["culling"])),
 	_pd_ipc_collision_handler(config["collision-handler"]),
 	_toi_estimator(config["toi-estimator"]) {
@@ -12,9 +12,8 @@ PDIPC::PDIPC(const json& config):
 }
 
 void PDIPC::BindSystem(const json &config) {
-	std::vector<Object> objs;
-	TypeErasure::ReadObjects(config["objects"], objs);
-	BindObjects(objs.begin(), objs.end());
+	TypeErasure::ReadObjects(config["objects"], _objs);
+	BindObjects(_objs.begin(), _objs.end());
 }
 
 void PDIPC::BindObjects(
@@ -62,11 +61,14 @@ void PDIPC::Step(double h) {
 	VectorXd x = x_hat;
 
 	_pd_ipc_collision_handler.ClearConstraintSet();
-	while (delta_x.lpNorm<Eigen::Infinity>() > _outer_tolerance) {
+	int outer_itr = 0;
+	while (delta_x.lpNorm<Eigen::Infinity>() > _outer_tolerance && outer_itr < _outer_max_itrs) {
 		VectorXd x_pre = x;
 		VectorXd barrier_y = VectorXd::Zero(x.size());
 		SparseMatrixXd barrier_global_matrix(total_dof, total_dof);
 		double delta_E = 0;
+
+		int inner_itrs = 0;
 		do {
 			VectorXd y = Mx_hat_h2;
 			_pd_assembler.LocalProject(x, y, 0);
@@ -84,17 +86,26 @@ void PDIPC::Step(double h) {
 			x = LDLT_solver.solve(y);
 
 			delta_E = 0.5 * x.transpose() * global_matrix * x;
-		} while (delta_E > _inner_tolerance);
+			inner_itrs++;
+		} while (delta_E > _inner_tolerance && inner_itrs < _inner_max_itrs);
+
+		std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
+
+		VectorXd v = x - x_pre;
+		_collision_assembler.ComputeCollisionVertex(x_pre, _collision_objs);
+		_collision_assembler.ComputeCollisionVertexVelocity(v, _collision_objs);
+
+		std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
 
 		std::vector<PrimitivePair> constraint_set;
 		_culling->GetCCDSet(_collision_objs, _offsets, constraint_set);
 
-		VectorXd v = x - x_pre;
-		_collision_assembler.ComputeCollisionVertex(x, _collision_objs);
-		_collision_assembler.ComputeCollisionVertexVelocity(v, _collision_objs);
+		std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
 
 		std::vector<double> local_tois;
 		double toi = _toi_estimator.GetLocalTOIs(constraint_set, _collision_objs, local_tois);
+
+		std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
 
 		if (toi < 1) {
 			toi *= 0.8;
@@ -106,11 +117,23 @@ void PDIPC::Step(double h) {
 			local_tois,
 			toi
 		);
+		std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
 		_pd_ipc_collision_handler.BarrierLocalProject(_massed_collision_objs, _offsets, barrier_y);
 		_pd_ipc_collision_handler.GetBarrierGlobalMatrix(_massed_collision_objs, _offsets, total_dof, barrier_global_matrix);
+		std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
 
 		x = x_pre + toi * (x - x_pre);
+		outer_itr++;
 	}
+	if (outer_itr < _outer_max_itrs) {
+		spdlog::info("Converges in {} outer iterations", outer_itr);
+	} else {
+		spdlog::warn("Not converge");
+	}
+
+	VectorXd v = (x - x_current) / h;
+	_coord_assembler.SetCoordinate(x);
+	_coord_assembler.SetVelocity(v);
 }
 
 const std::vector<Renderable>& PDIPC::GetRenderObjects() const {

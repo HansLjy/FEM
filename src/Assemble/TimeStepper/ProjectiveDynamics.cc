@@ -1,8 +1,6 @@
 #include "ProjectiveDynamics.hpp"
 #include "spdlog/spdlog.h"
 
-const bool pd_registerd = TimeStepperRegistration::RegisterTimeStepper<ProjectiveDynamics>("projective-dynamics");
-
 ProjectiveDynamics::ProjectiveDynamics(const json& config)
     : _max_step(config["max-step"]), _conv_tolerance(config["tolerance"]), _pd_collision_handler(config["collision-stiffness"]) {}
 

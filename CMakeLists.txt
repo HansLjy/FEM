@@ -40,8 +40,8 @@ add_subdirectory(src/Assemble)
 add_subdirectory(src/Matrix)
 add_subdirectory(src/IO)
 
-add_executable(fem src/main.cc)
-target_link_libraries(fem -Wl,--whole-archive Assemble -Wl,--no-whole-archive)
+add_executable(fem src/main.cc $<TARGET_OBJECTS:Objects>)
+target_link_libraries(fem Assemble)
 
 set(BUILD_GENERATOR ON)
 
