@@ -1,4 +1,4 @@
-#include "Collision/CCD/CubicSolver/BisectionCubicSolver.h"
+#include "Collision/CollisionUtil/CCD/CubicSolver/BisectionCubicSolver.h"
 #include "gtest/gtest.h"
 
 

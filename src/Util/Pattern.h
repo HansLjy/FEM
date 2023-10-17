@@ -63,6 +63,15 @@ private:
 	std::map<std::string, StatelessProductCreator> _stateless_creator_map;
 };
 
+namespace FactoryRegistration {
+	template<class ProductType, class T>
+	bool RegisterForFactory(const std::string& name) {
+		return Factory<ProductType>::GetInstance()->Register(name, [](const json& config) {
+			return new T(config);
+		});
+	}
+}
+
 #define DEFINE_HAS_MEMBER(MEMBER_NAME)                                         \
     template <typename T>                                                      \
     class has_member_##MEMBER_NAME {                                           \

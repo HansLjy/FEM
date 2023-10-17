@@ -11,4 +11,7 @@ namespace GeometryUtil {
 
 	//<- return alpha, beta where x1 + alpha(x2 - x1) + beta(x3 - x1) is the closest point to c on the plane(x1, x2, x3)
 	Vector2d GetClosestPoint(const Vector3d& x1, const Vector3d& x2, const Vector3d& x3, const Vector3d& c);
+
+	//<- return alpha, beta where x11 + alpha(x12 - x11), x21 + beta(x22 - x21) are the closest point on the two line x11 -> x12, x21 -> x22
+	Vector2d GetLineLineClosestPoint(const Vector3d& x11, const Vector3d& x12, const Vector3d& x21, const Vector3d& x22);
 }

@@ -26,3 +26,18 @@ Vector2d GeometryUtil::GetClosestPoint(const Vector3d& x1, const Vector3d& x2, c
 	
 	return A.inverse() * b;
 }
+
+Vector2d GeometryUtil::GetLineLineClosestPoint(const Vector3d& x11, const Vector3d& x12, const Vector3d& x21, const Vector3d& x22) {
+	Vector3d e1 = x12 - x11;
+	Vector3d e2 = x22 - x21;
+	Vector3d e12 = x21 - x11;
+	Matrix2d A;
+	A << e1.dot(e1), -e1.dot(e2),
+		 -e1.dot(e2), e2.dot(e2);
+
+	Vector2d b;
+	b << e12.dot(e1),
+		 -e12.dot(e2);
+		
+	return A.inverse() * b;
+}

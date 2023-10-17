@@ -41,11 +41,6 @@ add_subdirectory(src/Matrix)
 add_subdirectory(src/IO)
 
 add_executable(fem src/main.cc)
-target_link_libraries(fem FEMUtility)
-target_link_libraries(fem Geometry)
-target_link_libraries(fem Physics)
-target_link_libraries(fem Renderer)
-target_link_libraries(fem -Wl,--whole-archive Numeric -Wl,--no-whole-archive)
 target_link_libraries(fem -Wl,--whole-archive Assemble -Wl,--no-whole-archive)
 
 set(BUILD_GENERATOR ON)

@@ -7,7 +7,7 @@
 #include "spdlog/spdlog.h"
 
 int main(const int argc, const char* argv[]) {
-   if (argc <= 1) {
+	if (argc <= 1) {
        Simulator simulator(true, "FEM Simulator");
        simulator.LoadScene(CONFIG_PATH "/simulator.json");
        simulator.MainLoop();

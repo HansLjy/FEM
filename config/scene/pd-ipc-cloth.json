@@ -1,0 +1,27 @@
+{
+    "objects": [
+        {
+            "type": "cloth",
+            "filename": "/plane.obj",
+            "centered": true,
+            "density": 1,
+            "spring-stiffness": 1,
+            "bending-stiffness": 1,
+            "energy": {},
+            "external-forces": [
+                {
+                    "type": "gravity",
+                    "g": [0, 0, -9.8]
+                }
+            ],
+            "render": {
+                "have-bounding-box": false,
+                "use-texture": false,
+                "texture-path": ""
+            },
+			"collision": {
+				
+			}
+        }
+    ]
+}

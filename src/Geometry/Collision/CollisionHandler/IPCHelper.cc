@@ -238,7 +238,7 @@ double MaxStepEstimator::GetMaxStep(const VectorXd &p) {
 		obj_id++;
 	}
 
-	_culling->GetCCDSet(_d_hat, _objs, _offsets, _ccd_set);
+	_culling->GetCCDSet(_objs, _offsets, _ccd_set);
 
 	PROCESS_PRIMITIVE_PAIRS(
         _ccd_set,

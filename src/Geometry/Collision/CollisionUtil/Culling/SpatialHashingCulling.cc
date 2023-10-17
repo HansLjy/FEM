@@ -1,10 +1,18 @@
 #include "SpatialHashingCulling.hpp"
 
+const bool SpatialHashingCulling::registered = FactoryRegistration::RegisterForFactory<CCDCulling, SpatialHashingCulling>("spatial-hashing");
+
+SpatialHashingCulling::SpatialHashingCulling(const json& config):
+	_edge_hash_table(config["grid-length"], config["hash-table-size"]),
+	_vertex_hash_table(config["grid-length"], config["hash-table-size"]) {
+}
+
 void SpatialHashingCulling::GetCCDSet(
-	double d_hat,
 	const std::vector<CollisionInterface> &objs,
 	const std::vector<int> &offsets,
 	std::vector<PrimitivePair> &ccd_set) {
+	std::cerr << registered;
+
 	ccd_set.clear();
 	_time_stamp++;
 

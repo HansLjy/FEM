@@ -4,6 +4,11 @@
 #define block3(i, j) block<3, 3>(3 * i, 3 * j)
 #define slice3(i, j) block<3, 1>(3 * i, j)
 
+void CollisionUtils::PerfectElasticCollision(double v1, double v2, double m1, double m2, double& v1_after, double& v2_after) {
+	v1_after = ((m1 - m2) * v1 + 2 * m2 * v2) / (m1 + m2);
+	v2_after = ((m2 - m1) * v2 + 2 * m1 * v1) / (m1 + m2);
+}
+
 int GetVFDistanceType(const Vector3d& vertex, const Vector3d& face1, const Vector3d& face2, const Vector3d& face3) {
 	Vector3d e1 = face2 - face1, e2 = face3 - face1, e3 = vertex - face1;
     double A = e1.dot(e1);

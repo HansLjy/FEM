@@ -32,6 +32,8 @@ public:
 
 	template<class Data> static void ComputeCollisionVertex(Data* obj, const Ref<const VectorXd>& x);
 	template<class Data> static void ComputeCollisionVertexVelocity(Data* obj, const Ref<const VectorXd>& v);
+
+	template<class Data> double GetCollisionVertexMass(const Data* obj, int idx) const;
 	template<class Data> const MatrixXi& GetCollisionEdgeTopo(const Data* obj) const;
 	template<class Data> const MatrixXi& GetCollisionFaceTopo(const Data* obj) const;
 };
@@ -99,6 +101,12 @@ void SampledCollisionShape::ComputeCollisionVertex(Data *obj, const Ref<const Ve
 template<class Data>
 void SampledCollisionShape::ComputeCollisionVertexVelocity(Data *obj, const Ref<const VectorXd> &v) {
 	obj->_collision_vertex_velocity = StackVector<double, 3>(v);
+}
+
+
+template<class Data>
+double SampledCollisionShape::GetCollisionVertexMass(const Data* obj, int idx) const {
+	return obj->_mass(idx);
 }
 
 template<class Data>

@@ -6,8 +6,8 @@
 #include "Collision/CollisionInterface.hpp"
 #include "SpatialQuery/SpatialHashing.hpp"
 #include "Object.hpp"
-#include "Collision/CCD/CCD.h"
-#include "Collision/Culling/CCDCulling.hpp"
+#include "Collision/CollisionUtil/CCD/CCD.h"
+#include "Collision/CollisionUtil/Culling/CCDCulling.hpp"
 
 class IPCEnergy : public InterfaceContainer<CollisionInterface> {
 public:

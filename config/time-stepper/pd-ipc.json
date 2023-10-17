@@ -1,0 +1,24 @@
+{
+	"type": "PDIPC",
+	"outer-tolerance": 1e-2,
+	"inner-tolerance": 1e-2,
+	"culling": {
+		"type": "spatial-hashing",
+		"grid-length": 1e-3,
+		"hash-table-size": 4096
+	},
+	"collision-handler": {
+		"kappa": 1e7,
+		"d-hat": 1e-4
+	},
+	"toi-estimator": {
+		"CCD": {
+			"type": "simple-ccd",
+			"epsilon": 1e-12,
+			"cubic-solver": {
+				"type": "bisection-solver",
+				"tolerance": 1e-12
+			}
+		}
+	}
+}

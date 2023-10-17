@@ -12,6 +12,7 @@ public:
 	void ComputeCollisionVertex(const Ref<const VectorXd>& x);
 	void ComputeCollisionVertexVelocity(const Ref<const VectorXd>& v);
     Vector3d GetCollisionVertexVelocity(int idx) const;
+	double GetCollisionVertexMass(int idx) const;
 	const BlockVector& GetCollisionVertexDerivative(int idx) const;
 	const MatrixXd& GetCollisionVertices() const;
 	const MatrixXi& GetCollisionEdgeTopo() const;
@@ -37,6 +38,12 @@ template<class CollisionShape, class Derived>
 Vector3d CollisionShapeAdapter<CollisionShape, Derived>::GetCollisionVertexVelocity(int idx) const {
     return CollisionShape::GetCollisionVertexVelocity(static_cast<const Derived*>(this), idx);
 }
+
+template<class CollisionShape, class Derived>
+double CollisionShapeAdapter<CollisionShape, Derived>::GetCollisionVertexMass(int idx) const {
+	return CollisionShape::GetCollisionVertexMass(static_cast<const Derived*>(this), idx);
+}
+
 
 template<class CollisionShape, class Derived>
 const BlockVector& CollisionShapeAdapter<CollisionShape, Derived>::GetCollisionVertexDerivative(int idx) const {

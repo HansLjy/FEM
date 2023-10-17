@@ -12,34 +12,40 @@ Caster<Renderable>* Caster<Renderable>::_the_factory = nullptr;
 
 using nlohmann::json;
 
-void Simulator::LoadScene(const std::string &config) {
-    json config_json;
-    std::fstream config_file(config);
-    config_file >> config_json;
-    auto simulation_config = config_json["simulation-config"];
+void Simulator::LoadScene(const std::string &filename) {
+    json config;
+    std::ifstream config_file(filename);
+    config_file >> config;
+	config_file.close();
+    auto simulation_config = config["simulation-config"];
     _duration = simulation_config["duration"];
     _time_step = simulation_config["time-step"];
 
-    const auto& time_stepper_config = config_json["time-stepper"];
+	const std::string time_stepper_config_filepath = config["time-stepper-config"];
+	std::ifstream time_stepper_config_file(std::string(CONFIG_PATH) + "/time-stepper" + time_stepper_config_filepath);
+    const json time_stepper_config = json::parse(time_stepper_config_file);
+	time_stepper_config_file.close();
     _time_stepper = Factory<TimeStepper>::GetInstance()->GetProduct(
         time_stepper_config["type"],
         time_stepper_config
     );
 
-    const std::string system_config_file_path = config_json["system-config"];
-    std::ifstream system_config_file(CONFIG_PATH + system_config_file_path);
-    const json system_config = json::parse(system_config_file);
+    const std::string scene_config_filepath = std::string(CONFIG_PATH) + "/scene" + std::string(config["scene-config"]);
+    std::ifstream system_config_file(scene_config_filepath);
+    const json scene_config = json::parse(system_config_file);
     system_config_file.close();
 
-	_time_stepper->BindSystem(system_config);
+	_time_stepper->BindSystem(scene_config);
 
-    const auto& renderer_config_json = config_json["renderer"];
-    const auto& camera_config_json = renderer_config_json["camera"];
+	const std::string renderer_config_filepath = std::string(CONFIG_PATH) + "/renderer" + std::string(config["render-config"]);
+	std::ifstream renderer_config_file(renderer_config_filepath);
+	const json renderer_config = json::parse(renderer_config_file);
+    const auto& camera_config_json = renderer_config["camera"];
     _camera_position = Json2GlmVec3(camera_config_json["position"]);
     _camera_look = Json2GlmVec3(camera_config_json["look"]);
     _camera_up = Json2GlmVec3(camera_config_json["up"]);
 
-    const auto& light_config_json = renderer_config_json["light"];
+    const auto& light_config_json = renderer_config["light"];
     _light_position = Json2GlmVec3(light_config_json["position"]);
     _light_ambient = Json2GlmVec3(light_config_json["ambient"]);
     _light_diffuse = Json2GlmVec3(light_config_json["diffuse"]);

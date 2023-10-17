@@ -7,6 +7,10 @@
 
 #include "EigenAll.h"
 
+namespace CollisionUtils {
+	void PerfectElasticCollision(double v1, double v2, double m1, double m2, double& v1_after, double& v2_after);
+}
+
 int GetVFDistanceType(const Vector3d& vertex, const Vector3d& face1, const Vector3d& face2, const Vector3d& face3);
 int GetEEDistanceType(const Vector3d& edge11, const Vector3d& edge12, const Vector3d& edge21, const Vector3d& edge22);
 

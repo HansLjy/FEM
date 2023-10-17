@@ -1,29 +1,9 @@
 {
-  "simulation-config": {
-    "duration": 1,
-    "time-step": 0.01
-  },
-  "time-stepper": {
-    "type": "projective-dynamics",
-    "max-step": 10,
-    "tolerance": 1e-3,
-	  "collision-stiffness": 10000
-  },
-  "system-config": "/scene/pd-cloth.json",
-  "renderer": {
-    "camera":  {
-      "position": [3, 0, -1],
-      "look": [-1, 0, 0],
-      "up": [0, 0, 1]
-    },
-    "light": {
-      "position": [0.0, 10.0, 0.0],
-      "ambient": [0.2, 0.2, 0.2],
-      "diffuse": [0.5, 0.5, 0.5],
-      "specular": [1.0, 1.0, 1.0],
-      "Kc": 1.0,
-      "Kl": 0.35,
-      "Kq": 0.44
-    }
-  }
+	"simulation-config": {
+		"duration": 1,
+		"time-step": 0.01
+	},
+	"time-stepper-config": "/pd-ipc.json",
+	"scene-config": "/pd-ipc-cloth.json",
+	"renderer-config": "/undergrad-thesis.json"
 }
