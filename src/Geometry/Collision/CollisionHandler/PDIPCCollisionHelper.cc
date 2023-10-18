@@ -27,9 +27,9 @@ void PDIPCCollisionHandler::AddCollisionPairs(
 		if (local_tois[primitive_pair_id] > 1) {
 			continue;
 		}
-		std::cerr << "fuck: " << __FILE__ << ":" << __LINE__ << std::endl;
-		std::cout << (primitive_pair._type == CollisionType::kEdgeEdge ? "Edge-Edge " : "Vertex-Face ")
-				  << primitive_pair._primitive_id1 << " " << primitive_pair._primitive_id2 << std::endl;
+		// std::cerr << "fuck: " << __FILE__ << ":" << __LINE__ << std::endl;
+		// std::cout << (primitive_pair._type == CollisionType::kEdgeEdge ? "Edge-Edge " : "Vertex-Face ")
+		// 		  << primitive_pair._primitive_id1 << " " << primitive_pair._primitive_id2 << std::endl;
 
 		const auto& obj1 = objs[primitive_pair._obj_id1];
 		const auto& obj2 = objs[primitive_pair._obj_id2];

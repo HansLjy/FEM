@@ -15,8 +15,8 @@ public:
         : _grid_length(grid_length), _hash_table_size(hash_table_size), _hash_table(hash_table_size) {}
 
     void Insert(const Vector3d& position, const NodeInfo& info, int time_stamp) {
-        auto hash_value = HashValue(GetDiscretePosition(position));
-        HashTableInsert(hash_value, info, time_stamp);
+		const auto discrete_position = GetDiscretePosition(position);
+        HashTableInsert(discrete_position, info, time_stamp);
     }
 
     void Insert(const Vector3d& bb_min, const Vector3d& bb_max, const NodeInfo& info, int time_stamp) {
@@ -26,8 +26,8 @@ public:
         for (unsigned int x = bb_min_discrete.x(); x != bb_max_discrete.x(); x++) {
             for (unsigned int y = bb_min_discrete.y(); y != bb_max_discrete.y(); y++) {
                 for (unsigned int z = bb_min_discrete.z(); z != bb_max_discrete.z(); z++) {
-                    unsigned int hash_value = HashValue((Vector<unsigned int, 3>() << x, y, z).finished());
-                    HashTableInsert(hash_value, info, time_stamp);
+					Vector<unsigned int, 3> discrete_position = (Vector<unsigned int, 3>() << x, y, z).finished();
+                    HashTableInsert(discrete_position, info, time_stamp);
                 }
             }
         }
@@ -43,8 +43,8 @@ public:
             for (unsigned int y = bb_min_discrete.y(); y != bb_max_discrete.y(); y++) {
                 for (unsigned int z = bb_min_discrete.z(); z != bb_max_discrete.z(); z++) {
 					// TODO: change it into sorted array merge
-                    unsigned int hash_value = HashValue((Vector<unsigned int, 3>() << x, y, z).finished());
-                    HashTableFind(hash_value, time_stamp, infos);
+					Vector<unsigned int, 3> discrete_position = (Vector<unsigned int, 3>() << x, y, z).finished();
+                    HashTableFind(discrete_position, time_stamp, infos);
                 }
             }
         }
@@ -52,16 +52,15 @@ public:
         return infos;
     }
 
-	// find nodeinfos in the grid containing position
-	const std::vector<NodeInfo>& Find(const Vector3d& position, int time_stamp) {
-		const auto pos_discrete = GetDiscretePosition(position);
-
-	}
-
 protected:
+	struct NodeInfoWithPos {
+		Vector<unsigned int, 3> _discrete_position;
+		NodeInfo _info;
+	};
+
     struct HashTableEntry {
         int time_stamp;
-        std::vector<NodeInfo> list;
+        std::vector<NodeInfoWithPos> list;
     };
 
     Vector<unsigned int, 3> GetDiscretePosition(const Vector3d& position) {
@@ -77,34 +76,27 @@ protected:
         return hash_value;
     }
 
-    void HashTableInsert(unsigned int hash_value, const NodeInfo& info, int time_stamp) {
+    void HashTableInsert(const Vector<unsigned int, 3>& discrete_position, const NodeInfo& info, int time_stamp) {
+		unsigned int hash_value = HashValue(discrete_position);
         auto& hash_entry = _hash_table[hash_value];
         if (!hash_entry.list.empty() && hash_entry.time_stamp != time_stamp) {
             hash_entry.list.clear();
         }
         hash_entry.time_stamp = time_stamp;
-        hash_entry.list.push_back(info);
+        hash_entry.list.push_back({discrete_position, info});
     }
 
-    void HashTableFind(unsigned int hash_value, int time_stamp, std::vector<NodeInfo>& info) {
+    void HashTableFind(const Vector<unsigned int, 3>& discrete_position, int time_stamp, std::vector<NodeInfo>& infos) {
+		unsigned int hash_value = HashValue(discrete_position);
         const auto& hash_entry = _hash_table[hash_value];
         if (hash_entry.time_stamp == time_stamp) {
-			for (const auto& cur_info : hash_entry.list) {
-				if (std::find(info.begin(), info.end(), cur_info) == info.end()) {
-					info.push_back(cur_info);
+			for (const auto& info_with_pos : hash_entry.list) {
+				if (info_with_pos._discrete_position == discrete_position &&
+					std::find(infos.begin(), infos.end(), info_with_pos._info) == infos.end()) {
+					infos.push_back(info_with_pos._info);
 				}
 			}
         }
-    }
-
-	const std::vector<NodeInfo>& HashTableFind(unsigned int hash_value, int time_stamp) {
-		static const std::vector<NodeInfo> empty_list;
-        const auto& hash_entry = _hash_table[hash_value];
-        if (hash_entry.time_stamp == time_stamp) {
-			return hash_entry.list;
-        } else {
-			return empty_list;
-		}
     }
 
     static const int px = 73856093;

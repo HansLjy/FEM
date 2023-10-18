@@ -102,7 +102,7 @@ void PDIPC::Step(double h) {
 		_culling->GetCCDSet(_collision_objs, _offsets, constraint_set);
 		// std::cerr << "fuck: " << __FILE__ << ":" << __LINE__ << std::endl;
 		// for (const auto& pair : constraint_set) {
-		// 	if (pair._type == CollisionType::kEdgeEdge) {
+		// 	if (pair._type == CollisionType::kVertexFace) {
 		// 		continue;
 		// 	}
 		// 	std::cerr << (pair._type == CollisionType::kVertexFace ? "Vertex-Face: " : "Edge-Edge: ") << std::endl
