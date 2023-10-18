@@ -73,14 +73,14 @@ void Player::Processing(Scene &scene) {
 	std::ifstream itr_file(_input_file_dir + "/itr" + std::to_string(_cur_itr_id));
     for (int obj_id = 0; obj_id < _num_objects; obj_id++) {
         MatrixXd vertices;
-        MatrixXd rotation, translation;
+        // MatrixXd rotation, translation;
         read_binary(itr_file, vertices);
-        read_binary(itr_file, rotation);
-        read_binary(itr_file, translation);
+        // read_binary(itr_file, rotation);
+        // read_binary(itr_file, translation);
         scene.SelectData(_obj_id2scene_id[obj_id]);
-        // TODO:
         // scene.SetMesh(vertices, _topos[obj_id], rotation, translation);
-        scene.SetMesh(vertices, rotation, translation);
+        scene.SetMesh(vertices, Matrix3d::Identity(), Vector3d::Zero());
+        // scene.SetMesh(vertices, rotation, translation);
     }
 	itr_file.close();
 

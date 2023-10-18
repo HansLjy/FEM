@@ -61,16 +61,18 @@ void PDIPC::Step(double h) {
 	VectorXd x_pre = x_current;
 	VectorXd delta_x(x.size());
 
-
 	static int global_itrs = 0;
 	global_itrs++;
 	_pd_ipc_collision_handler.ClearConstraintSet();
+	VectorXd barrier_y = VectorXd::Zero(x.size());
+	SparseMatrixXd barrier_global_matrix(total_dof, total_dof);
+
+	Eigen::ConjugateGradient<SparseMatrixXd> CG_solver;
+
 	int outer_itr = 0;
 	do {
-		VectorXd barrier_y = VectorXd::Zero(x.size());
-		SparseMatrixXd barrier_global_matrix(total_dof, total_dof);
-
-		double delta_E = 0;
+		VectorXd inner_delta_x;
+		VectorXd inner_pre_x = x;
 		int inner_itrs = 0;
 		do {
 			VectorXd y = Mx_hat_h2 + barrier_y;
@@ -83,46 +85,45 @@ void PDIPC::Step(double h) {
 			global_matrix.setFromTriplets(coo.begin(), coo.end());
 			global_matrix += M_h2 + barrier_global_matrix;
 
-			LDLT_solver.compute(global_matrix);
+			CG_solver.compute(global_matrix);
+			// LDLT_solver.compute(global_matrix);
 
-			x = LDLT_solver.solve(y);
+			x = CG_solver.solve(y);
+			// x = LDLT_solver.solve(y);
 
-			delta_E = 0.5 * x.transpose() * global_matrix * x;
+			inner_delta_x = x - inner_pre_x;
+			inner_pre_x = x;
 			inner_itrs++;
-		} while (delta_E > _inner_tolerance && inner_itrs < _inner_max_itrs);
+		} while (inner_delta_x.lpNorm<Eigen::Infinity>() > _inner_tolerance && inner_itrs < _inner_max_itrs);
 
-		VectorXd v = x - x_pre;
+		// if (inner_itrs < _inner_max_itrs) {
+		// 	spdlog::info("Inner iteration converges in {} steps", inner_itrs);
+		// } else {
+		// 	spdlog::warn("Inner iteration does not converge!");
+		// }
+
+		delta_x = x - x_pre;
 		_collision_assembler.ComputeCollisionVertex(x_pre, _collision_objs);
-		_collision_assembler.ComputeCollisionVertexVelocity(v, _collision_objs);
-		// std::cerr << "fuck: " << __FILE__ << ":" << __LINE__ << std::endl;
-		// std::cerr << x_pre.transpose() << std::endl << v.transpose() << std::endl;
-		// std::cerr << v.lpNorm<Eigen::Infinity>() << std::endl;
+		_collision_assembler.ComputeCollisionVertexVelocity(delta_x, _collision_objs);
 
 		std::vector<PrimitivePair> constraint_set;
 		_culling->GetCCDSet(_collision_objs, _offsets, constraint_set);
-		// std::cerr << "fuck: " << __FILE__ << ":" << __LINE__ << std::endl;
-		// for (const auto& pair : constraint_set) {
-		// 	if (pair._type == CollisionType::kVertexFace) {
-		// 		continue;
-		// 	}
-		// 	std::cerr << (pair._type == CollisionType::kVertexFace ? "Vertex-Face: " : "Edge-Edge: ") << std::endl
-		// 			  << pair._obj_id1 << " " << pair._primitive_id1 << std::endl
-		// 			  << pair._obj_id2 << " " << pair._primitive_id2 << std::endl;
-		// }
-		// exit(-1);
 
 		std::vector<double> local_tois;
 		double toi = _toi_estimator.GetLocalTOIs(constraint_set, _collision_objs, local_tois);
+		// std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
+		// std::cerr << toi << std::endl;
 
-		int num_collision_pair = 0;
-		for (const auto& local_toi : local_tois) {
-			num_collision_pair += (local_toi <= 1);
-		}
-		spdlog::info("#cancidates = {}, #collision pairs = {}", constraint_set.size(), num_collision_pair);
+		// int num_collision_pair = 0;
+		// for (const auto& local_toi : local_tois) {
+		// 	num_collision_pair += (local_toi <= 1);
+		// }
+		// spdlog::info("#cancidates = {}, #collision pairs = {}", constraint_set.size(), num_collision_pair);
 
 		if (toi < 1) {
 			toi *= 0.8;
 		}
+
 		_pd_ipc_collision_handler.AddCollisionPairs(
 			_massed_collision_objs,
 			_offsets,
@@ -130,22 +131,24 @@ void PDIPC::Step(double h) {
 			local_tois,
 			toi
 		);
+
+		barrier_y.setZero();
 		_pd_ipc_collision_handler.BarrierLocalProject(_massed_collision_objs, _offsets, barrier_y);
+		barrier_global_matrix.setZero();
 		_pd_ipc_collision_handler.GetBarrierGlobalMatrix(_massed_collision_objs, _offsets, total_dof, barrier_global_matrix);
 
 		x = x_pre + toi * (x - x_pre);
-		delta_x = x - x_pre;
 		x_pre = x;
 
 		outer_itr++;
 	} while (delta_x.lpNorm<Eigen::Infinity>() > _outer_tolerance && outer_itr < _outer_max_itrs);
 
 	if (outer_itr < _outer_max_itrs) {
-		spdlog::info("Converges in {} outer iterations", outer_itr);
+		spdlog::info("Outer iteration converges in {} steps", outer_itr);
 	} else {
-		spdlog::warn("Not converge");
+		spdlog::warn("Outer iteration does not converge!");
 	}
-	spdlog::info("Global itrs = {}", global_itrs);
+	// spdlog::info("Global itrs = {}", global_itrs);
 
 	VectorXd v = (x - x_current) / h;
 	_coord_assembler.SetCoordinate(x);

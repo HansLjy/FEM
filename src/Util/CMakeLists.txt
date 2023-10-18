@@ -70,6 +70,7 @@ set(FEM_UTILITY_SOURCE EigenAll.cc JsonUtil.cc GeometryUtil.cc Object.cc TopoUti
 
 if (BUILD_TEST)
 	add_subdirectory(TestUtility)
+	add_subdirectory(Test)
 endif()
 
 add_library(FEMUtility ${FEM_UTILITY_SOURCE})

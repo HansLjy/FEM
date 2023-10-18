@@ -2,11 +2,11 @@
     "objects": [
         {
             "type": "cloth",
-            "filename": "/plane_16.obj",
+            "filename": "/plane_large.obj",
             "centered": false,
             "density": 1,
-            "spring-stiffness": 1,
-            "bending-stiffness": 1,
+            "spring-stiffness": 1000,
+            "bending-stiffness": 100,
             "energy": {},
             "external-forces": [
                 {

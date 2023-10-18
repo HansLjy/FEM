@@ -66,22 +66,21 @@ void Simulator::Simulate(const std::string& output_dir) {
 	const auto& renderable_object = _time_stepper->GetRenderObjects();
 
 	for (const auto& obj : renderable_object) {
-        MatrixXi topo;
-        MatrixXd vertices;
+        MatrixXd vertices(obj.GetRenderVertexNum(), 3);
+        MatrixXi topo(obj.GetRenderFaceNum(), 3);
 		obj.GetRenderTopos(topo);
 		obj.GetRenderVertices(vertices);
         write_binary(topo_file, topo);
 	}
 
 	topo_file.close();
-    const int object_number = obj_id;
 
     while(current_time < _duration) {
         _time_stepper->Step(_time_step);
         obj_id = 0;
 		std::ofstream itr_file(output_dir + "/itr" + std::to_string(itr_id));
         for (const auto& obj : renderable_object) {
-            MatrixXd vertices;
+        	MatrixXd vertices(obj.GetRenderVertexNum(), 3);
 			obj.GetRenderVertices(vertices);
             write_binary(itr_file, vertices);
             // write_binary(itr_file, obj->GetFrameRotation());
@@ -93,7 +92,7 @@ void Simulator::Simulate(const std::string& output_dir) {
         spdlog::info("Current time: {}", current_time);
     }
     json config;
-    config["number-of-objects"] = object_number;
+    config["number-of-objects"] = renderable_object.size();
     config["number-of-iterations"] = itr_id;
     std::ofstream config_file(output_dir + "/" + "config.json");
     config_file << config.dump();

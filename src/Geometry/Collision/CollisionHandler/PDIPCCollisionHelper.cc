@@ -7,7 +7,7 @@ template<>
 Caster<MassedCollisionInterface>* Caster<MassedCollisionInterface>::_the_factory = nullptr;
 
 double GetStiffness(double kappa, double d_hat, double distance) {
-	return kappa * std::log(distance / d_hat);
+	return - kappa * std::log(distance / d_hat);
 }
 
 void PDIPCCollisionHandler::ClearConstraintSet() {
@@ -24,12 +24,20 @@ void PDIPCCollisionHandler::AddCollisionPairs(
 	int primitive_pair_id = 0;
 
 	for (const auto& primitive_pair : constraint_set) {
-		if (local_tois[primitive_pair_id] > 1) {
+		double local_toi = local_tois[primitive_pair_id++];
+		if (local_toi > 1) {
 			continue;
+		} else {
+			local_toi *= 0.9;
 		}
-		// std::cerr << "fuck: " << __FILE__ << ":" << __LINE__ << std::endl;
-		// std::cout << (primitive_pair._type == CollisionType::kEdgeEdge ? "Edge-Edge " : "Vertex-Face ")
-		// 		  << primitive_pair._primitive_id1 << " " << primitive_pair._primitive_id2 << std::endl;
+
+		// if (primitive_pair._type == CollisionType::kVertexFace &&
+		// 	primitive_pair._obj_id1 == 1 &&
+		// 	primitive_pair._obj_id2 == 0 &&
+		// 	primitive_pair._primitive_id1 == 4 &&
+		// 	primitive_pair._primitive_id2 == 1) {
+		// 	std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
+		// }
 
 		const auto& obj1 = objs[primitive_pair._obj_id1];
 		const auto& obj2 = objs[primitive_pair._obj_id2];
@@ -63,13 +71,15 @@ void PDIPCCollisionHandler::AddCollisionPairs(
 				const double m_face = obj2.GetCollisionVertexMass(face_indices[0])
 									+ obj2.GetCollisionVertexMass(face_indices[1])
 									+ obj2.GetCollisionVertexMass(face_indices[2]);
-				const double local_toi = local_tois[primitive_pair_id];
 				const Vector3d vertex_toi = vertex + vertex_velocity * local_toi;
 				const Vector3d face_toi1 = face1 + face_velocity1 * local_toi;
 				const Vector3d face_toi2 = face2 + face_velocity2 * local_toi;
 				const Vector3d face_toi3 = face3 + face_velocity3 * local_toi;
 				Vector3d barycentric_coord;
-				barycentric_coord.segment<2>(1) = GeometryUtil::GetClosestPoint(vertex_toi, face_toi1, face_toi2, face_toi3);
+				barycentric_coord.segment<2>(1) = GeometryUtil::GetPointPlaneClosestPoint(
+					face_toi1, face_toi2, face_toi3,
+					vertex_toi
+				);
 				barycentric_coord(0) = 1 - barycentric_coord(1) - barycentric_coord(2);
 				const Vector3d closest_point = barycentric_coord(0) * face_toi1
 											+ barycentric_coord(1) * face_toi2
@@ -87,29 +97,26 @@ void PDIPCCollisionHandler::AddCollisionPairs(
 				const Vector3d face_velocity_after1 = face_velocity1 - (face_velocity1.dot(normal) - v_face_after) * normal;
 				const Vector3d face_velocity_after2 = face_velocity2 - (face_velocity2.dot(normal) - v_face_after) * normal;
 				const Vector3d face_velocity_after3 = face_velocity3 - (face_velocity3.dot(normal) - v_face_after) * normal;
+				// std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
+				// std::cerr << (vertex + local_toi * vertex_velocity + (1 - local_toi) * vertex_velocity_after).transpose() << std::endl
+				// 		  << (face1 + local_toi * face_velocity1 + (1 - local_toi) * face_velocity_after1).transpose() << std::endl
+				// 		  << (face2 + local_toi * face_velocity2 + (1 - local_toi) * face_velocity_after2).transpose() << std::endl
+				// 		  << (face3 + local_toi * face_velocity3 + (1 - local_toi) * face_velocity_after3).transpose() << std::endl;
 				_projection_infos.emplace_back(ProjectionInfo(
-					primitive_pair._obj_id1,
-					vertex_index,
-					stiffness,
+					primitive_pair._obj_id1, vertex_index, stiffness,
 					vertex + local_toi * vertex_velocity + (1 - local_toi) * vertex_velocity_after
 				));
 				_projection_infos.emplace_back(ProjectionInfo(
-					primitive_pair._obj_id2,
-					face_indices[0],
-					stiffness,
+					primitive_pair._obj_id2, face_indices[0], stiffness,
 					face1 + local_toi * face_velocity1 + (1 - local_toi) * face_velocity_after1
 				));
 				_projection_infos.emplace_back(ProjectionInfo(
-					primitive_pair._obj_id2,
-					face_indices[1],
-					stiffness,
-					face1 + local_toi * face_velocity2 + (1 - local_toi) * face_velocity_after2
+					primitive_pair._obj_id2, face_indices[1], stiffness,
+					face2 + local_toi * face_velocity2 + (1 - local_toi) * face_velocity_after2
 				));
 				_projection_infos.emplace_back(ProjectionInfo(
-					primitive_pair._obj_id2,
-					face_indices[2],
-					stiffness,
-					face1 + local_toi * face_velocity3 + (1 - local_toi) * face_velocity_after3
+					primitive_pair._obj_id2, face_indices[2], stiffness,
+					face3 + local_toi * face_velocity3 + (1 - local_toi) * face_velocity_after3
 				));
 				break;
 			}
@@ -142,7 +149,6 @@ void PDIPCCollisionHandler::AddCollisionPairs(
 									+ obj1.GetCollisionVertexMass(edge_indices1[1]);
 				const double m_edge2 = obj2.GetCollisionVertexMass(edge_indices2[0])
 									+ obj2.GetCollisionVertexMass(edge_indices2[1]);
-				const double local_toi = local_tois[primitive_pair_id];
 				const Vector3d edge_toi11 = edge11 + edge_velocity11 * local_toi;
 				const Vector3d edge_toi12 = edge12 + edge_velocity12 * local_toi;
 				const Vector3d edge_toi21 = edge21 + edge_velocity21 * local_toi;
@@ -196,8 +202,22 @@ void PDIPCCollisionHandler::AddCollisionPairs(
 				break;
 			}
 		}
-		primitive_pair_id++;
 	}
+
+	// std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
+	// for (const auto& projection_info : _projection_infos) {
+	// 	std::cerr << "== Begin projection info ==" << std::endl
+	// 			  << "Projection object = " << projection_info._obj_id << std::endl
+	// 			  << "Projection vertex = " << projection_info._vertex_id << std::endl
+	// 			  << "Projection target = " << projection_info._target_position.transpose() << std::endl
+	// 			  << "== End projection info ==" << std::endl;
+	// }
+	// if (flag) {
+	// 	exit(-1);
+	// }
+	// if (!_projection_infos.empty()) {
+	// 	exit(-1);
+	// }
 }
 
 void PDIPCCollisionHandler::BarrierLocalProject(
@@ -225,7 +245,8 @@ void PDIPCCollisionHandler::GetBarrierGlobalMatrix(
 		obj.GetCollisionVertexDerivative(projection_info._vertex_id)
 		.RightTransposeProduct(
 			obj.GetCollisionVertexDerivative(projection_info._vertex_id)
-		).ToSparse(
+		)
+		.ToSparse(
 			projection_info._stiffness / 2, coo,
 			x_offset + offsets[projection_info._obj_id],
 			y_offset + offsets[projection_info._obj_id]

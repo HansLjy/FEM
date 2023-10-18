@@ -1,17 +1,17 @@
 {
 	"type": "PDIPC",
-	"outer-tolerance": 1e-4,
-	"inner-tolerance": 1e-4,
+	"outer-tolerance": 1e-5,
+	"inner-tolerance": 1e-5,
 	"outer-max-iterations": 10,
 	"inner-max-iterations": 10,
 	"culling": {
 		"type": "spatial-hashing",
-		"grid-length": 1e-2,
+		"grid-length": 1e-1,
 		"hash-table-size": 4096
 	},
 	"collision-handler": {
 		"kappa": 1e7,
-		"d-hat": 1e-4
+		"d-hat": 1e-3
 	},
 	"toi-estimator": {
 		"CCD": {

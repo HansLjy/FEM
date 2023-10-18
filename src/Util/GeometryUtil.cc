@@ -12,7 +12,7 @@ double GeometryUtil::GetClosestPoint(const Vector3d& x1, const Vector3d& x2, con
 	return (c - x1).dot(x2 - x1) / (x2 - x1).squaredNorm();
 }
 
-Vector2d GeometryUtil::GetClosestPoint(const Vector3d& x1, const Vector3d& x2, const Vector3d& x3, const Vector3d& c) {
+Vector2d GeometryUtil::GetPointPlaneClosestPoint(const Vector3d& x1, const Vector3d& x2, const Vector3d& x3, const Vector3d& c) {
 	Vector3d x21 = x2 - x1;
 	Vector3d x31 = x3 - x1;
 	Vector3d cx1 = c - x1;
