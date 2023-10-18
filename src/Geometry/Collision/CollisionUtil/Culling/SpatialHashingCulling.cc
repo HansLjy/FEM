@@ -13,7 +13,6 @@ void SpatialHashingCulling::GetCCDSet(
 	ccd_set.clear();
 	_time_stamp++;
 
-	int cur_offset = 0;
     int obj_id = 0;
     for (auto obj : objs) {
 		const auto& vertices = obj.GetCollisionVertices();
@@ -51,13 +50,11 @@ void SpatialHashingCulling::GetCCDSet(
                 _time_stamp
             );
         }
-        cur_offset += offsets[obj_id];
         obj_id++;
     }
 
     /* find in hash table */
 
-	cur_offset = 0;
     obj_id = 0;
 
     for (auto obj : objs) {
@@ -129,7 +126,6 @@ void SpatialHashingCulling::GetCCDSet(
 				});
             }
         }
-		cur_offset += objs[obj_id].GetDOF();
 		obj_id++;
     }
 }

@@ -58,6 +58,7 @@ void PDIPC::Step(double h) {
     VectorXd Mx_hat_h2 = M_h2 * x_hat;
 
 	VectorXd x = x_hat;
+	VectorXd x_pre = x_current;
 	VectorXd delta_x(x.size());
 
 
@@ -66,11 +67,10 @@ void PDIPC::Step(double h) {
 	_pd_ipc_collision_handler.ClearConstraintSet();
 	int outer_itr = 0;
 	do {
-		VectorXd x_pre = x;
 		VectorXd barrier_y = VectorXd::Zero(x.size());
 		SparseMatrixXd barrier_global_matrix(total_dof, total_dof);
-		double delta_E = 0;
 
+		double delta_E = 0;
 		int inner_itrs = 0;
 		do {
 			VectorXd y = Mx_hat_h2 + barrier_y;
@@ -94,17 +94,22 @@ void PDIPC::Step(double h) {
 		VectorXd v = x - x_pre;
 		_collision_assembler.ComputeCollisionVertex(x_pre, _collision_objs);
 		_collision_assembler.ComputeCollisionVertexVelocity(v, _collision_objs);
-		std::cerr << "fuck: " << __FILE__ << ":" << __LINE__ << std::endl;
-		std::cerr << x_pre.transpose() << std::endl << v.transpose() << std::endl;
-		std::cerr << v.lpNorm<Eigen::Infinity>() << std::endl;
+		// std::cerr << "fuck: " << __FILE__ << ":" << __LINE__ << std::endl;
+		// std::cerr << x_pre.transpose() << std::endl << v.transpose() << std::endl;
+		// std::cerr << v.lpNorm<Eigen::Infinity>() << std::endl;
 
 		std::vector<PrimitivePair> constraint_set;
 		_culling->GetCCDSet(_collision_objs, _offsets, constraint_set);
-		std::cerr << "fuck: " << __FILE__ << ":" << __LINE__ << std::endl;
-		for (const auto& pair : constraint_set) {
-			std::cerr << pair._obj_id1 << " " << pair._obj_id2 << std::endl;
-		}
-		exit(-1);
+		// std::cerr << "fuck: " << __FILE__ << ":" << __LINE__ << std::endl;
+		// for (const auto& pair : constraint_set) {
+		// 	if (pair._type == CollisionType::kEdgeEdge) {
+		// 		continue;
+		// 	}
+		// 	std::cerr << (pair._type == CollisionType::kVertexFace ? "Vertex-Face: " : "Edge-Edge: ") << std::endl
+		// 			  << pair._obj_id1 << " " << pair._primitive_id1 << std::endl
+		// 			  << pair._obj_id2 << " " << pair._primitive_id2 << std::endl;
+		// }
+		// exit(-1);
 
 		std::vector<double> local_tois;
 		double toi = _toi_estimator.GetLocalTOIs(constraint_set, _collision_objs, local_tois);
@@ -129,9 +134,10 @@ void PDIPC::Step(double h) {
 		_pd_ipc_collision_handler.GetBarrierGlobalMatrix(_massed_collision_objs, _offsets, total_dof, barrier_global_matrix);
 
 		x = x_pre + toi * (x - x_pre);
-		outer_itr++;
-		
 		delta_x = x - x_pre;
+		x_pre = x;
+
+		outer_itr++;
 	} while (delta_x.lpNorm<Eigen::Infinity>() > _outer_tolerance && outer_itr < _outer_max_itrs);
 
 	if (outer_itr < _outer_max_itrs) {
