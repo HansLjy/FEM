@@ -80,18 +80,34 @@ protected:
 };
 
 #include "FixedShape/FixedShape.hpp"
+#include "FileIO.hpp"
 class FixedRenderShape : public RenderShape {
 public:
-	FixedRenderShape(const MatrixXd& vertices, const MatrixXi& topo) :
-		RenderShape(false, false, ""), _vertices(vertices), _topo(topo) {}
+	static FixedRenderShape CreateFromConfig(const json& config) {
+		VectorXd x;
+		MatrixXi topo;
+		FileIOUtils::ReadMesh(config["filename"], config["centered"], x, topo);
+		return FixedRenderShape(
+			config["have-bounding-box"],
+			config["use-texture"],
+			config["texture-path"],
+			StackVector<double, 3>(x),
+			topo
+		);
+	}
+
 	
 	FixedRenderShape(const FixedRenderShape& rhs) = delete;
 	FixedRenderShape(FixedRenderShape&& rhs) = default;
 	
-	template<class Data> void GetRenderVertices(const Data *obj, MatrixXd &vertices) const { vertices = _vertices; }
-	template<class Data> void GetRenderTopos(const Data *obj, MatrixXi &topo) const { topo = _topo; }
+	template<class Data> int GetRenderVertexNum(const Data* obj) const {return _vertices.rows();}
+	template<class Data> int GetRenderFaceNum(const Data* obj) const {return _topo.rows();}
+	template<class Data> void GetRenderVertices(const Data *obj, Ref<MatrixXd> vertices) const { vertices = _vertices; }
+	template<class Data> void GetRenderTopos(const Data *obj, Ref<MatrixXi> topo) const { topo = _topo; }
 
 protected:
+	FixedRenderShape(bool have_bounding_box, bool use_texture, const std::string& texture_path, const MatrixXd& vertices, const MatrixXi& topo) :
+		RenderShape(have_bounding_box, use_texture, texture_path), _vertices(vertices), _topo(topo) {}
     MatrixXd _vertices;
     MatrixXi _topo;
 };

@@ -9,6 +9,7 @@
 #include "Object.hpp"
 
 #include "PDEnergyModel/PDClothEnergyModel.hpp"
+#include "PDEnergyModel/PDNullEnergyModel.hpp"
 #include "PDEnergyModel/PDEnergyAdapter.hpp"
 
 #include "ExternalForce/SampledObjectGravity.hpp"
@@ -51,3 +52,27 @@ const bool pdipc_cloth_registered = CreatorRegistration::RegisterForCreator<PDIP
 const bool pdipc_cloth_caster_registered = ObjectRegistration::RegisterForPDIPC<PDIPCCloth>("cloth");
 const bool pdipc_cloth_deleter_registered = TypeErasure::RegisterForDeleter<PDIPCCloth>("cloth");
 const bool pdipc_cloth_render_object_registered = CasterRegistration::RegisterForCaster<Renderable, PDIPCCloth>("cloth");
+
+class PDIPCFixedObject :
+    public FixedObjectData,
+    public CoordinateAdapter<BasicCoordinate, PDIPCFixedObject>,
+    public MassModelAdapter<NullMassModel, PDIPCFixedObject>,
+    public PDEnergyModelAdapter<PDNullEnergyModel, PDIPCFixedObject>,
+    public ExternalForceContainerAdapter<FixedObjectData, PDIPCFixedObject>,
+    public RenderShapeAdapter<FixedRenderShape, PDIPCFixedObject>,
+    public CollisionShapeAdapter<FixedCollisionShape, PDIPCFixedObject> {
+public:
+    PDIPCFixedObject(const json& config) :
+        PDEnergyModelAdapter({}),
+        ExternalForceContainerAdapter(ExternalForceContainer<FixedObjectData>::CreateFromConfig(config["external-forces"])),
+        RenderShapeAdapter(FixedRenderShape::CreateFromConfig(config["render"])),
+        CollisionShapeAdapter(FixedCollisionShape::CreateFromConfig(config["collision"])) {
+        CollisionShapeAdapter::Initialize();
+    }
+
+};
+
+const bool pdipc_fixed_object_registered = CreatorRegistration::RegisterForCreator<PDIPCFixedObject>("fixed-object");
+const bool pdipc_fixed_object_caster_registered = ObjectRegistration::RegisterForPDIPC<PDIPCFixedObject>("fixed-object");
+const bool pdipc_fixed_object_deleter_registered = TypeErasure::RegisterForDeleter<PDIPCFixedObject>("fixed-object");
+const bool pdipc_fixed_object_render_object_registered = CasterRegistration::RegisterForCaster<Renderable, PDIPCFixedObject>("fixed-object");

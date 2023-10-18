@@ -3,7 +3,6 @@
 #include "EigenAll.h"
 #include "Collision/CollisionInfo.hpp"
 #include "Collision/CollisionInterface.hpp"
-#include "Collision/CollisionShape/CollisionShape.hpp"
 
 class CCDCulling {
 public:

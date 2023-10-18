@@ -1,7 +1,6 @@
 #pragma once
 
 #include "EigenAll.h"
-#include "Collision/CollisionShape/CollisionShape.hpp"
 #include "Collision/CollisionInfo.hpp"
 #include "Collision/CollisionInterface.hpp"
 #include "SpatialQuery/SpatialHashing.hpp"

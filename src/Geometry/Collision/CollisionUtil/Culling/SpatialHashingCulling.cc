@@ -55,8 +55,6 @@ void SpatialHashingCulling::GetCCDSet(
         obj_id++;
     }
 
-	std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
-
     /* find in hash table */
 
 	cur_offset = 0;
@@ -99,7 +97,6 @@ void SpatialHashingCulling::GetCCDSet(
             }
         }
 
-		std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
         /* edge edge collision */
         for (int edge_id = 0; edge_id < num_edges; edge_id++) {
             const RowVector2i indices = edge_topo.row(edge_id);
@@ -115,7 +112,6 @@ void SpatialHashingCulling::GetCCDSet(
             Vector3d bb_max = edge_vertex1.cwiseMax(edge_vertex_next1).cwiseMax(edge_vertex2.cwiseMax(edge_vertex_next2));
 
             auto candidates = _edge_hash_table.Find(bb_min, bb_max, _time_stamp);
-			std::cerr << candidates.size() << std::endl;
             for (const auto& candidate : candidates) {
 				if (candidate._obj_id > obj_id) {
 					continue;

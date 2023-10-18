@@ -2,8 +2,8 @@
     "objects": [
         {
             "type": "cloth",
-            "filename": "/plane.obj",
-            "centered": true,
+            "filename": "/plane_4.obj",
+            "centered": false,
             "density": 1,
             "spring-stiffness": 1,
             "bending-stiffness": 1,
@@ -19,9 +19,22 @@
                 "use-texture": false,
                 "texture-path": ""
             },
-			"collision": {
-				
-			}
+			"collision": {}
+        },
+        {
+            "type": "fixed-object",
+            "external-forces": [],
+            "render": {
+                "have-bounding-box": false,
+                "use-texture": false,
+                "texture-path": "",
+                "filename": "/cube.obj",
+                "centered": false
+            },
+            "collision": {
+				"filename": "/cube.obj",
+                "centered": false
+            }
         }
     ]
 }

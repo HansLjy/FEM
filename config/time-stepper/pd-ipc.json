@@ -6,7 +6,7 @@
 	"inner-max-iterations": 10,
 	"culling": {
 		"type": "spatial-hashing",
-		"grid-length": 1e-1,
+		"grid-length": 1e-2,
 		"hash-table-size": 4096
 	},
 	"collision-handler": {

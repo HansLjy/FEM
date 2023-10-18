@@ -8,6 +8,7 @@
 #include "EigenAll.h"
 
 namespace CollisionUtils {
+	// m < 0 for infinity
 	void PerfectElasticCollision(double v1, double v2, double m1, double m2, double& v1_after, double& v2_after);
 }
 

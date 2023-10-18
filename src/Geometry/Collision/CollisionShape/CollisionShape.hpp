@@ -57,32 +57,42 @@ protected:
 };
 
 #include "FixedShape/FixedShape.hpp"
+#include "FileIO.hpp"
+#include "TopoUtil.hpp"
+
 class FixedCollisionShape : public BasicCollisionShape {
 public:
-	template<class Data>
-	FixedCollisionShape(const Data* data, const json& config) : FixedCollisionShape(
-		data,
-		FixedShapeFactory::Instance()->GetVertices(config["type"], config),
-		FixedShapeFactory::Instance()->GetEdgeTopo(config["type"], config),
-		FixedShapeFactory::Instance()->GetFaceTopo(config["type"], config)
-	) {}
+	static FixedCollisionShape CreateFromConfig(const json& config) {
+		VectorXd x;
+		MatrixXi face_topo;
+		FileIOUtils::ReadMesh(config["filename"], config["centered"], x, face_topo);
+		MatrixXi edge_topo = TopoUtil::GetEdgeTopo(face_topo);
 
-	template<class Data>
-	FixedCollisionShape(const Data* data, const MatrixXd& vertices, const MatrixXi& edge_topo, const MatrixXi& face_topo) {
-		data->_collision_vertices = vertices;
-		data->_collision_edge_topo = edge_topo;
-		data->_collision_face_topo = face_topo;
-		data->_collision_num_points = vertices.rows();
+		return FixedCollisionShape(StackVector<double, 3>(x), edge_topo, face_topo);
 	}
 
-	template<class Data> void Initialize(Data* obj) {}
+	template<class Data> void Initialize(Data* obj) {
+		obj->_collision_vertices = _fixed_vertices;
+		obj->_collision_edge_topo = _fixed_edge_topo;
+		obj->_collision_face_topo = _fixed_face_topo;
+		_fixed_vertices.resize(0, 3);
+		_fixed_edge_topo.resize(0, 2);
+		_fixed_face_topo.resize(0, 3);
+	}
+
 	template<class Data> void ComputeCollisionVertex(Data* obj, const Ref<const VectorXd>& x) {}
 	template<class Data> void ComputeCollisionVertexVelocity(Data* obj, const Ref<const VectorXd>& x) {}
 	template<class Data> const BlockVector& GetCollisionVertexDerivative(const Data* obj, int idx) const {return null_vector;}
-	template<class Data> double GetMaxVelocity(const Data* obj, const Ref<const VectorXd> &v) const {return 0;}
-	template<class Data> Vector3d GetCollisionVertexVelocity(const Data* obj, const Ref<const VectorXd>& v, int idx) const {return Vector3d::Zero();}
+	template<class Data> Vector3d GetCollisionVertexVelocity(const Data* obj, int idx) const {return Vector3d::Zero();}
+	template<class Data> double GetCollisionVertexMass(const Data* obj, int idx) const {return -1;}
 
 protected:
+	FixedCollisionShape(const MatrixXd& vertices, const MatrixXi& edge_topo, const MatrixXi& face_topo) :
+		_fixed_vertices(vertices), _fixed_edge_topo(edge_topo), _fixed_face_topo(face_topo) {}
+
+	MatrixXd _fixed_vertices;
+	MatrixXi _fixed_edge_topo;
+	MatrixXi _fixed_face_topo;
 	const BlockVector null_vector{0, 0, {}, {}, MatrixXd(0, 3)};
 };
 

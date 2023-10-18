@@ -8,7 +8,7 @@ template<class CollisionShape, class Derived>
 class CollisionShapeAdapter : public CollisionShape {
 public:
 	void Initialize();
-    CollisionShapeAdapter(const json& config) : CollisionShape(config) {}
+    CollisionShapeAdapter(CollisionShape&& rhs) : CollisionShape(std::move(rhs)) {}
 	void ComputeCollisionVertex(const Ref<const VectorXd>& x);
 	void ComputeCollisionVertexVelocity(const Ref<const VectorXd>& v);
     Vector3d GetCollisionVertexVelocity(int idx) const;
