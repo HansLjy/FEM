@@ -5,6 +5,7 @@ file(GLOB GEOMETRY_TEST_SOURCE
 	DistanceFunctionTest.cc
 	SpatialHashingTest.cc
 	VoxelizerTest.cc
+	CCDTest.cc
 )
 
 if (GEOMETRY_TEST_SOURCE)

@@ -493,7 +493,7 @@ double GetLLDistance(const Vector3d& edge11, const Vector3d& edge12, const Vecto
 	const double lambda1 = (C * D - B * E) / delta;
 	const double lambda2 = (B * D - A * E) / delta;
 
-    return ((edge11 + lambda1 * (edge12 - edge11)) - (edge21 + lambda2 * (edge22 - edge21))).norm();
+	return ((edge11 + lambda1 * (edge12 - edge11)) - (edge21 + lambda2 * (edge22 - edge21))).norm();
 }
 
 Vector12d GetLLDistanceGradient(const Vector3d& edge11, const Vector3d& edge12, const Vector3d& edge21, const Vector3d& edge22) {

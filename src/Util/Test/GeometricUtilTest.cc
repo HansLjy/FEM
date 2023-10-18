@@ -10,7 +10,7 @@ TEST(GeometricUtilTest, ClosestPointTest) {
 		Vector3d x3 = Vector3d::Random();
 		Vector3d c = Vector3d::Random();
 
-		Vector2d lambda = GeometryUtil::GetPointPlaneClosestPoint(x1, x2, x3, c);
+		Vector2d lambda = GeometryUtil::GetPointPlaneClosestPoint(c, x1, x2, x3);
 		Vector3d perp = c - (x1 + lambda(0) * (x2 - x1) + lambda(1) * (x3 - x1));
 		EXPECT_NEAR(perp.dot(x2 - x1), 0, 1e-10);
 		EXPECT_NEAR(perp.dot(x3 - x1), 0, 1e-10);

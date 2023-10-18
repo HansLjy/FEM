@@ -1,6 +1,6 @@
 {
 	"simulation-config": {
-		"duration": 5,
+		"duration": 2,
 		"time-step": 0.01
 	},
 	"time-stepper-config": "/pd-ipc.json",

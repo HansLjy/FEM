@@ -62,13 +62,16 @@ SimpleCCD::CheckVertexInFace(const Eigen::Vector3d &vertex, const Eigen::Vector3
 
 //<- https://math.stackexchange.com/questions/3114665/how-to-find-if-two-line-segments-intersect-in-3d
 bool SimpleCCD::CheckEdgeIntersection(const Eigen::Vector3d &edge11, const Eigen::Vector3d &edge12, const Eigen::Vector3d &edge21, const Eigen::Vector3d &edge22) {
-    Matrix<double, 3, 2> A;
-    A.col(0) = edge11 - edge12;
-    A.col(1) = - edge21 + edge22;
-    Eigen::FullPivLU<Matrix<double, 3, 2>> lu_decomp(A);
-	if (lu_decomp.rank() < 2) {
+	Vector3d e1 = edge11 - edge12;
+    Vector3d e2 = - edge21 + edge22;
+
+	if (e1.normalized().cross(e2.normalized()).norm() < 1e-10) {
 		return false;
 	} else {
+    	Matrix<double, 3, 2> A;
+		A.col(0) = e1;
+		A.col(1) = e2;
+    	Eigen::FullPivLU<Matrix<double, 3, 2>> lu_decomp(A);
 		Vector2d sol = lu_decomp.solve(edge22 - edge12);
 		return sol(0) >= 0 && sol(0) <= 1 && sol(1) >= 0 && sol(1) <= 1;
 	}

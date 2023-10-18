@@ -10,7 +10,7 @@
 		"hash-table-size": 4096
 	},
 	"collision-handler": {
-		"kappa": 1e7,
+		"kappa": 1e4,
 		"d-hat": 1e-3
 	},
 	"toi-estimator": {

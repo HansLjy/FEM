@@ -114,6 +114,21 @@ void PDIPC::Step(double h) {
 		// std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
 		// std::cerr << toi << std::endl;
 
+		// std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
+		// bool flag = false;
+		// for (int i = 0; i < local_tois.size(); i++) {
+		// 	if (local_tois[i] <= 1) {
+		// 		PrintPrimitivePair(constraint_set[i]);
+		// 		std::cerr << _collision_objs[constraint_set[i]._obj_id1].GetCollisionEdgeTopo().row(constraint_set[i]._primitive_id1) << std::endl;
+		// 		std::cerr << _collision_objs[constraint_set[i]._obj_id2].GetCollisionEdgeTopo().row(constraint_set[i]._primitive_id2) << std::endl;
+		// 		std::cerr << local_tois[i] << std::endl;
+		// 		flag = true;
+		// 	}
+		// }
+		// if (flag) {
+		// 	exit(-1);
+		// }
+
 		// int num_collision_pair = 0;
 		// for (const auto& local_toi : local_tois) {
 		// 	num_collision_pair += (local_toi <= 1);
@@ -148,7 +163,10 @@ void PDIPC::Step(double h) {
 	} else {
 		spdlog::warn("Outer iteration does not converge!");
 	}
-	// spdlog::info("Global itrs = {}", global_itrs);
+	spdlog::info("Global itrs = {}", global_itrs);
+
+	// std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
+	// std::cerr << x.transpose() << std::endl;
 
 	VectorXd v = (x - x_current) / h;
 	_coord_assembler.SetCoordinate(x);

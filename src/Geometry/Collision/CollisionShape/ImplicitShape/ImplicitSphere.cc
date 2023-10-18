@@ -19,7 +19,7 @@ bool ImplicitSphere::Intersect(const Vector3d& x1, const Vector3d& x2, double& r
 }
 
 bool ImplicitSphere::Intersect(const Vector3d& x1, const Vector3d& x2, const Vector3d& x3, Vector2d& ratio) const {
-	ratio = GeometryUtil::GetPointPlaneClosestPoint(x1, x2, x3, _center);
+	ratio = GeometryUtil::GetPointPlaneClosestPoint(_center, x1, x2, x3);
 	return ratio[0] >= 0 && ratio[1] >= 0 && ratio[0] + ratio[1] <= 1;
 }
 

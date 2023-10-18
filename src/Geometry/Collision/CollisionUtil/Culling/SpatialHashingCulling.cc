@@ -110,7 +110,7 @@ void SpatialHashingCulling::GetCCDSet(
 
             auto candidates = _edge_hash_table.Find(bb_min, bb_max, _time_stamp);
             for (const auto& candidate : candidates) {
-				if (candidate._obj_id > obj_id) {
+				if (candidate._obj_id > obj_id || (candidate._obj_id == obj_id && candidate._primitive_id > edge_id)) {
 					continue;
 				}
 				if (candidate._obj_id == obj_id) {

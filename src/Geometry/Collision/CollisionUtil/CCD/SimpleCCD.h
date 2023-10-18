@@ -11,6 +11,7 @@
 
 class SimpleCCD : public CCD {
 public:
+	SimpleCCD(double epsilon, CubicSolver* solver) : _epsilon(epsilon), _cubic_solver(solver) {}
     explicit SimpleCCD(const json& config);
     ~SimpleCCD() override;
 
