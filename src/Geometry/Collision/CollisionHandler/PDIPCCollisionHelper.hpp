@@ -53,6 +53,10 @@ public:
 		const double global_toi
 	);
 
+	double GetBarrierEnergy(
+		const std::vector<MassedCollisionInterface>& objs
+	) const;
+
 	void BarrierLocalProject(
 		const std::vector<MassedCollisionInterface>& objs,
 		const std::vector<int>& offsets,

@@ -1,7 +1,7 @@
 {
 	"type": "PDIPC",
-	"outer-tolerance": 1e-5,
-	"inner-tolerance": 1e-5,
+	"outer-tolerance": 1e-4,
+	"inner-tolerance": 1e-4,
 	"outer-max-iterations": 10,
 	"inner-max-iterations": 10,
 	"culling": {

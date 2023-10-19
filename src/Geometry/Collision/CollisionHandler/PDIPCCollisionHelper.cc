@@ -216,6 +216,21 @@ void PDIPCCollisionHandler::AddCollisionPairs(
 	// }
 }
 
+double PDIPCCollisionHandler::GetBarrierEnergy(
+	const std::vector<MassedCollisionInterface> &objs
+) const {
+	double energy = 0;
+	for (const auto& projection_info : _projection_infos) {
+		Vector3d vertex = objs[projection_info._obj_id]
+						  .GetCollisionVertices()
+						  .row(projection_info._vertex_id);
+		
+		energy += 0.5 * projection_info._stiffness *
+				  (vertex - projection_info._target_position).squaredNorm();
+	}
+	return energy;
+}
+
 void PDIPCCollisionHandler::BarrierLocalProject(
 	const std::vector<MassedCollisionInterface> &objs,
 	const std::vector<int>& offsets,

@@ -72,6 +72,8 @@ void PDIPC::Step(double h) {
 		VectorXd inner_delta_x;
 		VectorXd inner_pre_x = x;
 		int inner_itrs = 0;
+		double E_prev = _pd_assembler.GetEnergy(_pd_objs, x);
+		double E_delta = 0;
 		do {
 			VectorXd y = Mx_hat_h2 + barrier_y;
 			_pd_assembler.LocalProject(_pd_objs, x, y);
@@ -89,10 +91,16 @@ void PDIPC::Step(double h) {
 			x = CG_solver.solve(y);
 			// x = LDLT_solver.solve(y);
 
+			_collision_assembler.ComputeCollisionVertex(x, _collision_objs);
+			double E_current = _pd_assembler.GetEnergy(_pd_objs, x)
+							 + _pd_ipc_collision_handler.GetBarrierEnergy(_massed_collision_objs);
+			E_delta = E_current - E_prev;
+			E_prev = E_current;
+
 			inner_delta_x = x - inner_pre_x;
 			inner_pre_x = x;
 			inner_itrs++;
-		} while (inner_delta_x.lpNorm<Eigen::Infinity>() > _inner_tolerance && inner_itrs < _inner_max_itrs);
+		} while (E_delta > _inner_tolerance && inner_itrs < _inner_max_itrs);
 
 		// if (inner_itrs < _inner_max_itrs) {
 		// 	spdlog::info("Inner iteration converges in {} steps", inner_itrs);
