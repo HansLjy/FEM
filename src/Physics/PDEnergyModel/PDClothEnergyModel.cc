@@ -2,6 +2,25 @@
 #include "GeometryUtil.hpp"
 #include <iostream>
 
+double PDEnergyModelFunction::GetPDSpringEnergy(
+    const Ref<const VectorXd> &x,
+    const Ref<const MatrixXi> &edge_topo,
+    const std::vector<double> &rest_length, 
+    double stiffness
+) {
+    const int num_edges = edge_topo.rows();
+    double energy = 0;
+    for (int i = 0; i < num_edges; i++) {
+        const RowVector2i indices = edge_topo.row(i);
+        double delta_length = (
+            x.segment<3>(indices(0) * 3) -
+            x.segment<3>(indices(1) * 3)
+        ).norm() - rest_length[i];
+        energy += 0.5 * stiffness * delta_length * delta_length;
+    }
+    return energy;
+}
+
 void PDEnergyModelFunction::GetPDSpringEnergyLHSMatrix(
     const Ref<const MatrixXi> &edge_topo,
     double stiffness,
@@ -105,6 +124,13 @@ void PDEnergyModelFunction::InitQuadraticBendingMatrix(
 
     Q.resize(x.size(), x.size());
     Q.setFromTriplets(coo.begin(), coo.end());
+}
+
+double PDEnergyModelFunction::GetPDQuadraticEnergy(
+    const Ref<const VectorXd> &x,
+    const SparseMatrixXd &Q
+) {
+    return x.transpose() * Q * x;
 }
 
 void PDEnergyModelFunction::GetPDQuadraticEnergyLHSMatrix(

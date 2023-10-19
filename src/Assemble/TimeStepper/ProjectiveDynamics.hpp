@@ -28,10 +28,12 @@ protected:
     int _max_step;
     double _conv_tolerance;
 
+    int _total_dof;
 	std::vector<Object> _objs;
 	std::vector<Object> _colliders;
 
 	std::vector<Renderable> _render_objects;
+    std::vector<PDObject> _pd_objects;
 
     CoordinateAssembler _coord_assembler;
     MassAssembler _mass_assembler;

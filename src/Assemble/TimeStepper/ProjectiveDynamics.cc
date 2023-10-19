@@ -20,8 +20,13 @@ void ProjectiveDynamics::BindObjects(
     _coord_assembler.BindObjects(begin, end);
     _mass_assembler.BindObjects(begin, end);
     _ext_force_assembler.BindObjects(begin, end);
-    _pd_assembler.BindObjects(begin, end);
 	_pd_collision_handler.BindObjects(begin, end);
+
+    TypeErasure::Cast2Interface(begin, end, _pd_objects);
+    _total_dof = 0;
+    for (const auto& obj : _pd_objects) {
+        _total_dof += obj.GetDOF();
+    }
 }
 
 void ProjectiveDynamics::BindCollider(
@@ -32,18 +37,16 @@ void ProjectiveDynamics::BindCollider(
 }
 
 void ProjectiveDynamics::Step(double h) {
-    const int total_dof = _coord_assembler.GetDOF();
-
-    VectorXd x_current(total_dof), v_current(total_dof);
+    VectorXd x_current(_total_dof), v_current(_total_dof);
     _coord_assembler.GetCoordinate(x_current);
     _coord_assembler.GetVelocity(v_current);
 
     SparseMatrixXd M, G;
     _mass_assembler.GetMass(M);
-    _pd_assembler.GetGlobalMatrix(G);
+    _pd_assembler.GetGlobalMatrix(_pd_objects, _total_dof, G);
     SparseMatrixXd M_h2 = M / (h * h);
 
-    VectorXd f_ext(total_dof);
+    VectorXd f_ext(_total_dof);
     _ext_force_assembler.GetExternalForce(f_ext);
     
     Eigen::SimplicialLDLT<SparseMatrixXd> LDLT_solver(M);
@@ -52,20 +55,20 @@ void ProjectiveDynamics::Step(double h) {
 
     // LDLT_solver.compute(global_matrix);
     VectorXd x_next = x_hat;
-    VectorXd x_prev(total_dof);
+    VectorXd x_prev(_total_dof);
     int itr = 0;
 	_pd_collision_handler.ComputeConstraintSet(x_hat);
     do {
         x_prev = x_next;
-        VectorXd y = VectorXd::Zero(total_dof);
+        VectorXd y = VectorXd::Zero(_total_dof);
 
-        _pd_assembler.LocalProject(x_next, y, 0);
+        _pd_assembler.LocalProject(_pd_objects, x_next, y);
 		_pd_collision_handler.LocalProject(x_next, y, 0);
 
 		COO coo;
-		_pd_assembler.GetGlobalMatrix(coo, 0, 0);
+		_pd_assembler.GetGlobalMatrix(_pd_objects, coo, 0, 0);
 		_pd_collision_handler.GetGlobalMatrix(coo, 0, 0);
-		SparseMatrixXd global_matrix(total_dof, total_dof);
+		SparseMatrixXd global_matrix(_total_dof, _total_dof);
 		global_matrix.setFromTriplets(coo.begin(), coo.end());
 		global_matrix += M_h2;
 		LDLT_solver.compute(global_matrix);

@@ -23,34 +23,32 @@ void PDIPC::BindObjects(
 	_coord_assembler.BindObjects(begin, end);
 	_mass_assembler.BindObjects(begin, end);
 	_ext_force_assembler.BindObjects(begin, end);
-	_pd_assembler.BindObjects(begin, end);
 
 	TypeErasure::Cast2Interface(begin, end, _render_objs);
 	TypeErasure::Cast2Interface(begin, end, _collision_objs);
 	TypeErasure::Cast2Interface(begin, end, _massed_collision_objs);
+	TypeErasure::Cast2Interface(begin, end, _pd_objs);
 
 	_offsets.clear();
 	_offsets.reserve(end - begin);
-	int offset = 0;
+	_total_dof = 0;
 	for (const auto& obj : _collision_objs) {
-		_offsets.push_back(offset);
-		offset += obj.GetDOF();
+		_offsets.push_back(_total_dof);
+		_total_dof += obj.GetDOF();
 	}
 }
 
 void PDIPC::Step(double h) {
-	const int total_dof = _coord_assembler.GetDOF();
-
-    VectorXd x_current(total_dof), v_current(total_dof);
+    VectorXd x_current(_total_dof), v_current(_total_dof);
     _coord_assembler.GetCoordinate(x_current);
     _coord_assembler.GetVelocity(v_current);
 
     SparseMatrixXd M, G;
     _mass_assembler.GetMass(M);
-    _pd_assembler.GetGlobalMatrix(G);
+    _pd_assembler.GetGlobalMatrix(_pd_objs, _total_dof, G);
     SparseMatrixXd M_h2 = M / (h * h);
 
-    VectorXd f_ext(total_dof);
+    VectorXd f_ext(_total_dof);
     _ext_force_assembler.GetExternalForce(f_ext);
     
     Eigen::SimplicialLDLT<SparseMatrixXd> LDLT_solver(M);
@@ -65,7 +63,7 @@ void PDIPC::Step(double h) {
 	global_itrs++;
 	_pd_ipc_collision_handler.ClearConstraintSet();
 	VectorXd barrier_y = VectorXd::Zero(x.size());
-	SparseMatrixXd barrier_global_matrix(total_dof, total_dof);
+	SparseMatrixXd barrier_global_matrix(_total_dof, _total_dof);
 
 	Eigen::ConjugateGradient<SparseMatrixXd> CG_solver;
 
@@ -76,12 +74,12 @@ void PDIPC::Step(double h) {
 		int inner_itrs = 0;
 		do {
 			VectorXd y = Mx_hat_h2 + barrier_y;
-			_pd_assembler.LocalProject(x, y, 0);
+			_pd_assembler.LocalProject(_pd_objs, x, y);
 
 			COO coo;
-			_pd_assembler.GetGlobalMatrix(coo, 0, 0);
+			_pd_assembler.GetGlobalMatrix(_pd_objs, coo, 0, 0);
 
-			SparseMatrixXd global_matrix(total_dof, total_dof);
+			SparseMatrixXd global_matrix(_total_dof, _total_dof);
 			global_matrix.setFromTriplets(coo.begin(), coo.end());
 			global_matrix += M_h2 + barrier_global_matrix;
 
@@ -150,7 +148,7 @@ void PDIPC::Step(double h) {
 		barrier_y.setZero();
 		_pd_ipc_collision_handler.BarrierLocalProject(_massed_collision_objs, _offsets, barrier_y);
 		barrier_global_matrix.setZero();
-		_pd_ipc_collision_handler.GetBarrierGlobalMatrix(_massed_collision_objs, _offsets, total_dof, barrier_global_matrix);
+		_pd_ipc_collision_handler.GetBarrierGlobalMatrix(_massed_collision_objs, _offsets, _total_dof, barrier_global_matrix);
 
 		x = x_pre + toi * (x - x_pre);
 		x_pre = x;

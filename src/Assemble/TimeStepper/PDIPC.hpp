@@ -33,17 +33,20 @@ protected:
 	int _outer_max_itrs;
 	int _inner_max_itrs;
 
+	int _total_dof;
 	std::vector<int> _offsets;
 	std::vector<Object> _objs;
 	std::vector<Renderable> _render_objs;
 	std::vector<CollisionInterface> _collision_objs;
 	std::vector<MassedCollisionInterface> _massed_collision_objs;
+	std::vector<PDObject> _pd_objs;
 
 	CCDCulling* _culling;
 
 	CoordinateAssembler _coord_assembler;
 	MassAssembler _mass_assembler;
 	ExternalForceAssembler _ext_force_assembler;
+
 
 	PDAssembler _pd_assembler;
 	PDIPCCollisionHandler _pd_ipc_collision_handler;

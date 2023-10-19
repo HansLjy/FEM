@@ -30,7 +30,7 @@ class PDIPCCloth :
 	public PDClothData,
     public CoordinateAdapter<BasicCoordinate, PDIPCCloth>,
     public MassModelAdapter<SampledObjectMassModel, PDIPCCloth>,
-    public PDEnergyModelAdapter<PDClothEnergyModel, PDIPCCloth>,
+    public PDClothEnergyModel<PDIPCCloth>,
     public ExternalForceContainerAdapter<PDClothData, PDIPCCloth>,
     public RenderShapeAdapter<SampledRenderShape, PDIPCCloth>,
 	public CollisionShapeAdapter<SampledCollisionShape, PDIPCCloth> {
@@ -38,11 +38,11 @@ class PDIPCCloth :
 public:
 	PDIPCCloth(const json& config):
         PDClothData(PDClothData::CreateFromFile(config)),
-        PDEnergyModelAdapter(PDClothEnergyModel::CreateFromConfig(config["energy"])),
+        PDClothEnergyModel(PDClothEnergyModel::CreateFromConfig(config["energy"])),
         ExternalForceContainerAdapter(ExternalForceContainer<PDClothData>::CreateFromConfig(config["external-forces"])),
         RenderShapeAdapter(SampledRenderShape::CreateFromConfig(config["render"])),
 		CollisionShapeAdapter(config["collision"]){
-		PDEnergyModelAdapter::Initialize();
+        PDClothEnergyModel::Initialize();
 		CollisionShapeAdapter::Initialize();
     }
 };
@@ -57,13 +57,12 @@ class PDIPCFixedObject :
     public FixedObjectData,
     public CoordinateAdapter<BasicCoordinate, PDIPCFixedObject>,
     public MassModelAdapter<NullMassModel, PDIPCFixedObject>,
-    public PDEnergyModelAdapter<PDNullEnergyModel, PDIPCFixedObject>,
+    public PDNullEnergyModel,
     public ExternalForceContainerAdapter<FixedObjectData, PDIPCFixedObject>,
     public RenderShapeAdapter<FixedRenderShape, PDIPCFixedObject>,
     public CollisionShapeAdapter<FixedCollisionShape, PDIPCFixedObject> {
 public:
     PDIPCFixedObject(const json& config) :
-        PDEnergyModelAdapter({}),
         ExternalForceContainerAdapter(ExternalForceContainer<FixedObjectData>::CreateFromConfig(config["external-forces"])),
         RenderShapeAdapter(FixedRenderShape::CreateFromConfig(config["render"])),
         CollisionShapeAdapter(FixedCollisionShape::CreateFromConfig(config["collision"])) {

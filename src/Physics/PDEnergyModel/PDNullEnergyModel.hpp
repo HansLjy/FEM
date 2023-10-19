@@ -5,11 +5,11 @@
 
 class PDNullEnergyModel {
 public:
-    static PDNullEnergyModel CreateFromConfig(const json& config) {return {};}
+    PDNullEnergyModel() = default;
     PDNullEnergyModel(const PDNullEnergyModel& rhs) = delete;
     PDNullEnergyModel(PDNullEnergyModel&& rhs) = default;
-    template<class Data> void Initialize(Data* data) {}
-    template<class Data> void GetGlobalMatrix(const Data* data, COO& coo, int x_offset, int y_offset) const {}
-    template<class Data> void LocalProject(const Data* data, const Ref<const VectorXd>& x, Ref<VectorXd> y) const {}
+    double GetEnergy(const Ref<const VectorXd>& x) const {return 0;}
+    void GetGlobalMatrix(COO& coo, int x_offset, int y_offset) const {}
+    void LocalProject(const Ref<const VectorXd>& x, Ref<VectorXd> y) const {}
 };
 
