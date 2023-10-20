@@ -9,6 +9,7 @@ class TOIEstimator {
 public:
 	explicit TOIEstimator(const json& config) : _ccd(Factory<CCD>::GetInstance()->GetProduct(config["CCD"]["type"], config["CCD"])) {}
 
+	//<- <= 1 for global toi, > 1 for non-intersecting case
 	double GetTOI(
 		const std::vector<PrimitivePair>& constraint_set,
 		const std::vector<CollisionInterface>& objs

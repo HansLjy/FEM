@@ -4,9 +4,9 @@
             "type": "cloth",
             "filename": "/plane_large.obj",
             "centered": false,
-            "density": 1,
-            "spring-stiffness": 1000,
-            "bending-stiffness": 100,
+            "density": 10,
+            "spring-stiffness": 10000,
+            "bending-stiffness": 1000,
             "energy": {},
             "external-forces": [
                 {
@@ -28,11 +28,11 @@
                 "have-bounding-box": false,
                 "use-texture": false,
                 "texture-path": "",
-                "filename": "/cube.obj",
+                "filename": "/ball.obj",
                 "centered": false
             },
             "collision": {
-				"filename": "/cube.obj",
+				"filename": "/ball.obj",
                 "centered": false
             }
         }

@@ -5,7 +5,7 @@ double TOIEstimator::GetTOI(
 	const std::vector<PrimitivePair> &constraint_set,
 	const std::vector<CollisionInterface> &objs
 ) const {
-	double toi = 1;
+	double toi = 2;
 
 	PROCESS_PRIMITIVE_PAIR(
 		constraint_set, objs,
@@ -32,7 +32,7 @@ double TOIEstimator::GetLocalTOIs(
 	std::vector<double> &local_tois
 ) const {
 	local_tois.reserve(local_tois.size() + constraint_set.size());
-	double toi = 1;
+	double toi = 2;
 
 	for (const auto& primitive_pair : constraint_set) {
 		const auto& obj1 = objs[primitive_pair._obj_id1];

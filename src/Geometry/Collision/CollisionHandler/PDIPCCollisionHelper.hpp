@@ -40,8 +40,10 @@ CONCEPT_MODEL_IDIOM_END
 
 class PDIPCCollisionHandler {
 public:
-	explicit PDIPCCollisionHandler(const json& config) : PDIPCCollisionHandler(config["kappa"], config["d-hat"]) {}
-	PDIPCCollisionHandler(double kappa, double d_hat) : _kappa(kappa), _d_hat(d_hat) {}
+	explicit PDIPCCollisionHandler(const json& config) : PDIPCCollisionHandler(
+		config["kappa"], config["d-hat"], config["stiffness-blending"]
+	) {}
+	PDIPCCollisionHandler(double kappa, double d_hat, double stiffness_blending) : _kappa(kappa), _d_hat(d_hat), _stiffness_blending(stiffness_blending){}
 
 	void ClearConstraintSet();
 	
@@ -79,6 +81,7 @@ public:
 protected:
 	double _kappa;
 	double _d_hat;
+	double _stiffness_blending;
 
 	struct ProjectionInfo {
 		ProjectionInfo(int obj_id, int vertex_id, double stiffness, Vector3d target_position) :
@@ -91,6 +94,7 @@ protected:
 	};
 	
 	std::vector<ProjectionInfo> _projection_infos;
+	std::vector<PrimitivePair> _primitive_pairs;					// every primitive pair cooresponds to 4 projection infos
 	InterfaceContainer<MassedCollisionInterface> _obj_container;
 	
 };

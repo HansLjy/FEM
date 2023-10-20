@@ -1,13 +1,19 @@
 cmake_minimum_required(VERSION 3.22)
 
+CPMAddPackage(
+	cyCodeBase
+	GIT_REPOSITORY git@github.com:cemyuksel/cyCodeBase.git
+	GIT_TAG ede026f5c1976faa90709690a4290161ed05c19b
+)
+
 file(GLOB_RECURSE GEOMETRY_SOURCE_FILE
-        Render/*.cc
-        Collision/*.cc
-        Shape/*.cc
-		Voxelizer/*.cc
-		Embedding/*.cc
-		SpatialQuery/*.cc
-    )
+	Render/*.cc
+	Collision/*.cc
+	Shape/*.cc
+	Voxelizer/*.cc
+	Embedding/*.cc
+	SpatialQuery/*.cc
+)
 
 if(BUILD_TEST)
     add_subdirectory(Test)
@@ -21,3 +27,4 @@ target_link_libraries(Geometry PRIVATE FEMUtility)
 target_link_libraries(Geometry PUBLIC Matrix)
 target_link_libraries(Geometry PUBLIC FileIO)
 target_link_libraries(Geometry PRIVATE igl_restricted::triangle)
+target_include_directories(Geometry PRIVATE ${cyCodeBase_SOURCE_DIR})

@@ -10,7 +10,6 @@
 
 #include "PDEnergyModel/PDClothEnergyModel.hpp"
 #include "PDEnergyModel/PDNullEnergyModel.hpp"
-#include "PDEnergyModel/PDEnergyAdapter.hpp"
 
 #include "ExternalForce/SampledObjectGravity.hpp"
 #include "ExternalForce/ExternalForceContainer.hpp"

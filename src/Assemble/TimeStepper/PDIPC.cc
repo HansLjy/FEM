@@ -68,12 +68,23 @@ void PDIPC::Step(double h) {
 	Eigen::ConjugateGradient<SparseMatrixXd> CG_solver;
 
 	int outer_itr = 0;
+
+	std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
+	std::fstream toi_file("./toi.txt", std::fstream::out | std::fstream::app);
+
+	std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
+	std::fstream delta_x_file("./delta-x.txt", std::fstream::out | std::fstream::app);
+
 	do {
+		int inner_itrs = 0;
+
+		_collision_assembler.ComputeCollisionVertex(x, _collision_objs);
+		double E_prev = _pd_assembler.GetEnergy(_pd_objs, x)
+					  + _pd_ipc_collision_handler.GetBarrierEnergy(_massed_collision_objs)
+					  + 0.5 * (x - x_hat).transpose() * M_h2 * (x - x_hat);
+		double E_delta = 0;
 		VectorXd inner_delta_x;
 		VectorXd inner_pre_x = x;
-		int inner_itrs = 0;
-		double E_prev = _pd_assembler.GetEnergy(_pd_objs, x);
-		double E_delta = 0;
 		do {
 			VectorXd y = Mx_hat_h2 + barrier_y;
 			_pd_assembler.LocalProject(_pd_objs, x, y);
@@ -93,14 +104,20 @@ void PDIPC::Step(double h) {
 
 			_collision_assembler.ComputeCollisionVertex(x, _collision_objs);
 			double E_current = _pd_assembler.GetEnergy(_pd_objs, x)
-							 + _pd_ipc_collision_handler.GetBarrierEnergy(_massed_collision_objs);
+							 + _pd_ipc_collision_handler.GetBarrierEnergy(_massed_collision_objs)
+					  		 + 0.5 * (x - x_hat).transpose() * M_h2 * (x - x_hat);
+			// energy_file << ", " << E_current;
 			E_delta = E_current - E_prev;
 			E_prev = E_current;
 
 			inner_delta_x = x - inner_pre_x;
 			inner_pre_x = x;
 			inner_itrs++;
-		} while (E_delta > _inner_tolerance && inner_itrs < _inner_max_itrs);
+
+
+		} while (inner_delta_x.lpNorm<Eigen::Infinity>() > _inner_tolerance && inner_itrs < _inner_max_itrs);
+		// energy_file << std::endl;
+		delta_x_file << inner_delta_x.lpNorm<Eigen::Infinity>() << ", ";
 
 		// if (inner_itrs < _inner_max_itrs) {
 		// 	spdlog::info("Inner iteration converges in {} steps", inner_itrs);
@@ -117,33 +134,13 @@ void PDIPC::Step(double h) {
 
 		std::vector<double> local_tois;
 		double toi = _toi_estimator.GetLocalTOIs(constraint_set, _collision_objs, local_tois);
-		// std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
-		// std::cerr << toi << std::endl;
 
-		// std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
-		// bool flag = false;
-		// for (int i = 0; i < local_tois.size(); i++) {
-		// 	if (local_tois[i] <= 1) {
-		// 		PrintPrimitivePair(constraint_set[i]);
-		// 		std::cerr << _collision_objs[constraint_set[i]._obj_id1].GetCollisionEdgeTopo().row(constraint_set[i]._primitive_id1) << std::endl;
-		// 		std::cerr << _collision_objs[constraint_set[i]._obj_id2].GetCollisionEdgeTopo().row(constraint_set[i]._primitive_id2) << std::endl;
-		// 		std::cerr << local_tois[i] << std::endl;
-		// 		flag = true;
-		// 	}
-		// }
-		// if (flag) {
-		// 	exit(-1);
-		// }
-
-		// int num_collision_pair = 0;
-		// for (const auto& local_toi : local_tois) {
-		// 	num_collision_pair += (local_toi <= 1);
-		// }
-		// spdlog::info("#cancidates = {}, #collision pairs = {}", constraint_set.size(), num_collision_pair);
-
-		if (toi < 1) {
+		if (toi <= 1) {
 			toi *= 0.8;
+		} else {
+			toi = 1;
 		}
+		toi_file << toi << ", ";
 
 		_pd_ipc_collision_handler.AddCollisionPairs(
 			_massed_collision_objs,
@@ -163,6 +160,10 @@ void PDIPC::Step(double h) {
 
 		outer_itr++;
 	} while (delta_x.lpNorm<Eigen::Infinity>() > _outer_tolerance && outer_itr < _outer_max_itrs);
+	toi_file << std::endl;
+	toi_file.close();
+	delta_x_file << std::endl;
+	delta_x_file.close();
 
 	if (outer_itr < _outer_max_itrs) {
 		spdlog::info("Outer iteration converges in {} steps", outer_itr);
@@ -170,9 +171,6 @@ void PDIPC::Step(double h) {
 		spdlog::warn("Outer iteration does not converge!");
 	}
 	spdlog::info("Global itrs = {}", global_itrs);
-
-	// std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
-	// std::cerr << x.transpose() << std::endl;
 
 	VectorXd v = (x - x_current) / h;
 	_coord_assembler.SetCoordinate(x);
