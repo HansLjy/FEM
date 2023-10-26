@@ -13,11 +13,12 @@ double PDAssembler::GetEnergy(const std::vector<PDObject>& objs, const Ref<const
     return energy;
 }
 
-void PDAssembler::GetGlobalMatrix(const std::vector<PDObject>& objs, int total_dof, SparseMatrixXd& mass) const {
+SparseMatrixXd PDAssembler::GetGlobalMatrix(const std::vector<PDObject>& objs, int total_dof) const {
     COO coo;
     GetGlobalMatrix(objs, coo, 0, 0);
-    mass.resize(total_dof, total_dof);
-    mass.setFromTriplets(coo.begin(), coo.end());
+	SparseMatrixXd global_matrix(total_dof, total_dof);
+    global_matrix.setFromTriplets(coo.begin(), coo.end());
+	return global_matrix;
 }
 
 void PDAssembler::GetGlobalMatrix(const std::vector<PDObject>& objs, COO &coo, int x_offset, int y_offset) const {

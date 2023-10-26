@@ -38,14 +38,32 @@ void PDIPC::BindObjects(
 	}
 }
 
+void PDIPC::InnerIteration(const SparseMatrixXd& lhs_out, const VectorXd& rhs_out, VectorXd& x) const {
+	VectorXd rhs = rhs_out;
+	_pd_assembler.LocalProject(_pd_objs, x, rhs);
+
+	SparseMatrixXd global_matrix = _pd_assembler.GetGlobalMatrix(_pd_objs, _total_dof);
+	global_matrix += lhs_out;
+
+	Eigen::ConjugateGradient<SparseMatrixXd> CG_solver;
+	CG_solver.compute(global_matrix);
+	x = CG_solver.solve(rhs);
+}
+
+double PDIPC::GetTotalEnergy(const VectorXd &x, const SparseMatrixXd &M_h2, const VectorXd &x_hat) {
+	return _pd_assembler.GetEnergy(_pd_objs, x)
+		   + _pd_ipc_collision_handler.GetBarrierEnergy(_massed_collision_objs)
+		   + 0.5 * (x - x_hat).transpose() * M_h2 * (x - x_hat);
+}
+
 void PDIPC::Step(double h) {
     VectorXd x_current(_total_dof), v_current(_total_dof);
     _coord_assembler.GetCoordinate(x_current);
     _coord_assembler.GetVelocity(v_current);
 
-    SparseMatrixXd M, G;
+    SparseMatrixXd M;
     _mass_assembler.GetMass(M);
-    _pd_assembler.GetGlobalMatrix(_pd_objs, _total_dof, G);
+    SparseMatrixXd G = _pd_assembler.GetGlobalMatrix(_pd_objs, _total_dof);
     SparseMatrixXd M_h2 = M / (h * h);
 
     VectorXd f_ext(_total_dof);
@@ -67,41 +85,24 @@ void PDIPC::Step(double h) {
 	int outer_itr = 0;
 	double last_toi = 0;
 	VectorXd x = x_hat;							// final solution
-	VectorXd x_pre_sol = x_hat;					// solution of previous LG solve
-	VectorXd delta_x_sol(_total_dof);		// delta of solutions of LG solve 
 	do {
 		x = x_hat;
 
 		int inner_itrs = 0;
 		_collision_assembler.ComputeCollisionVertex(x, _collision_objs);
-		double E_prev = _pd_assembler.GetEnergy(_pd_objs, x)
-					  + _pd_ipc_collision_handler.GetBarrierEnergy(_massed_collision_objs)
-					  + 0.5 * (x - x_hat).transpose() * M_h2 * (x - x_hat);
+		double E_prev = GetTotalEnergy(x, M_h2, x_hat);
 		double E_delta = 0;
 		do {
-			VectorXd y = Mx_hat_h2 + barrier_y;
-			_pd_assembler.LocalProject(_pd_objs, x, y);
-
-			COO coo;
-			_pd_assembler.GetGlobalMatrix(_pd_objs, coo, 0, 0);
-
-			SparseMatrixXd global_matrix(_total_dof, _total_dof);
-			global_matrix.setFromTriplets(coo.begin(), coo.end());
-			global_matrix += M_h2 + barrier_global_matrix;
-
-			CG_solver.compute(global_matrix);
-
-			x = CG_solver.solve(y);
+			InnerIteration(M_h2 + barrier_global_matrix, Mx_hat_h2 + barrier_y, x);
 
 			_collision_assembler.ComputeCollisionVertex(x, _collision_objs);
-			double E_current = _pd_assembler.GetEnergy(_pd_objs, x)
-					  		 + _pd_ipc_collision_handler.GetBarrierEnergy(_massed_collision_objs)
-					  		 + 0.5 * (x - x_hat).transpose() * M_h2 * (x - x_hat);
-			E_delta = E_prev > 1e-6 ? std::abs(E_current - E_prev) / E_prev : std::abs(E_current - E_prev);
+			double E_current = GetTotalEnergy(x, M_h2, x_hat);
+			E_delta = E_prev > 1e-6
+					? std::abs(E_current - E_prev) / E_prev
+					: std::abs(E_current - E_prev);
 			E_prev = E_current;
 
 			inner_itrs++;
-
 		} while (E_delta > _inner_tolerance && inner_itrs < _inner_max_itrs);
 
 
@@ -110,9 +111,6 @@ void PDIPC::Step(double h) {
 		} else {
 			spdlog::warn("Inner iteration does not converge!");
 		}
-
-		delta_x_sol = x - x_pre_sol;
-		x_pre_sol = x;
 
 		_collision_assembler.ComputeCollisionVertex(x_current, _collision_objs);
 		_collision_assembler.ComputeCollisionVertexVelocity(x - x_current, _collision_objs);

@@ -41,9 +41,9 @@ void ProjectiveDynamics::Step(double h) {
     _coord_assembler.GetCoordinate(x_current);
     _coord_assembler.GetVelocity(v_current);
 
-    SparseMatrixXd M, G;
+    SparseMatrixXd M;
     _mass_assembler.GetMass(M);
-    _pd_assembler.GetGlobalMatrix(_pd_objects, _total_dof, G);
+    SparseMatrixXd G = _pd_assembler.GetGlobalMatrix(_pd_objects, _total_dof);
     SparseMatrixXd M_h2 = M / (h * h);
 
     VectorXd f_ext(_total_dof);

@@ -24,7 +24,7 @@ CONCEPT_MODEL_IDIOM_END
 class PDAssembler {
 public:
     double GetEnergy(const std::vector<PDObject>& objs, const Ref<const VectorXd>& x) const;
-    void GetGlobalMatrix(const std::vector<PDObject>& objs, int total_dof, SparseMatrixXd& global) const;
+    SparseMatrixXd GetGlobalMatrix(const std::vector<PDObject>& objs, int total_dof) const;
     void GetGlobalMatrix(const std::vector<PDObject>& objs, COO& coo, int x_offset, int y_offset) const;
     void LocalProject(const std::vector<PDObject>& objs, const Ref<const VectorXd>& x, Ref<VectorXd> y) const;
 };
