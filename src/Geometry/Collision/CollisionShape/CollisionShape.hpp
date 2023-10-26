@@ -65,7 +65,7 @@ public:
 	static FixedCollisionShape CreateFromConfig(const json& config) {
 		VectorXd x;
 		MatrixXi face_topo;
-		FileIOUtils::ReadMesh(config["filename"], config["centered"], x, face_topo);
+		FileIOUtils::ReadMesh(config["filename"], x, face_topo, config["centered"]);
 		MatrixXi edge_topo = TopoUtil::GetEdgeTopo(face_topo);
 
 		return FixedCollisionShape(StackVector<double, 3>(x), edge_topo, face_topo);

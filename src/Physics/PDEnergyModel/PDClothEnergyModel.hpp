@@ -67,6 +67,8 @@ namespace PDEnergyModelFunction {
     );
 }
 
+#include <iostream>
+
 template<class Derived>
 double PDClothEnergyModel<Derived>::GetEnergy(const Ref<const VectorXd> &x) const {
     auto data = static_cast<const Derived*>(this);

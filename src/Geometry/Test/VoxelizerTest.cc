@@ -17,7 +17,7 @@ TEST(VoxelizerTest, ContainmentTest) {
 	ObjIO obj_io;
 	VectorXd vertices;
 	MatrixXi topo;
-	obj_io.LoadFromFile(GEOMETRY_TEST_DATA_PATH + obj_file_path, false, vertices, topo);
+	obj_io.LoadFromFile(GEOMETRY_TEST_DATA_PATH + obj_file_path, vertices, topo, false, Matrix3d::Identity(), Vector3d::Zero());
 
 	SimpleMeshVoxelizer voxlizer;
 	VectorXd grid_vertices;

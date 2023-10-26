@@ -2,11 +2,11 @@
     "objects": [
         {
             "type": "cloth",
-            "filename": "/plane.obj",
-            "centered": true,
-            "density": 1,
-            "spring-stiffness": 1,
-            "bending-stiffness": 1,
+            "filename": "/plane_large.obj",
+            "centered": false,
+            "density": 10,
+            "spring-stiffness": 10000,
+            "bending-stiffness": 1000,
             "energy": {},
             "external-forces": [
                 {
@@ -19,16 +19,14 @@
                 "use-texture": false,
                 "texture-path": ""
             },
-			"collision": {
-				
-			}
+			"collision": {}
         }
     ],
 	"colliders": [
 		{
             "type": "sphere",
-            "center": [0, 0, -0.5],
-            "radius": 0.5
+            "center": [0, 0, 0],
+            "radius": 0.2
         }
 	]
 }

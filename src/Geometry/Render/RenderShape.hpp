@@ -86,7 +86,7 @@ public:
 	static FixedRenderShape CreateFromConfig(const json& config) {
 		VectorXd x;
 		MatrixXi topo;
-		FileIOUtils::ReadMesh(config["filename"], config["centered"], x, topo);
+		FileIOUtils::ReadMesh(config["filename"], x, topo, config["centered"]);
 		return FixedRenderShape(
 			config["have-bounding-box"],
 			config["use-texture"],

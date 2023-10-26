@@ -1,9 +1,11 @@
 {
 	"simulation-config": {
-		"duration": 3,
-		"time-step": 0.01
+		"duration": 1,
+		"time-step": 0.01,
+		"save-results": true,
+		"result-path": "/output/cloth-ball"
 	},
 	"time-stepper-config": "/pd-ipc.json",
-	"scene-config": "/pd-ipc-cloth.json",
+	"scene-config": "/pd-ipc-cloth-ball.json",
 	"renderer-config": "/undergrad-thesis.json"
 }

@@ -58,10 +58,7 @@ void ProjectiveDynamics::Step(double h) {
     VectorXd x_prev(_total_dof);
     int itr = 0;
 	_pd_collision_handler.ComputeConstraintSet(x_hat);
-	std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
-	std::fstream energy_file("./energy.txt", std::fstream::app | std::fstream::out);
 	double energy = _pd_assembler.GetEnergy(_pd_objects, x);
-	energy_file << energy;
     do {
         x_prev = x;
         VectorXd y = VectorXd::Zero(_total_dof);
@@ -79,15 +76,12 @@ void ProjectiveDynamics::Step(double h) {
         x = LDLT_solver.solve(Mx_hat_h2 + y);
 
 		energy = _pd_assembler.GetEnergy(_pd_objects, x);
-		energy_file << ", " << energy;
 
 		itr++;
-    } while ((x_prev - x).lpNorm<1>() > _conv_tolerance && itr <= _max_step);
-	energy_file << std::endl;
-	energy_file.close();
+    } while ((x_prev - x).lpNorm<Eigen::Infinity>() > _conv_tolerance && itr <= _max_step);
 
     if (itr > _max_step) {
-        spdlog::error("Projective Dynamics not converge");
+        spdlog::warn("Projective Dynamics not converge");
     } else {
         spdlog::info("Projective Dynamics converge in {} steps", itr);
     }

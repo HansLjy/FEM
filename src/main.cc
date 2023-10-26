@@ -7,6 +7,11 @@
 #include "spdlog/spdlog.h"
 
 int main(const int argc, const char* argv[]) {
+#ifdef PROFILE_MODE
+	Simulator simulator(false, "FEM simulator");
+	simulator.LoadScene(CONFIG_PATH "/simulator.json");
+	simulator.Simulate(std::string(OUTPUT_PATH) + "/test");
+#else
 	if (argc <= 1) {
        Simulator simulator(true, "FEM Simulator");
        simulator.LoadScene(CONFIG_PATH "/simulator.json");
@@ -27,4 +32,6 @@ int main(const int argc, const char* argv[]) {
 			player.MainLoop();
 		}
 	}
+#endif
+
 }

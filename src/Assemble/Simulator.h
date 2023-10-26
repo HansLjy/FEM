@@ -21,6 +21,8 @@ public:
     ~Simulator() override;
 
 protected:
+	bool _save_results;
+	std::string _result_path;
     double _duration;
     double _time_step;
     TimeStepper* _time_stepper;

@@ -4,9 +4,35 @@
             "type": "cloth",
             "filename": "/plane_large.obj",
             "centered": false,
+			"translation": [0, 0, 0.5],
+			"rotation-axis": [0, 0, 1],
+			"rotation-angle": 45,
             "density": 10,
             "spring-stiffness": 10000,
-            "bending-stiffness": 1000,
+            "bending-stiffness": 0.5,
+            "energy": {},
+            "external-forces": [
+                {
+                    "type": "gravity",
+                    "g": [0, 0, -9.8]
+                }
+            ],
+            "render": {
+                "have-bounding-box": false,
+                "use-texture": false,
+                "texture-path": ""
+            },
+			"collision": {}
+        },{
+            "type": "cloth",
+            "filename": "/plane_large.obj",
+            "centered": false,
+			"translation": [0, 0, 0.3],
+			"rotation-axis": [0, 0, 1],
+			"rotation-angle": 0,
+            "density": 10,
+            "spring-stiffness": 10000,
+            "bending-stiffness": 0.5,
             "energy": {},
             "external-forces": [
                 {
@@ -36,5 +62,6 @@
                 "centered": false
             }
         }
+
     ]
 }

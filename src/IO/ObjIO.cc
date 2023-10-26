@@ -5,10 +5,10 @@
 #include "spdlog/spdlog.h"
 #include "Pattern.h"
 #include <igl/readOBJ.h>
+#include <igl/writeOBJ.h>
 
 void ObjIO::RealLoadFromFile(const std::string &filename, VectorXd &vertices, MatrixXi &topo) const {
 	MatrixXd vertices_mat;
-	std::cerr << filename << std::endl;
 	bool success = igl::readOBJ(filename, vertices_mat, topo);
 	if (!success) {
 		spdlog::error("Invalid input file {}", filename);
@@ -22,7 +22,6 @@ void ObjIO::RealLoadFromFile(const std::string &filename, VectorXd &vertices, Ma
 	}
 }
 
-void ObjIO::RealSaveToFile(const std::string &filename, const VectorXd &vertices, const MatrixXi &topo) const {
-	// TODO: 
-	throw std::logic_error("unimplemented method");
+void ObjIO::RealSaveToFile(const std::string &filename, const MatrixXd &vertices, const MatrixXi &topo) const {
+	igl::writeOBJ(filename, vertices, topo);
 }

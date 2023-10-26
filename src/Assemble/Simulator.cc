@@ -5,6 +5,7 @@
 #include "Simulator.h"
 #include "JsonUtil.h"
 #include "Pattern.h"
+#include "FileIO.hpp"
 #include <string>
 
 template<>
@@ -20,6 +21,10 @@ void Simulator::LoadScene(const std::string &filename) {
     auto simulation_config = config["simulation-config"];
     _duration = simulation_config["duration"];
     _time_step = simulation_config["time-step"];
+	_save_results = simulation_config["save-results"];
+	if (_save_results) {
+		_result_path = std::string(simulation_config["result-path"]);
+	}
 
 	const std::string time_stepper_config_filepath = config["time-stepper-config"];
 	std::ifstream time_stepper_config_file(std::string(CONFIG_PATH) + "/time-stepper" + time_stepper_config_filepath);
@@ -131,13 +136,20 @@ void Simulator::InitializeScene(Scene &scene) {
             obj.GetUVCoords(uv_coords);
             scene.SetTexture(obj.GetTexturePath(), uv_coords);
         }
-		// if (_draw_bounding_box && obj.HasOuterFrame()) {
-		// 	MatrixXd bounding_box_vertices;
-		// 	MatrixXi bounding_box_topo;
-		// 	obj->GetFrameTopo(bounding_box_topo);
-		// 	obj->GetFrameVertices(bounding_box_vertices);
-		// }
     }
+	if (_save_results) {
+		int obj_id = 0;
+		for (const auto& obj : renderable_object) {
+			MatrixXd vertices(obj.GetRenderVertexNum(), 3);
+			MatrixXi topo(obj.GetRenderFaceNum(), 3);
+
+			obj.GetRenderTopos(topo);
+			obj.GetRenderVertices(vertices);
+
+			FileIOUtils::WriteMesh("/" + std::to_string(obj_id) + "_itr0.obj", vertices, topo);
+			obj_id++;
+		}
+	}
 }
 
 #include "Timer.h"
@@ -173,19 +185,19 @@ void Simulator::Processing(Scene &scene) {
         MatrixXd vertices(obj.GetRenderVertexNum(), 3);
 		obj.GetRenderVertices(vertices);
         scene.SetMesh(vertices, Matrix3d::Identity(), Vector3d::Zero());
-
-		// if (_draw_bounding_box && obj.HasOuterFrame()) {
-		// 	if (obj->IsFrameTopoUpdated()) {
-		// 		spdlog::info("bb topo updated");
-		// 		MatrixXi topo;
-		// 		obj->GetFrameTopo(topo);
-		// 		scene.SetBoundingBoxTopo(topo);
-		// 		// std::cerr << "BB topo" << std::endl << topo << std::endl;
-		// 	}
-		// 	MatrixXd bb_vertices;
-		// 	obj->GetFrameVertices(bb_vertices);
-		// 	scene.SetBoundingBoxMesh(bb_vertices, obj->GetFrameRotation(), obj->GetFrameX());
-		// 	// std::cerr << "BB vertices" << std::endl << bb_vertices << std::endl;
-		// }
     }
+
+	if (_save_results) {
+		int obj_id = 0;
+		for (const auto& obj : renderable_object) {
+			MatrixXd vertices(obj.GetRenderVertexNum(), 3);
+			MatrixXi topo(obj.GetRenderFaceNum(), 3);
+
+			obj.GetRenderTopos(topo);
+			obj.GetRenderVertices(vertices);
+
+			FileIOUtils::WriteMesh(_result_path + "/" + std::to_string(obj_id) + "_itr" + std::to_string(step_number) + ".obj", vertices, topo);
+			obj_id++;
+		}
+	}
 }

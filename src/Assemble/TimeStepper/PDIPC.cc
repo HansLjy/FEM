@@ -55,36 +55,29 @@ void PDIPC::Step(double h) {
     VectorXd x_hat = x_current + h * v_current + h * h * LDLT_solver.solve(f_ext);
     VectorXd Mx_hat_h2 = M_h2 * x_hat;
 
-	VectorXd x = x_hat;
-	VectorXd x_pre = x_current;
-	VectorXd delta_x(x.size());
+	_pd_ipc_collision_handler.ClearConstraintSet();
+	VectorXd barrier_y = VectorXd::Zero(_total_dof);
+	SparseMatrixXd barrier_global_matrix(_total_dof, _total_dof);
 
 	static int global_itrs = 0;
 	global_itrs++;
-	_pd_ipc_collision_handler.ClearConstraintSet();
-	VectorXd barrier_y = VectorXd::Zero(x.size());
-	SparseMatrixXd barrier_global_matrix(_total_dof, _total_dof);
 
 	Eigen::ConjugateGradient<SparseMatrixXd> CG_solver;
 
 	int outer_itr = 0;
-
-	std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
-	std::fstream toi_file("./toi.txt", std::fstream::out | std::fstream::app);
-
-	std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
-	std::fstream delta_x_file("./delta-x.txt", std::fstream::out | std::fstream::app);
-
+	double last_toi = 0;
+	VectorXd x = x_hat;							// final solution
+	VectorXd x_pre_sol = x_hat;					// solution of previous LG solve
+	VectorXd delta_x_sol(_total_dof);		// delta of solutions of LG solve 
 	do {
-		int inner_itrs = 0;
+		x = x_hat;
 
+		int inner_itrs = 0;
 		_collision_assembler.ComputeCollisionVertex(x, _collision_objs);
 		double E_prev = _pd_assembler.GetEnergy(_pd_objs, x)
 					  + _pd_ipc_collision_handler.GetBarrierEnergy(_massed_collision_objs)
 					  + 0.5 * (x - x_hat).transpose() * M_h2 * (x - x_hat);
 		double E_delta = 0;
-		VectorXd inner_delta_x;
-		VectorXd inner_pre_x = x;
 		do {
 			VectorXd y = Mx_hat_h2 + barrier_y;
 			_pd_assembler.LocalProject(_pd_objs, x, y);
@@ -97,37 +90,32 @@ void PDIPC::Step(double h) {
 			global_matrix += M_h2 + barrier_global_matrix;
 
 			CG_solver.compute(global_matrix);
-			// LDLT_solver.compute(global_matrix);
 
 			x = CG_solver.solve(y);
-			// x = LDLT_solver.solve(y);
 
 			_collision_assembler.ComputeCollisionVertex(x, _collision_objs);
 			double E_current = _pd_assembler.GetEnergy(_pd_objs, x)
-							 + _pd_ipc_collision_handler.GetBarrierEnergy(_massed_collision_objs)
+					  		 + _pd_ipc_collision_handler.GetBarrierEnergy(_massed_collision_objs)
 					  		 + 0.5 * (x - x_hat).transpose() * M_h2 * (x - x_hat);
-			// energy_file << ", " << E_current;
-			E_delta = E_current - E_prev;
+			E_delta = E_prev > 1e-6 ? std::abs(E_current - E_prev) / E_prev : std::abs(E_current - E_prev);
 			E_prev = E_current;
 
-			inner_delta_x = x - inner_pre_x;
-			inner_pre_x = x;
 			inner_itrs++;
 
+		} while (E_delta > _inner_tolerance && inner_itrs < _inner_max_itrs);
 
-		} while (inner_delta_x.lpNorm<Eigen::Infinity>() > _inner_tolerance && inner_itrs < _inner_max_itrs);
-		// energy_file << std::endl;
-		delta_x_file << inner_delta_x.lpNorm<Eigen::Infinity>() << ", ";
 
-		// if (inner_itrs < _inner_max_itrs) {
-		// 	spdlog::info("Inner iteration converges in {} steps", inner_itrs);
-		// } else {
-		// 	spdlog::warn("Inner iteration does not converge!");
-		// }
+		if (inner_itrs < _inner_max_itrs) {
+			// spdlog::info("Inner iteration converges in {} steps", inner_itrs);
+		} else {
+			spdlog::warn("Inner iteration does not converge!");
+		}
 
-		delta_x = x - x_pre;
-		_collision_assembler.ComputeCollisionVertex(x_pre, _collision_objs);
-		_collision_assembler.ComputeCollisionVertexVelocity(delta_x, _collision_objs);
+		delta_x_sol = x - x_pre_sol;
+		x_pre_sol = x;
+
+		_collision_assembler.ComputeCollisionVertex(x_current, _collision_objs);
+		_collision_assembler.ComputeCollisionVertexVelocity(x - x_current, _collision_objs);
 
 		std::vector<PrimitivePair> constraint_set;
 		_culling->GetCCDSet(_collision_objs, _offsets, constraint_set);
@@ -136,12 +124,10 @@ void PDIPC::Step(double h) {
 		double toi = _toi_estimator.GetLocalTOIs(constraint_set, _collision_objs, local_tois);
 
 		if (toi <= 1) {
-			toi *= 0.8;
+			toi *= 0.998;
 		} else {
 			toi = 1;
 		}
-		toi_file << toi << ", ";
-
 		_pd_ipc_collision_handler.AddCollisionPairs(
 			_massed_collision_objs,
 			_offsets,
@@ -149,21 +135,20 @@ void PDIPC::Step(double h) {
 			local_tois,
 			toi
 		);
+		last_toi = toi;
 
 		barrier_y.setZero();
 		_pd_ipc_collision_handler.BarrierLocalProject(_massed_collision_objs, _offsets, barrier_y);
 		barrier_global_matrix.setZero();
 		_pd_ipc_collision_handler.GetBarrierGlobalMatrix(_massed_collision_objs, _offsets, _total_dof, barrier_global_matrix);
 
-		x = x_pre + toi * (x - x_pre);
-		x_pre = x;
-
+		x = x_current + toi * (x - x_current);
 		outer_itr++;
-	} while (delta_x.lpNorm<Eigen::Infinity>() > _outer_tolerance && outer_itr < _outer_max_itrs);
-	toi_file << std::endl;
-	toi_file.close();
-	delta_x_file << std::endl;
-	delta_x_file.close();
+	} while (outer_itr <= 1 || last_toi < 0.9 && outer_itr < _outer_max_itrs);
+
+	if (last_toi < 0.9) {
+		spdlog::warn("TOI = {}", last_toi);
+	}
 
 	if (outer_itr < _outer_max_itrs) {
 		spdlog::info("Outer iteration converges in {} steps", outer_itr);

@@ -11,15 +11,39 @@ namespace {
 	});
 }
 
-
-void FileIOUtils::ReadMesh(const std::string &filename, bool centered, VectorXd &x, MatrixXi &topo) {
+void FileIOUtils::ReadMesh(
+	const std::string &filename,
+	VectorXd &vertices,
+	MatrixXi &topo,
+	bool centered,
+	const Matrix3d& rotation,
+	const Vector3d& translation
+) {
 	auto suffix = filename.substr(filename.find_last_of('.') + 1);
 	auto io = Factory<FileIO>::GetInstance()->GetProduct(suffix);
-	io->LoadFromFile(MODEL_PATH + filename, centered, x, topo);
+	io->LoadFromFile(MODEL_PATH + filename, vertices, topo, centered, rotation, translation);
 	delete io;
 }
 
-void FileIO::LoadFromFile(const std::string &filename, bool centered, VectorXd &vertices, MatrixXi &topo) const {
+void FileIOUtils::WriteMesh(
+	const std::string &filename,
+	const MatrixXd &vertices, const MatrixXi &topo,
+	const Matrix3d& rotation, const Vector3d& translation
+) {
+	auto suffix = filename.substr(filename.find_last_of('.') + 1);
+	auto io = Factory<FileIO>::GetInstance()->GetProduct(suffix);
+	io->SaveToFile(MODEL_PATH + filename, vertices, topo, rotation, translation);
+	delete io;
+}
+
+void FileIO::LoadFromFile(
+	const std::string &filename,
+	VectorXd &vertices,
+	MatrixXi &topo,
+	bool centered,
+	const Matrix3d &rotation,
+	const Vector3d &translation
+) const {
 	RealLoadFromFile(filename, vertices, topo);
 	if (centered) {
 		Vector3d max_coord = vertices.segment<3>(0);
@@ -37,8 +61,21 @@ void FileIO::LoadFromFile(const std::string &filename, bool centered, VectorXd &
 			vertices.segment<3>(i3) /= scale_ratio;
 		}
 	}
+	const int num_points = vertices.size() / 3;
+	for (int i = 0, i3 = 0; i < num_points; i++, i3 += 3) {
+		vertices.segment<3>(i3) = rotation * vertices.segment<3>(i3) + translation;
+	}
 }
 
-void FileIO::SaveToFile(const std::string &filename, bool centered, const VectorXd &vertices, const MatrixXi &topo) const {
-	throw std::logic_error("unimplemented method");
+void FileIO::SaveToFile(
+	const std::string &filename,
+	const MatrixXd &vertices, const MatrixXi &topo,
+	const Matrix3d &rotation, const Vector3d &translation
+) const {
+	const int num_points = vertices.rows();
+	MatrixXd translated_vertices(vertices.rows(), vertices.cols());
+	for (int i = 0; i < num_points; i++) {
+		translated_vertices.row(i) = vertices.row(i) * rotation + translation.transpose();
+	}
+	RealSaveToFile(filename, translated_vertices, topo);
 }

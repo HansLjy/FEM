@@ -2,5 +2,5 @@
 	"type": "projective-dynamics",
 	"max-step": 10,
 	"tolerance": 1e-3,
-	"collision-stiffness": 10000
+	"collision-stiffness": 1e5
 }

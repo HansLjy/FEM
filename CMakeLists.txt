@@ -31,6 +31,11 @@ if(BUILD_TEST)
 	add_definitions(-DBUILD_TEST)
 endif()
 
+if(CMAKE_BUILD_TYPE STREQUAL "profile")
+	message("-- Profile mode")
+	add_definitions(-DPROFILE_MODE)
+endif()
+
 add_subdirectory(src/Util)
 add_subdirectory(src/Numeric)
 add_subdirectory(src/Geometry)

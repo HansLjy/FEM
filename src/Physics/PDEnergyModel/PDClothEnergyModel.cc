@@ -110,7 +110,7 @@ void PDEnergyModelFunction::InitQuadraticBendingMatrix(
             const int row_offset = indices[block_row] * 3;
             for (int block_col = 0; block_col < 4; block_col++) {
                 const int col_offset = indices[block_col] * 3;
-                const double val = K[block_row] * K[block_col] * 3 / (area1 + area2);
+                const double val = stiffness * K[block_row] * K[block_col] * 3 / (area1 + area2);
                 for (int j = 0; j < 3; j++) {
                     coo.push_back(Tripletd(
                         row_offset + j,
