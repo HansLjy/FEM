@@ -3,9 +3,6 @@
 #include "GeometryUtil.hpp"
 #include "Collision/CollisionUtility.h"
 
-template<>
-Caster<MassedCollisionInterface>* Caster<MassedCollisionInterface>::_the_factory = nullptr;
-
 void PDIPCCollisionUtility::GetVertexFaceRebounce(
 	const Vector3d &vertex,
 	const Vector3d &face1, const Vector3d &face2, const Vector3d &face3,
@@ -147,268 +144,331 @@ double PDIPCCollisionUtility::GetStiffness(double kappa, double d_hat, double di
 	return - kappa * std::log(distance / d_hat);
 }
 
-void PDIPCCollisionHandler::ClearConstraintSet() {
-	_projection_infos.clear();
-	_primitive_pairs.clear();
+void PDIPCCollisionHandler::ClearBarrierSet() {
+	_barrier_infos.clear();
 }
 
-void PDIPCCollisionHandler::AddCollisionPairs(
-	const std::vector<MassedCollisionInterface>& objs,
-	const std::vector<int>& offsets,
-	const std::vector<PrimitivePair> &constraint_set,
-	const std::vector<double> & local_tois,
+void PDIPCCollisionHandler::AddBarrierPairs(
+	const std::vector<CollisionInterface> &objs,
+	const std::vector<int> &offsets,
+	const std::vector<PrimitivePair> &barrier_candidate_set,
 	const double global_toi
 ) {
-	int old_primitive_pair_id = 0;
-	for (const auto& primitive_pair : _primitive_pairs) {
-		const auto& obj1 = objs[primitive_pair._obj_id1];
-		const auto& obj2 = objs[primitive_pair._obj_id2];
-		double new_stiffness = 0;
-		switch (primitive_pair._type) {
+	for (const auto& barrier_pair : barrier_candidate_set) {
+		const auto& obj1 = objs[barrier_pair._obj_id1];
+		const auto& obj2 = objs[barrier_pair._obj_id2];
+		bool is_barrier = false;
+		double distance;
+		Vector4d barycentric_coords;
+		Vector3d normal;
+		switch (barrier_pair._type) {
 			case CollisionType::kVertexFace: {
-				const int vertex_index = primitive_pair._primitive_id1;
-				const Vector3d vertex = obj1.GetCollisionVertices().row(vertex_index);
-				const Vector3d vertex_velocity = obj1.GetCollisionVertexVelocity(vertex_index);
+				const int vertex_index = barrier_pair._primitive_id1;
+				const Vector3d vertex_toi = obj1.GetCollisionVertices().row(vertex_index).transpose()
+										  + global_toi * obj1.GetCollisionVertexVelocity(vertex_index);
 
-				const RowVector3i face_indices = obj2.GetCollisionFaceTopo().row(primitive_pair._primitive_id2);
-				const Vector3d face1 = obj2.GetCollisionVertices().row(face_indices[0]);
-				const Vector3d face2 = obj2.GetCollisionVertices().row(face_indices[1]);
-				const Vector3d face3 = obj2.GetCollisionVertices().row(face_indices[2]);
-				const Vector3d face_velocity1 = obj2.GetCollisionVertexVelocity(face_indices[0]);
-				const Vector3d face_velocity2 = obj2.GetCollisionVertexVelocity(face_indices[1]);
-				const Vector3d face_velocity3 = obj2.GetCollisionVertexVelocity(face_indices[2]);
+				const RowVector3i face_indices = obj2.GetCollisionFaceTopo().row(barrier_pair._primitive_id2);
+				const Vector3d face_toi1 = obj2.GetCollisionVertices().row(face_indices[0]).transpose()
+										 + global_toi * obj2.GetCollisionVertexVelocity(face_indices[0]);
+				const Vector3d face_toi2 = obj2.GetCollisionVertices().row(face_indices[1]).transpose()
+										 + global_toi * obj2.GetCollisionVertexVelocity(face_indices[1]);
+				const Vector3d face_toi3 = obj2.GetCollisionVertices().row(face_indices[2]).transpose()
+										 + global_toi * obj2.GetCollisionVertexVelocity(face_indices[2]);
 
-				new_stiffness = PDIPCCollisionUtility::GetStiffness(
-					_kappa, _d_hat, 
-					GetVFDistance(
-						vertex + global_toi * vertex_velocity,
-						face1 + global_toi * face_velocity1,
-						face2 + global_toi * face_velocity2,
-						face3 + global_toi * face_velocity3
-					)
+				auto compact_barycentric_coords = CollisionUtils::GetVertexFaceClosestPointBarycentricCoords(
+					vertex_toi, face_toi1, face_toi2, face_toi3
 				);
+
+				const Vector3d closest_point_on_face = face_toi1
+													 + compact_barycentric_coords[0] * (face_toi2 - face_toi1)
+													 + compact_barycentric_coords[1] * (face_toi3 - face_toi1);
+				
+				distance = (vertex_toi - closest_point_on_face).norm();
+				if (distance < _d_hat) {
+					is_barrier = true;
+					normal = (vertex_toi - closest_point_on_face).normalized();
+					barycentric_coords << 1, 1 - compact_barycentric_coords[0] - compact_barycentric_coords[1],
+										  compact_barycentric_coords[0], compact_barycentric_coords[1];
+				}
+
 				break;
 			}
 			case CollisionType::kEdgeEdge: {
-				const RowVector2i edge_indices1 = obj1.GetCollisionEdgeTopo().row(primitive_pair._primitive_id1);
-				const Vector3d edge11 = obj1.GetCollisionVertices().row(edge_indices1[0]);
-				const Vector3d edge12 = obj1.GetCollisionVertices().row(edge_indices1[1]);
-				const Vector3d edge_velocity11 = obj1.GetCollisionVertexVelocity(edge_indices1[0]);
-				const Vector3d edge_velocity12 = obj1.GetCollisionVertexVelocity(edge_indices1[1]);
+				const RowVector2i edge_indices1 = obj1.GetCollisionEdgeTopo().row(barrier_pair._primitive_id1);
+				const Vector3d edge_toi11 = obj1.GetCollisionVertices().row(edge_indices1[0]).transpose()
+										  + global_toi * obj1.GetCollisionVertexVelocity(edge_indices1[0]);
+				const Vector3d edge_toi12 = obj1.GetCollisionVertices().row(edge_indices1[1]).transpose()
+										  + global_toi * obj1.GetCollisionVertexVelocity(edge_indices1[1]);
 
-				const RowVector2i edge_indices2 = obj2.GetCollisionEdgeTopo().row(primitive_pair._primitive_id2);
-				const Vector3d edge21 = obj2.GetCollisionVertices().row(edge_indices2[0]);
-				const Vector3d edge22 = obj2.GetCollisionVertices().row(edge_indices2[1]);
-				const Vector3d edge_velocity21 = obj2.GetCollisionVertexVelocity(edge_indices2[0]);
-				const Vector3d edge_velocity22 = obj2.GetCollisionVertexVelocity(edge_indices2[1]);
+				const RowVector2i edge_indices2 = obj2.GetCollisionEdgeTopo().row(barrier_pair._primitive_id2);
+				const Vector3d edge_toi21 = obj2.GetCollisionVertices().row(edge_indices2[0]).transpose()
+										  + global_toi * obj2.GetCollisionVertexVelocity(edge_indices2[0]);
+				const Vector3d edge_toi22 = obj2.GetCollisionVertices().row(edge_indices2[1]).transpose()
+										  + global_toi * obj2.GetCollisionVertexVelocity(edge_indices2[1]);
 
-				new_stiffness = PDIPCCollisionUtility::GetStiffness(
-					_kappa, _d_hat,
-					GetEEDistance(
-						edge11 + global_toi * edge_velocity11,
-						edge12 + global_toi * edge_velocity12,
-						edge21 + global_toi * edge_velocity21,
-						edge22 + global_toi * edge_velocity22
-					)
+				auto compact_barycentric_coords = CollisionUtils::GetEdgeEdgeClosestPointBarycentricCoords(
+					edge_toi11, edge_toi12, edge_toi21, edge_toi22
 				);
+				const Vector3d closest_point_on_edge1 = edge_toi11 + compact_barycentric_coords[0] * (edge_toi12 - edge_toi11);
+				const Vector3d closest_point_on_edge2 = edge_toi21 + compact_barycentric_coords[1] * (edge_toi22 - edge_toi21);
+
+				distance = (closest_point_on_edge1 - closest_point_on_edge2).norm();
+				if (distance < _d_hat) {
+					is_barrier = true;
+					normal = (closest_point_on_edge1 - closest_point_on_edge2).normalized();
+					barycentric_coords << 1 - compact_barycentric_coords[0], compact_barycentric_coords[0],
+										  1 - compact_barycentric_coords[1], compact_barycentric_coords[1];
+				}
 
 				break;
 			}
 		}
-
-		for (int i = 0; i < 4; i++) {
-			_projection_infos[old_primitive_pair_id * 4 + i]._stiffness =
-				_stiffness_blending * new_stiffness +
-				(1 - _stiffness_blending) * _projection_infos[old_primitive_pair_id * 4 + i]._stiffness;
-		}
-
-		old_primitive_pair_id++;
-	}
-
-	int new_primitive_pair_id = 0;
-	for (const auto& primitive_pair : constraint_set) {
-		double local_toi = local_tois[new_primitive_pair_id++];
-		if (local_toi > 1) {
-			continue;
-		}
-		local_toi *= 0.9;
-		_primitive_pairs.emplace_back(primitive_pair);
-
-		const auto& obj1 = objs[primitive_pair._obj_id1];
-		const auto& obj2 = objs[primitive_pair._obj_id2];
-		
-		switch (primitive_pair._type) {
-			case CollisionType::kVertexFace: {
-				const int vertex_index = primitive_pair._primitive_id1;
-				const Vector3d vertex = obj1.GetCollisionVertices().row(vertex_index);
-				const Vector3d vertex_velocity = obj1.GetCollisionVertexVelocity(vertex_index);
-				
-				const RowVector3i face_indices = obj2.GetCollisionFaceTopo().row(primitive_pair._primitive_id2);
-				const Vector3d face1 = obj2.GetCollisionVertices().row(face_indices[0]);
-				const Vector3d face2 = obj2.GetCollisionVertices().row(face_indices[1]);
-				const Vector3d face3 = obj2.GetCollisionVertices().row(face_indices[2]);
-				const Vector3d face_velocity1 = obj2.GetCollisionVertexVelocity(face_indices[0]);
-				const Vector3d face_velocity2 = obj2.GetCollisionVertexVelocity(face_indices[1]);
-				const Vector3d face_velocity3 = obj2.GetCollisionVertexVelocity(face_indices[2]);
-
-				double distance_toi = GeometryUtil::GetPointPlaneDistance(
-					vertex + global_toi * vertex_velocity,
-					face1 + global_toi * face_velocity1,
-					face2 + global_toi * face_velocity2,
-					face3 + global_toi * face_velocity3
-				);
-
-				const double stiffness = PDIPCCollisionUtility::GetStiffness(_kappa, _d_hat, distance_toi);
-				Vector3d vertex_after, face_after1, face_after2, face_after3;
-				PDIPCCollisionUtility::GetVertexFaceRebounce(
-					vertex,
-					face1, face2, face3,
-					vertex_velocity,
-					face_velocity1, face_velocity2, face_velocity3,
-					obj1.GetCollisionVertexMass(vertex_index),
-					obj2.GetCollisionVertexMass(face_indices[0]),
-					obj2.GetCollisionVertexMass(face_indices[1]),
-					obj2.GetCollisionVertexMass(face_indices[2]),
-					local_toi, _d_hat,
-					vertex_after,
-					face_after1, face_after2, face_after3
-				);
-				
-				_projection_infos.emplace_back(ProjectionInfo(
-					primitive_pair._obj_id1, vertex_index, stiffness,
-					vertex_after
-				));
-				_projection_infos.emplace_back(ProjectionInfo(
-					primitive_pair._obj_id2, face_indices[0], stiffness,
-					face_after1
-				));
-				_projection_infos.emplace_back(ProjectionInfo(
-					primitive_pair._obj_id2, face_indices[1], stiffness,
-					face_after2
-				));
-				_projection_infos.emplace_back(ProjectionInfo(
-					primitive_pair._obj_id2, face_indices[2], stiffness,
-					face_after3
-				));
-				break;
-			}
-			case CollisionType::kEdgeEdge: {
-				const RowVector2i edge_indices1 = obj1.GetCollisionEdgeTopo().row(primitive_pair._primitive_id1);
-				const Vector3d edge11 = obj1.GetCollisionVertices().row(edge_indices1[0]);
-				const Vector3d edge12 = obj1.GetCollisionVertices().row(edge_indices1[1]);
-				const Vector3d edge_velocity11 = obj1.GetCollisionVertexVelocity(edge_indices1[0]);
-				const Vector3d edge_velocity12 = obj1.GetCollisionVertexVelocity(edge_indices1[1]);
-				
-				const RowVector2i edge_indices2 = obj2.GetCollisionEdgeTopo().row(primitive_pair._primitive_id2);
-				const Vector3d edge21 = obj2.GetCollisionVertices().row(edge_indices2[0]);
-				const Vector3d edge22 = obj2.GetCollisionVertices().row(edge_indices2[1]);
-				const Vector3d edge_velocity21 = obj2.GetCollisionVertexVelocity(edge_indices2[0]);
-				const Vector3d edge_velocity22 = obj2.GetCollisionVertexVelocity(edge_indices2[1]);
-				
-				double distance_toi = GeometryUtil::GetLineLineDistance(
-					edge11 + global_toi * edge_velocity11,
-					edge12 + global_toi * edge_velocity12,
-					edge21 + global_toi * edge_velocity21,
-					edge22 + global_toi * edge_velocity22
-				);
-
-				const double stiffness = PDIPCCollisionUtility::GetStiffness(_kappa, _d_hat, distance_toi);
-
-				Vector3d edge_after11, edge_after12, edge_after21, edge_after22;
-				
-				PDIPCCollisionUtility::GetEdgeEdgeRebounce(
-					edge11, edge12,
-					edge21, edge22,
-					edge_velocity11, edge_velocity12,
-					edge_velocity21, edge_velocity22,
-					obj1.GetCollisionVertexMass(edge_indices1[0]),
-					obj1.GetCollisionVertexMass(edge_indices1[1]),
-					obj2.GetCollisionVertexMass(edge_indices2[0]),
-					obj2.GetCollisionVertexMass(edge_indices2[1]),
-					local_toi, _d_hat,
-					edge_after11, edge_after12,
-					edge_after21, edge_after22
-				);
-				_projection_infos.emplace_back(ProjectionInfo(
-					primitive_pair._obj_id1, edge_indices1[0], stiffness,
-					edge_after11
-				));
-				_projection_infos.emplace_back(ProjectionInfo(
-					primitive_pair._obj_id1, edge_indices1[1], stiffness,
-					edge_after12
-				));
-				_projection_infos.emplace_back(ProjectionInfo(
-					primitive_pair._obj_id2, edge_indices2[0], stiffness,
-					edge_after21
-				));
-				_projection_infos.emplace_back(ProjectionInfo(
-					primitive_pair._obj_id2, edge_indices2[1], stiffness,
-					edge_after22
-				));
-
-				break;
-			}
+		if (is_barrier) {
+			_barrier_infos.push_back({
+				barrier_pair._type,
+				barrier_pair._obj_id1,
+				barrier_pair._obj_id2,
+				barrier_pair._primitive_id1,
+				barrier_pair._primitive_id2,
+				barycentric_coords,
+				normal,
+				PDIPCCollisionUtility::GetStiffness(_kappa, _d_hat, distance)
+			});
 		}
 	}
 }
 
 double PDIPCCollisionHandler::GetBarrierEnergy(
-	const std::vector<MassedCollisionInterface> &objs
+	const std::vector<CollisionInterface> &objs
 ) const {
 	double energy = 0;
-	for (const auto& projection_info : _projection_infos) {
-		Vector3d vertex = objs[projection_info._obj_id]
-						  .GetCollisionVertices()
-						  .row(projection_info._vertex_id);
-		
-		energy += 0.5 * projection_info._stiffness *
-				  (vertex - projection_info._target_position).squaredNorm();
+	for (const auto& barrier_pair : _barrier_infos) {
+		const auto& obj1 = objs[barrier_pair._obj_id1];
+		const auto& obj2 = objs[barrier_pair._obj_id2];
+		switch (barrier_pair._type) {
+			case CollisionType::kVertexFace: {
+				int vertex_index = barrier_pair._primitive_id1;
+				const Vector3d vertex = obj1.GetCollisionVertices().row(vertex_index);
+
+				const RowVector3i face_indices = obj2.GetCollisionFaceTopo().row(barrier_pair._primitive_id2);
+				const Vector3d face1 = obj2.GetCollisionVertices().row(face_indices[0]);
+				const Vector3d face2 = obj2.GetCollisionVertices().row(face_indices[1]);
+				const Vector3d face3 = obj2.GetCollisionVertices().row(face_indices[2]);
+
+				double d = barrier_pair._normal.dot(
+					vertex - barrier_pair._barycentric_coords[1] * face1
+						   - barrier_pair._barycentric_coords[2] * face2
+						   - barrier_pair._barycentric_coords[3] * face3
+				);
+
+				if (d < _d_hat) {
+					energy += 0.5 * barrier_pair._stiffness * (_d_hat - d) * (_d_hat - d);
+				}
+				break;
+			}
+			case CollisionType::kEdgeEdge: {
+				const RowVector2i edge_indices1 = obj1.GetCollisionEdgeTopo().row(barrier_pair._primitive_id1);
+				const Vector3d edge11 = obj1.GetCollisionVertices().row(edge_indices1[0]);
+				const Vector3d edge12 = obj1.GetCollisionVertices().row(edge_indices1[1]);
+
+				const RowVector2i edge_indices2 = obj2.GetCollisionEdgeTopo().row(barrier_pair._primitive_id2);
+				const Vector3d edge21 = obj2.GetCollisionVertices().row(edge_indices2[0]);
+				const Vector3d edge22 = obj2.GetCollisionVertices().row(edge_indices2[1]);
+
+				double d = barrier_pair._normal.dot(
+					barrier_pair._barycentric_coords[0] * edge11
+					+ barrier_pair._barycentric_coords[1] * edge12
+					- barrier_pair._barycentric_coords[2] * edge21
+					- barrier_pair._barycentric_coords[3] * edge22
+				);
+
+				if (d < _d_hat) {
+					energy += 0.5 * barrier_pair._stiffness * (_d_hat - d) * (_d_hat - d);
+				}
+				break;
+			}
+		}
 	}
 	return energy;
 }
 
 void PDIPCCollisionHandler::BarrierLocalProject(
-	const std::vector<MassedCollisionInterface> &objs,
+	const std::vector<CollisionInterface> &objs,
 	const std::vector<int>& offsets,
 	Ref<VectorXd> y
 ) const {
-	for (const auto& projection_info : _projection_infos) {
-		const auto& obj = objs[projection_info._obj_id];
-		obj.GetCollisionVertexDerivative(projection_info._vertex_id)
-		.RightProduct(
-			projection_info._stiffness / 2 * projection_info._target_position,
-			y.segment(offsets[projection_info._obj_id], obj.GetDOF())
-		);
+	for (const auto& barrier_pair : _barrier_infos) {
+		const auto& obj1 = objs[barrier_pair._obj_id1];
+		const auto& obj2 = objs[barrier_pair._obj_id2];
+		Ref<VectorXd> y1 = y.segment(offsets[barrier_pair._obj_id1], obj1.GetDOF());
+		Ref<VectorXd> y2 = y.segment(offsets[barrier_pair._obj_id2], obj2.GetDOF());
+
+		switch (barrier_pair._type) {
+			case CollisionType::kVertexFace: {
+				int vertex_index = barrier_pair._primitive_id1;
+				const Vector3d vertex = obj1.GetCollisionVertices().row(vertex_index);
+
+				const RowVector3i face_indices = obj2.GetCollisionFaceTopo().row(barrier_pair._primitive_id2);
+				const Vector3d face1 = obj2.GetCollisionVertices().row(face_indices[0]);
+				const Vector3d face2 = obj2.GetCollisionVertices().row(face_indices[1]);
+				const Vector3d face3 = obj2.GetCollisionVertices().row(face_indices[2]);
+
+				double d = barrier_pair._normal.dot(
+					vertex - barrier_pair._barycentric_coords[1] * face1
+						   - barrier_pair._barycentric_coords[2] * face2
+						   - barrier_pair._barycentric_coords[3] * face3
+				);
+
+				if (d < _d_hat) {
+					d = _d_hat;
+				}
+
+				obj1.GetCollisionVertexDerivative(vertex_index)
+				.RightProduct(
+					barrier_pair._stiffness / 2 * barrier_pair._normal, y1
+				);
+
+				obj2.GetCollisionVertexDerivative(face_indices[0])
+				.RightProduct(
+					- barrier_pair._stiffness / 2 * barrier_pair._barycentric_coords[1] * d * barrier_pair._normal, y2
+				);
+
+				obj2.GetCollisionVertexDerivative(face_indices[1])
+				.RightProduct(
+					- barrier_pair._stiffness / 2 * barrier_pair._barycentric_coords[2] * d * barrier_pair._normal, y2
+				);
+
+				obj2.GetCollisionVertexDerivative(face_indices[2])
+				.RightProduct(
+					- barrier_pair._stiffness / 2 * barrier_pair._barycentric_coords[3] * d * barrier_pair._normal, y2
+				);
+
+				break;
+			}
+			case CollisionType::kEdgeEdge: {
+				const RowVector2i edge_indices1 = obj1.GetCollisionEdgeTopo().row(barrier_pair._primitive_id1);
+				const Vector3d edge11 = obj1.GetCollisionVertices().row(edge_indices1[0]);
+				const Vector3d edge12 = obj1.GetCollisionVertices().row(edge_indices1[1]);
+
+				const RowVector2i edge_indices2 = obj2.GetCollisionEdgeTopo().row(barrier_pair._primitive_id2);
+				const Vector3d edge21 = obj2.GetCollisionVertices().row(edge_indices2[0]);
+				const Vector3d edge22 = obj2.GetCollisionVertices().row(edge_indices2[1]);
+
+				double d = barrier_pair._normal.dot(
+					barrier_pair._barycentric_coords[0] * edge11
+					+ barrier_pair._barycentric_coords[1] * edge12
+					- barrier_pair._barycentric_coords[2] * edge21
+					- barrier_pair._barycentric_coords[3] * edge22
+				);
+
+				if (d < _d_hat) {
+					d = _d_hat;
+				}
+
+				obj1.GetCollisionVertexDerivative(edge_indices1[0])
+				.RightProduct(
+					barrier_pair._stiffness / 2 * barrier_pair._barycentric_coords[0] * d * barrier_pair._normal, y1
+				);
+
+				obj1.GetCollisionVertexDerivative(edge_indices1[1])
+				.RightProduct(
+					barrier_pair._stiffness / 2 * barrier_pair._barycentric_coords[1] * d * barrier_pair._normal, y1
+				);
+
+				obj2.GetCollisionVertexDerivative(edge_indices2[0])
+				.RightProduct(
+					- barrier_pair._stiffness / 2 * barrier_pair._barycentric_coords[2] * d * barrier_pair._normal, y2
+				);
+
+				obj2.GetCollisionVertexDerivative(edge_indices2[1])
+				.RightProduct(
+					- barrier_pair._stiffness / 2 * barrier_pair._barycentric_coords[3] * d * barrier_pair._normal, y2
+				);
+				break;
+			}
+		}
 	}
 }
 
 void PDIPCCollisionHandler::GetBarrierGlobalMatrix(
-	const std::vector<MassedCollisionInterface> &objs,
+	const std::vector<CollisionInterface> &objs,
 	const std::vector<int>& offsets,
 	COO& coo, int x_offset, int y_offset
 ) const {
-	for (const auto& projection_info : _projection_infos) {
-		const auto& obj = objs[projection_info._obj_id];
-		obj.GetCollisionVertexDerivative(projection_info._vertex_id)
-		.RightTransposeProduct(
-			obj.GetCollisionVertexDerivative(projection_info._vertex_id)
-		)
-		.ToSparse(
-			projection_info._stiffness / 2, coo,
-			x_offset + offsets[projection_info._obj_id],
-			y_offset + offsets[projection_info._obj_id]
-		);
+	for (const auto& barrier_pair : _barrier_infos) {
+		const auto& obj1 = objs[barrier_pair._obj_id1];
+		const auto& obj2 = objs[barrier_pair._obj_id2];
+		const int offset1 = offsets[barrier_pair._obj_id1];
+		const int offset2 = offsets[barrier_pair._obj_id2];
+		switch (barrier_pair._type) {
+			case CollisionType::kVertexFace: {
+				const int vertex_index = barrier_pair._primitive_id1;
+				const RowVector3i face_indices = obj2.GetCollisionFaceTopo().row(barrier_pair._primitive_id2);
+
+				const int submatrix_offsets[] = {
+					offset1, offset2, offset2, offset2
+				};
+
+				BlockVector AS[4] = {
+					obj1.GetCollisionVertexDerivative(vertex_index).RightProduct(barrier_pair._normal),
+					obj2.GetCollisionVertexDerivative(face_indices[0]).RightProduct(- barrier_pair._normal * barrier_pair._barycentric_coords[1]),
+					obj2.GetCollisionVertexDerivative(face_indices[1]).RightProduct(- barrier_pair._normal * barrier_pair._barycentric_coords[2]),
+					obj2.GetCollisionVertexDerivative(face_indices[2]).RightProduct(- barrier_pair._normal * barrier_pair._barycentric_coords[3])
+				};
+
+				for (int i = 0; i < 4; i++) {
+					for (int j = 0; j < 4; j++) {
+						AS[i].RightTransposeProduct(AS[j])
+						.ToSparse(
+							barrier_pair._stiffness / 2, coo,
+							x_offset + submatrix_offsets[i],
+							y_offset + submatrix_offsets[j]
+						);
+					}
+				}
+
+				break;
+			}
+
+			case CollisionType::kEdgeEdge: {
+				const RowVector2i edge_indices1 = obj1.GetCollisionEdgeTopo().row(barrier_pair._primitive_id1);
+				const RowVector2i edge_indices2 = obj2.GetCollisionEdgeTopo().row(barrier_pair._primitive_id2);
+
+				const int submatrix_offsets[] = {
+					offset1, offset1, offset2, offset2
+				};
+
+				BlockVector AS[4] = {
+					obj1.GetCollisionVertexDerivative(edge_indices1[0]).RightProduct(barrier_pair._barycentric_coords[0] * barrier_pair._normal),
+					obj1.GetCollisionVertexDerivative(edge_indices1[1]).RightProduct(barrier_pair._barycentric_coords[1] * barrier_pair._normal),
+					obj2.GetCollisionVertexDerivative(edge_indices2[0]).RightProduct(- barrier_pair._barycentric_coords[2] * barrier_pair._normal),
+					obj2.GetCollisionVertexDerivative(edge_indices2[1]).RightProduct(- barrier_pair._barycentric_coords[3] * barrier_pair._normal),
+				};
+
+				for (int i = 0; i < 4; i++) {
+					for (int j = 0; j < 4; j++) {
+						AS[i].RightTransposeProduct(AS[j])
+						.ToSparse(
+							barrier_pair._stiffness / 2, coo,
+							x_offset + submatrix_offsets[i],
+							y_offset + submatrix_offsets[j]
+						);
+					}
+				}
+				break;
+			}
+		}
 	}
 }
 
-void PDIPCCollisionHandler::GetBarrierGlobalMatrix(
-	const std::vector<MassedCollisionInterface> &objs,
+SparseMatrixXd PDIPCCollisionHandler::GetBarrierGlobalMatrix(
+	const std::vector<CollisionInterface> &objs,
 	const std::vector<int>& offsets,
-	int total_dof,
-	SparseMatrixXd& global_matrix
+	int total_dof
 ) const {
 	COO coo;
 	GetBarrierGlobalMatrix(objs, offsets, coo, 0, 0);
-	global_matrix.resize(total_dof, total_dof);
+	SparseMatrixXd global_matrix(total_dof, total_dof);
 	global_matrix.setFromTriplets(coo.begin(), coo.end());
+	return global_matrix;
 }

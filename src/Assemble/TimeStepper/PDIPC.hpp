@@ -7,6 +7,7 @@
 #include "Collision/CollisionUtil/Assembler/CollisionAssembler.hpp"
 #include "Assembler/Assembler.hpp"
 #include "Assembler/PDAssembler.hpp"
+#include "Collision/CollisionUtil/BarrierSet/BarrierSetGenerator.hpp"
 
 class PDIPC : public TimeStepper {
 public:
@@ -41,7 +42,6 @@ protected:
 	std::vector<Object> _objs;
 	std::vector<Renderable> _render_objs;
 	std::vector<CollisionInterface> _collision_objs;
-	std::vector<MassedCollisionInterface> _massed_collision_objs;
 	std::vector<PDObject> _pd_objs;
 
 	CCDCulling* _culling;
@@ -55,6 +55,7 @@ protected:
 	PDIPCCollisionHandler _pd_ipc_collision_handler;
 	CollisionAssembler _collision_assembler;
 	TOIEstimator _toi_estimator;
+	BarrierSetGenerator* _barrier_set_generator = nullptr;
 
 };
 
@@ -67,8 +68,6 @@ namespace ObjectRegistration {
 		CasterRegistration::RegisterForCaster<ExternalForced, T>(type);
 		CasterRegistration::RegisterForCaster<PDObject, T>(type);
 		CasterRegistration::RegisterForCaster<CollisionInterface, T>(type);
-		CasterRegistration::RegisterForCaster<MassedCollisionInterface, T>(type);
-		CasterRegistration::RegisterForCaster<MassedCollisionInterface, T>(type);
 		return true;
 	}
 }

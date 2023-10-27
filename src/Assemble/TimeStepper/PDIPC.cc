@@ -26,7 +26,6 @@ void PDIPC::BindObjects(
 
 	TypeErasure::Cast2Interface(begin, end, _render_objs);
 	TypeErasure::Cast2Interface(begin, end, _collision_objs);
-	TypeErasure::Cast2Interface(begin, end, _massed_collision_objs);
 	TypeErasure::Cast2Interface(begin, end, _pd_objs);
 
 	_offsets.clear();
@@ -41,6 +40,7 @@ void PDIPC::BindObjects(
 void PDIPC::InnerIteration(const SparseMatrixXd& lhs_out, const VectorXd& rhs_out, VectorXd& x) const {
 	VectorXd rhs = rhs_out;
 	_pd_assembler.LocalProject(_pd_objs, x, rhs);
+	_pd_ipc_collision_handler.BarrierLocalProject(_collision_objs, _offsets, rhs);
 
 	SparseMatrixXd global_matrix = _pd_assembler.GetGlobalMatrix(_pd_objs, _total_dof);
 	global_matrix += lhs_out;
@@ -52,7 +52,7 @@ void PDIPC::InnerIteration(const SparseMatrixXd& lhs_out, const VectorXd& rhs_ou
 
 double PDIPC::GetTotalEnergy(const VectorXd &x, const SparseMatrixXd &M_h2, const VectorXd &x_hat) {
 	return _pd_assembler.GetEnergy(_pd_objs, x)
-		   + _pd_ipc_collision_handler.GetBarrierEnergy(_massed_collision_objs)
+		   + _pd_ipc_collision_handler.GetBarrierEnergy(_collision_objs)
 		   + 0.5 * (x - x_hat).transpose() * M_h2 * (x - x_hat);
 }
 
@@ -73,8 +73,7 @@ void PDIPC::Step(double h) {
     VectorXd x_hat = x_current + h * v_current + h * h * LDLT_solver.solve(f_ext);
     VectorXd Mx_hat_h2 = M_h2 * x_hat;
 
-	_pd_ipc_collision_handler.ClearConstraintSet();
-	VectorXd barrier_y = VectorXd::Zero(_total_dof);
+	_pd_ipc_collision_handler.ClearBarrierSet();
 	SparseMatrixXd barrier_global_matrix(_total_dof, _total_dof);
 
 	static int global_itrs = 0;
@@ -93,7 +92,7 @@ void PDIPC::Step(double h) {
 		double E_prev = GetTotalEnergy(x, M_h2, x_hat);
 		double E_delta = 0;
 		do {
-			InnerIteration(M_h2 + barrier_global_matrix, Mx_hat_h2 + barrier_y, x);
+			InnerIteration(M_h2 + barrier_global_matrix, Mx_hat_h2, x);
 
 			_collision_assembler.ComputeCollisionVertex(x, _collision_objs);
 			double E_current = GetTotalEnergy(x, M_h2, x_hat);
@@ -112,10 +111,9 @@ void PDIPC::Step(double h) {
 			spdlog::warn("Inner iteration does not converge!");
 		}
 
+		std::vector<PrimitivePair> constraint_set;
 		_collision_assembler.ComputeCollisionVertex(x_current, _collision_objs);
 		_collision_assembler.ComputeCollisionVertexVelocity(x - x_current, _collision_objs);
-
-		std::vector<PrimitivePair> constraint_set;
 		_culling->GetCCDSet(_collision_objs, _offsets, constraint_set);
 
 		std::vector<double> local_tois;
@@ -126,19 +124,17 @@ void PDIPC::Step(double h) {
 		} else {
 			toi = 1;
 		}
-		_pd_ipc_collision_handler.AddCollisionPairs(
-			_massed_collision_objs,
-			_offsets,
-			constraint_set,
-			local_tois,
-			toi
-		);
+
+		std::vector<PrimitivePair> barrier_candidate_set;
+		_collision_assembler.ComputeCollisionVertex(x + toi * (x - x_current), _collision_objs);
+		_barrier_set_generator->GenerateBarrierSet(_collision_objs, _offsets, barrier_candidate_set);
+		_pd_ipc_collision_handler.AddBarrierPairs(_collision_objs, _offsets, barrier_candidate_set, toi);
+
 		last_toi = toi;
 
-		barrier_y.setZero();
-		_pd_ipc_collision_handler.BarrierLocalProject(_massed_collision_objs, _offsets, barrier_y);
-		barrier_global_matrix.setZero();
-		_pd_ipc_collision_handler.GetBarrierGlobalMatrix(_massed_collision_objs, _offsets, _total_dof, barrier_global_matrix);
+		barrier_global_matrix = _pd_ipc_collision_handler.GetBarrierGlobalMatrix(
+			_collision_objs, _offsets, _total_dof
+		);
 
 		x = x_current + toi * (x - x_current);
 		outer_itr++;

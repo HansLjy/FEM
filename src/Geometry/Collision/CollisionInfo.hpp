@@ -15,6 +15,7 @@ struct PrimitivePair {
 	int _primitive_id2;
 };
 
+
 #include <iostream>
 inline void PrintPrimitivePair(const PrimitivePair& pair) {
 	std::cerr << (pair._type == CollisionType::kEdgeEdge ? "Edge-Edge" : "Vertex-Face") << std::endl

@@ -55,25 +55,3 @@ protected:
 	std::vector<PrimitivePair> _ccd_set;
 };
 
-class ConstraintSetGenerator : public InterfaceContainer<CollisionInterface> {
-public:
-	ConstraintSetGenerator(double d_hat, double grid_length, unsigned int hash_table_size) :
-		_d_hat(d_hat),
-		_edge_hash_table(grid_length, hash_table_size),
-		_vertex_hash_table(grid_length, hash_table_size) {}
-
-	void BindObjects(
-		const typename std::vector<Object>::const_iterator &begin,
-		const typename std::vector<Object>::const_iterator &end
-	) override;
-
-	void ComputeConstraintSet(const VectorXd &x, std::vector<PrimitivePair>& constraint_set);
-
-public:
-	double _d_hat;
-	std::vector<int> _offsets;
-
-	int _time_stamp = 0;
-	SpatialHashing<EdgePrimitiveInfo> _edge_hash_table;
-	SpatialHashing<VertexPrimitiveInfo> _vertex_hash_table;
-};
