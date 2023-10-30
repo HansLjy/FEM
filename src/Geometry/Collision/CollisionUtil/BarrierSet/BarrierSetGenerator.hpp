@@ -6,6 +6,8 @@
 
 class BarrierSetGenerator {
 public:
+	static BarrierSetGenerator* GetProductFromConfig(const json& config);
+
 	virtual void GenerateBarrierSet(
 		const std::vector<CollisionInterface>& objs,
 		const std::vector<int>& offsets,
@@ -15,6 +17,7 @@ public:
 
 class SpatialHashingBarrierSetGenerator : public BarrierSetGenerator {
 public:
+	static SpatialHashingBarrierSetGenerator* CreateFromConfig(const json& config);
 	SpatialHashingBarrierSetGenerator(double d_hat, double grid_length, unsigned int hash_table_size)
 		: _d_hat(d_hat),
 		  _edge_hash_table(grid_length, hash_table_size),

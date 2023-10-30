@@ -130,7 +130,7 @@ double PDEnergyModelFunction::GetPDQuadraticEnergy(
     const Ref<const VectorXd> &x,
     const SparseMatrixXd &Q
 ) {
-    return x.transpose() * Q * x;
+    return x.transpose() * Q.selfadjointView<Eigen::Upper>() * x;
 }
 
 void PDEnergyModelFunction::GetPDQuadraticEnergyLHSMatrix(

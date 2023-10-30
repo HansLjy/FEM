@@ -5,7 +5,8 @@
 
 class SpatialHashingCulling : public CCDCulling {
 public:
-	explicit SpatialHashingCulling(const json& config);
+	static SpatialHashingCulling* CreateFromConfig(const json& config);
+	SpatialHashingCulling(double grid_length, unsigned int hash_table_size);
 	void GetCCDSet(const std::vector<CollisionInterface> &objs, const std::vector<int> &offsets, std::vector<PrimitivePair> &ccd_set) override;
 
 protected:

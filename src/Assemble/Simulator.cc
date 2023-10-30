@@ -146,7 +146,7 @@ void Simulator::InitializeScene(Scene &scene) {
 			obj.GetRenderTopos(topo);
 			obj.GetRenderVertices(vertices);
 
-			FileIOUtils::WriteMesh("/" + std::to_string(obj_id) + "_itr0.obj", vertices, topo);
+			FileIOUtils::WriteMesh(_result_path + "/" + std::to_string(obj_id) + "_itr0.obj", vertices, topo);
 			obj_id++;
 		}
 	}

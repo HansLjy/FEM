@@ -9,6 +9,7 @@
 
 class CubicSolver {
 public:
+	static CubicSolver* GetProductFromConfig(const json& config);
     CubicSolver(double tolerance) : _tolerance(tolerance) {}
     virtual ~CubicSolver() = default;
 

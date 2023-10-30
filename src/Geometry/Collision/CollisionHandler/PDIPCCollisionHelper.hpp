@@ -55,8 +55,7 @@ public:
 	void AddBarrierPairs(
 		const std::vector<CollisionInterface>& objs,
 		const std::vector<int>& offsets,
-		const std::vector<PrimitivePair>& barrier_candidate_set,
-		const double global_toi
+		const std::vector<PrimitivePair>& barrier_candidate_set
 	);
 	
 	// Compute collision shape before calling this function

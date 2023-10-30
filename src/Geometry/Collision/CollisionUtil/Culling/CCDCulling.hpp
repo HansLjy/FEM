@@ -6,6 +6,7 @@
 
 class CCDCulling {
 public:
+	static CCDCulling* GetProductFromConfig(const json& config);
 	virtual void GetCCDSet(
 		const std::vector<CollisionInterface>& objs,
 		const std::vector<int>& offsets,

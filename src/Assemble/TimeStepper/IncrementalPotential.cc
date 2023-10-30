@@ -4,14 +4,29 @@ IncrementalPotentialTimeStepper::~IncrementalPotentialTimeStepper() {
 	delete _optimizer;
 }
 
-IncrementalPotentialTimeStepper::IncrementalPotentialTimeStepper(const json& config)
-: _damping_enabled(config["damping-enabled"]),
-  _optimizer(Factory<Optimizer>::GetInstance()->GetProduct(config["optimizer"]["type"], config["optimizer"])) {
-	if (_damping_enabled) {
-		_rayleigh_coef_mass = config["rayleigh-coef-mass"];
-		_rayleigh_coef_stiffness = config["rayleigh-coef-stiffness"];
+IncrementalPotentialTimeStepper* IncrementalPotentialTimeStepper::CreateFromConfig(const json &config) {
+	bool damping_enabled = config["damping-enabled"];
+	double rayleigh_coef_mass, rayleigh_coef_stiffness;
+	if (damping_enabled) {
+		rayleigh_coef_mass = config["rayleigh-coef-mass"];
+		rayleigh_coef_stiffness = config["rayleigh-coef-stiffness"];
 	}
+	return new IncrementalPotentialTimeStepper(
+		damping_enabled,
+		rayleigh_coef_mass, rayleigh_coef_stiffness,
+		Factory<Optimizer>::GetInstance()->GetProduct(config["optimizer"]["type"], config["optimizer"])
+	);
 }
+
+IncrementalPotentialTimeStepper::IncrementalPotentialTimeStepper(
+	double damping_enabled,
+	double rayleigh_coef_mass,
+	double rayleigh_coef_stiffness,
+	Optimizer* optimizer)
+	: _damping_enabled(damping_enabled),
+	  _rayleigh_coef_mass(rayleigh_coef_mass),
+	  _rayleigh_coef_stiffness(rayleigh_coef_stiffness),
+	  _optimizer(optimizer) {}
 
 void IncrementalPotentialTimeStepper::BindSystem(const json &config) {
 	std::vector<Object> objs;

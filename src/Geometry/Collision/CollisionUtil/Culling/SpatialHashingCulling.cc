@@ -1,9 +1,12 @@
 #include "SpatialHashingCulling.hpp"
 
-SpatialHashingCulling::SpatialHashingCulling(const json& config):
-	_edge_hash_table(config["grid-length"], config["hash-table-size"]),
-	_vertex_hash_table(config["grid-length"], config["hash-table-size"]) {
+SpatialHashingCulling* SpatialHashingCulling::CreateFromConfig(const json &config) {
+	return new SpatialHashingCulling(config["grid-length"], config["hash-table-size"]);
 }
+
+SpatialHashingCulling::SpatialHashingCulling(double grid_length, unsigned int hash_table_size):
+	_edge_hash_table(grid_length, hash_table_size),
+	_vertex_hash_table(grid_length, hash_table_size) {}
 
 void SpatialHashingCulling::GetCCDSet(
 	const std::vector<CollisionInterface> &objs,

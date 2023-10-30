@@ -5,8 +5,9 @@
 #include "SimpleCCD.h"
 #include "CubicSolver/CubicSolver.h"
 
-SimpleCCD::SimpleCCD(const json& config)
-	: _epsilon(config["epsilon"]), _cubic_solver(Factory<CubicSolver>::GetInstance()->GetProduct(config["cubic-solver"]["type"], config["cubic-solver"])) {}
+SimpleCCD* SimpleCCD::CreateFromConfig(const json &config) {
+	return new SimpleCCD(config["epsilon"], CubicSolver::GetProductFromConfig(config["cubic-solver"]));
+}
 
 double SimpleCCD::EdgeEdgeCollision(const Eigen::Vector3d &x11, const Eigen::Vector3d &x12,
                                     const Eigen::Vector3d &x21, const Eigen::Vector3d &x22,

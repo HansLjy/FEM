@@ -1,8 +1,14 @@
 #include "ProjectiveDynamics.hpp"
 #include "spdlog/spdlog.h"
 
-ProjectiveDynamics::ProjectiveDynamics(const json& config)
-    : _max_step(config["max-step"]), _conv_tolerance(config["tolerance"]), _pd_collision_handler(config["collision-stiffness"]) {}
+ProjectiveDynamics* ProjectiveDynamics::CreateFromConfig(const json& config) {
+	return new ProjectiveDynamics(config["max-step"], config["tolerance"], PDCollisionHandler(static_cast<double>(config["collision-stiffness"])));
+}
+
+ProjectiveDynamics::ProjectiveDynamics(
+	int max_step, double tolerance,
+	PDCollisionHandler&& collision_handler)
+	: _max_step(max_step), _conv_tolerance(tolerance), _pd_collision_handler(std::move(collision_handler)){}
 
 void ProjectiveDynamics::BindSystem(const json &config) {
 	TypeErasure::ReadObjects(config["objects"], _objs);

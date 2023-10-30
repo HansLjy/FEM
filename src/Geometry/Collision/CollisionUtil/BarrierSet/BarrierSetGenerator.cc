@@ -1,6 +1,19 @@
 #include "BarrierSetGenerator.hpp"
 #include "Collision/CollisionUtility.h"
+#include "Pattern.h"
 
+template<>
+Factory<BarrierSetGenerator>* Factory<BarrierSetGenerator>::_the_factory = nullptr;
+
+const bool shbg_registered = FactoryRegistration::RegisterForFactory<BarrierSetGenerator, SpatialHashingBarrierSetGenerator>("spatial-hashing");
+
+BarrierSetGenerator* BarrierSetGenerator::GetProductFromConfig(const json &config) {
+	return Factory<BarrierSetGenerator>::GetInstance()->GetProduct(config["type"], config);
+}
+
+SpatialHashingBarrierSetGenerator* SpatialHashingBarrierSetGenerator::CreateFromConfig(const json &config) {
+	return new SpatialHashingBarrierSetGenerator(config["d-hat"], config["grid-length"], config["hash-table-size"]);
+}
 
 void SpatialHashingBarrierSetGenerator::GenerateBarrierSet(
 	const std::vector<CollisionInterface> &objs,

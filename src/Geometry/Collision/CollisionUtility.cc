@@ -17,15 +17,6 @@ void CollisionUtils::PerfectElasticCollision(double v1, double v2, double m1, do
     }
 }
 
-Vector2d CollisionUtils::GetVertexFaceClosestPointBarycentricCoords(const Vector3d &vertex, const Vector3d &face1, const Vector3d &face2, const Vector3d &face3) {
-	// TODO:
-
-}
-
-Vector2d CollisionUtils::GetEdgeEdgeClosestPointBarycentricCoords(const Vector3d &edge11, const Vector3d &edge12, const Vector3d &edge21, const Vector3d &edge22) {
-	// TODO:
-}
-
 int GetVFDistanceType(const Vector3d& vertex, const Vector3d& face1, const Vector3d& face2, const Vector3d& face3) {
 	Vector3d e1 = face2 - face1, e2 = face3 - face1, e3 = vertex - face1;
     double A = e1.dot(e1);
@@ -804,4 +795,14 @@ Matrix12d GetEEDistanceHessian(int distance_type, const Vector3d &edge11, const 
 Matrix12d GetEEDistanceHessian(const Vector3d &edge11, const Vector3d &edge12, const Vector3d &edge21, const Vector3d &edge22) {
 	auto distance_type = GetEEDistanceType(edge11, edge12, edge21, edge22);
 	return GetEEDistanceHessian(distance_type, edge11, edge12, edge21, edge22);
+}
+
+Vector2d CollisionUtils::GetVertexFaceClosestPointBarycentricCoords(const Vector3d &vertex, const Vector3d &face1, const Vector3d &face2, const Vector3d &face3) {
+	int type = GetVFDistanceType(vertex, face1, face2, face3);
+	// TODO:
+}
+
+Vector2d CollisionUtils::GetEdgeEdgeClosestPointBarycentricCoords(const Vector3d &edge11, const Vector3d &edge12, const Vector3d &edge21, const Vector3d &edge22) {
+	int type = GetEEDistanceType(edge11, edge12, edge21, edge22);
+	// TODO:
 }

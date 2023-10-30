@@ -11,7 +11,16 @@
 
 class PDIPC : public TimeStepper {
 public:
-	explicit PDIPC(const json& config);
+	static PDIPC* CreateFromConfig(const json& config);
+
+	PDIPC(
+		double outer_tolerance, double inner_tolerance,
+		int outer_max_itrs, int inner_max_itrs,
+		PDIPCCollisionHandler&& collision_handler,
+		TOIEstimator&& toi_estimator,
+		CCDCulling* culling,
+		BarrierSetGenerator* barrier_set_generator
+	);
 	void BindSystem(const json &config) override;
 
 	void BindObjects(
@@ -21,7 +30,7 @@ public:
 
 	void Step(double h) override;
 
-	void InnerIteration(const SparseMatrixXd& lhs_out, const VectorXd& rhs_out, VectorXd& x) const;
+	void InnerIteration(const SparseMatrixXd& lhs_out, const VectorXd& rhs_out, VectorXd& x);
 	double GetTotalEnergy(const VectorXd& x, const SparseMatrixXd& M_h2, const VectorXd& x_hat);
 
 	const std::vector<Renderable> & GetRenderObjects() const override;
@@ -44,17 +53,17 @@ protected:
 	std::vector<CollisionInterface> _collision_objs;
 	std::vector<PDObject> _pd_objs;
 
-	CCDCulling* _culling;
 
 	CoordinateAssembler _coord_assembler;
 	MassAssembler _mass_assembler;
 	ExternalForceAssembler _ext_force_assembler;
-
-
 	PDAssembler _pd_assembler;
-	PDIPCCollisionHandler _pd_ipc_collision_handler;
 	CollisionAssembler _collision_assembler;
+
+
+	PDIPCCollisionHandler _pd_ipc_collision_handler;
 	TOIEstimator _toi_estimator;
+	CCDCulling* _culling = nullptr;
 	BarrierSetGenerator* _barrier_set_generator = nullptr;
 
 };

@@ -67,7 +67,7 @@ namespace FactoryRegistration {
 	template<class ProductType, class T>
 	bool RegisterForFactory(const std::string& name) {
 		return Factory<ProductType>::GetInstance()->Register(name, [](const json& config) {
-			return new T(config);
+			return T::CreateFromConfig(config);
 		});
 	}
 }

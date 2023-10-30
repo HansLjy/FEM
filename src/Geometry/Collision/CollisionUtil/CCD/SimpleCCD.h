@@ -11,8 +11,8 @@
 
 class SimpleCCD : public CCD {
 public:
+	static SimpleCCD* CreateFromConfig(const json& config);
 	SimpleCCD(double epsilon, CubicSolver* solver) : _epsilon(epsilon), _cubic_solver(solver) {}
-    explicit SimpleCCD(const json& config);
     ~SimpleCCD() override;
 
     double EdgeEdgeCollision(const Eigen::Vector3d &x11, const Eigen::Vector3d &x12, const Eigen::Vector3d &x21, const Eigen::Vector3d &x22, const Eigen::Vector3d &v11, const Eigen::Vector3d &v12, const Eigen::Vector3d &v21, const Eigen::Vector3d &v22) override;

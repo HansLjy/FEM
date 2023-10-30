@@ -3,6 +3,10 @@
 template<>
 Factory<CubicSolver>* Factory<CubicSolver>::_the_factory = nullptr;
 
+CubicSolver* CubicSolver::GetProductFromConfig(const json &config) {
+	return Factory<CubicSolver>::GetInstance()->GetProduct(config["type"], config);
+}
+
 #include "BisectionCubicSolver.h"
 #include "CemCubicSolver.hpp"
 

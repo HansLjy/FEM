@@ -7,7 +7,11 @@
 
 class ProjectiveDynamics : public TimeStepper {
 public:
-    ProjectiveDynamics(const json& config);
+	static ProjectiveDynamics* CreateFromConfig(const json& config);
+	ProjectiveDynamics(
+		int max_step, double tolerance,
+		PDCollisionHandler&& collision_handler
+	);
 
 	void BindSystem(const json &config) override;
 

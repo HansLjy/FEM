@@ -5,6 +5,10 @@
 #include "BisectionCubicSolver.h"
 #include "cmath"
 
+BisectionCubicSolver* BisectionCubicSolver::CreateFromConfig(const json &config) {
+	return new BisectionCubicSolver(config["tolerance"]);
+}
+
 double BisectionCubicSolver::Solve(double A, double B, double C, double D, double l, double r) {
     if (A < 0) {
         A = -A; B = -B; C = -C; D = -D;

@@ -6,7 +6,8 @@
 
 class IncrementalPotentialTimeStepper : public TimeStepper {
 public:
-	explicit IncrementalPotentialTimeStepper(const json& config);
+	static IncrementalPotentialTimeStepper* CreateFromConfig(const json& config);
+	IncrementalPotentialTimeStepper(double damping_enabled, double rayleigh_coef_mass, double rayleigh_coef_stiffness, Optimizer* optimizer);
 
 	void BindSystem(const json &config) override;
 	void BindObjects(
