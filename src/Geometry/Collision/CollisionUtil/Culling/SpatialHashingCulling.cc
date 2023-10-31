@@ -1,4 +1,5 @@
 #include "SpatialHashingCulling.hpp"
+#include <oneapi/tbb/parallel_for.h>
 
 SpatialHashingCulling* SpatialHashingCulling::CreateFromConfig(const json &config) {
 	return new SpatialHashingCulling(config["grid-length"], config["hash-table-size"]);
@@ -69,8 +70,9 @@ void SpatialHashingCulling::GetCCDSet(
         const int num_edges = edge_topo.rows();
 
         /* vertex-face collision */
-        for (int face_id = 0; face_id < num_faces; face_id++) {
-            const auto topo = face_topo.row(face_id);
+		std::vector<std::vector<PrimitivePair>> local_vf_primitive_pairs(num_faces); 
+		tbb::parallel_for(0, num_faces, [&](int face_id) {
+			const auto topo = face_topo.row(face_id);
             Vector3d face_vertex1 = vertices.row(topo(0)).transpose();
 			Vector3d face_vertex_v1 = obj.GetCollisionVertexVelocity(topo(0));
             Vector3d face_vertex_next1 = face_vertex1 + face_vertex_v1;
@@ -89,16 +91,22 @@ void SpatialHashingCulling::GetCCDSet(
 				if (candidate._obj_id == obj_id && (candidate._primitive_id == topo(0) || candidate._primitive_id == topo(1) || candidate._primitive_id == topo(2))) {
 					continue;
 				}
-				ccd_set.push_back(PrimitivePair{
+				local_vf_primitive_pairs[face_id].push_back(PrimitivePair{
 					CollisionType::kVertexFace,
 					candidate._obj_id, obj_id,
 					candidate._primitive_id, face_id
 				});
             }
-        }
+		});
+		int total_vf_pairs = 0;
+		for (int face_id = 0; face_id < num_faces; face_id++) {
+			total_vf_pairs += local_vf_primitive_pairs[face_id].size();
+		}
+
 
         /* edge edge collision */
-        for (int edge_id = 0; edge_id < num_edges; edge_id++) {
+		std::vector<std::vector<PrimitivePair>> local_ee_primitive_pairs(num_edges);
+		tbb::parallel_for(0, num_edges, [&](int edge_id) {
             const RowVector2i indices = edge_topo.row(edge_id);
 
             Vector3d edge_vertex1 = vertices.row(indices(0)).transpose();
@@ -122,13 +130,34 @@ void SpatialHashingCulling::GetCCDSet(
 						continue;
 					}
 				}
-				ccd_set.push_back(PrimitivePair{
+				local_ee_primitive_pairs[edge_id].push_back(PrimitivePair{
 					CollisionType::kEdgeEdge,
 					candidate._obj_id, obj_id,
 					candidate._primitive_id, edge_id
 				});
             }
-        }
+		});
+		int total_ee_pairs = 0;
+		for (int edge_id = 0; edge_id < num_edges; edge_id++) {
+			total_ee_pairs += local_ee_primitive_pairs[edge_id].size();
+		}
+		ccd_set.reserve(total_vf_pairs + total_ee_pairs + ccd_set.size());
+		for (int face_id = 0; face_id < num_faces; face_id++) {
+			ccd_set.insert(
+				ccd_set.end(),
+				local_vf_primitive_pairs[face_id].begin(),
+				local_vf_primitive_pairs[face_id].end()
+			);
+		}
+		for (int edge_id = 0; edge_id < num_edges; edge_id++) {
+			ccd_set.insert(
+				ccd_set.end(),
+				local_ee_primitive_pairs[edge_id].begin(),
+				local_ee_primitive_pairs[edge_id].end()
+			);
+		}
+
+
 		obj_id++;
     }
 }

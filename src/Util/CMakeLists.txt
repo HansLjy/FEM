@@ -66,6 +66,8 @@ CPMAddPackage(
 	GIT_TAG v2.5.0
 )
 
+find_package(TBB REQUIRED)
+
 set(FEM_UTILITY_SOURCE EigenAll.cc JsonUtil.cc GeometryUtil.cc Object.cc TopoUtil.cc)
 
 if (BUILD_TEST)
@@ -79,6 +81,7 @@ target_link_libraries(FEMUtility PUBLIC Eigen3::Eigen)
 target_link_libraries(FEMUtility PUBLIC spdlog::spdlog)
 target_link_libraries(FEMUtility PUBLIC nlohmann_json::nlohmann_json)
 target_link_libraries(FEMUtility PUBLIC igl::core)
+target_link_libraries(FEMUtility PUBLIC TBB::tbb)
 
 if (BUILD_TEST)
 	target_link_libraries(FEMUtility PUBLIC TestUtility)
