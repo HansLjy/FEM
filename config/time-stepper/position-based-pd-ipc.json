@@ -1,0 +1,28 @@
+{
+	"type": "position-based-PDIPC",
+	"outer-tolerance": 1e-5,
+	"inner-tolerance": 5e-3,
+	"outer-max-iterations": 10,
+	"inner-max-iterations": 10,
+	"culling": {
+		"type": "spatial-hashing",
+		"grid-length": 1e-1,
+		"hash-table-size": 8192
+	},
+	"collision-handler": {
+		"kappa": 1e5,
+		"d-hat": 1e-3,
+		"stiffness-blending": 0.5,
+		"velocity-damping": 1
+	},
+	"toi-estimator": {
+		"CCD": {
+			"type": "simple-ccd",
+			"epsilon": 1e-12,
+			"cubic-solver": {
+				"type": "cem-solver",
+				"tolerance": 1e-12
+			}
+		}
+	}
+}

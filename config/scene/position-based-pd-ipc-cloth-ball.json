@@ -1,0 +1,67 @@
+{
+    "objects": [
+        {
+            "type": "cloth",
+            "filename": "/plane_large.obj",
+            "centered": false,
+			"translation": [0, 0, 0.3],
+			"rotation-axis": [0, 0, 1],
+			"rotation-angle": 0,
+            "density": 100,
+            "spring-stiffness": 10000,
+            "bending-stiffness": 0.01,
+            "energy": {},
+            "external-forces": [
+                {
+                    "type": "gravity",
+                    "g": [0, 0, -9.8]
+                }
+            ],
+            "render": {
+                "have-bounding-box": false,
+                "use-texture": false,
+                "texture-path": ""
+            },
+			"collision": {}
+        },
+		{
+            "type": "cloth",
+            "filename": "/plane_large.obj",
+            "centered": false,
+			"translation": [0, 0, 0.5],
+			"rotation-axis": [0, 0, 1],
+			"rotation-angle": 0,
+            "density": 100,
+            "spring-stiffness": 10000,
+            "bending-stiffness": 0.01,
+            "energy": {},
+            "external-forces": [
+                {
+                    "type": "gravity",
+                    "g": [0, 0, -9.8]
+                }
+            ],
+            "render": {
+                "have-bounding-box": false,
+                "use-texture": false,
+                "texture-path": ""
+            },
+			"collision": {}
+        },
+		{
+            "type": "fixed-object",
+            "external-forces": [],
+            "render": {
+                "have-bounding-box": false,
+                "use-texture": false,
+                "texture-path": "",
+                "filename": "/ball.obj",
+                "centered": false
+            },
+            "collision": {
+				"filename": "/ball.obj",
+                "centered": false
+            }
+        }
+    ]
+}
