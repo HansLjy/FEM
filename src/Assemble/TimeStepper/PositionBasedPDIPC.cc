@@ -1,15 +1,29 @@
 #include "PositionBasedPDIPC.hpp"
 
-PositionBasedPDIPC::PositionBasedPDIPC(const json& config):
-	_outer_tolerance(config["outer-tolerance"]),
-	_inner_tolerance(config["inner-tolerance"]),
-	_outer_max_itrs(config["outer-max-iterations"]),
-	_inner_max_itrs(config["inner-max-iterations"]),
-	_culling(Factory<CCDCulling>::GetInstance()->GetProduct(config["culling"]["type"], config["culling"])),
-	_pd_ipc_collision_handler(config["collision-handler"]),
-	_toi_estimator(config["toi-estimator"]) {
-
+PositionBasedPDIPC* PositionBasedPDIPC::CreateFromConfig(const json &config) {
+	auto culling = CCDCulling::GetProductFromConfig(config["culling"]);
+	return new PositionBasedPDIPC(
+		config["outer-tolerance"], config["inner-tolerance"],
+		config["outer-max-iterations"], config["inner-max-iterations"],
+		PositionBasedPDIPCCollisionHandler(config["collision-handler"]),
+		TOIEstimator(config["toi-estimator"]),
+		culling
+	);
 }
+
+PositionBasedPDIPC::PositionBasedPDIPC (
+	double outer_tolerance, double inner_tolerance,
+	int outer_max_iterations, int inner_max_iterations,
+	PositionBasedPDIPCCollisionHandler&& collision_handler,
+	TOIEstimator&& toi_estimator,
+	CCDCulling* culling)
+	: _outer_tolerance(outer_tolerance),
+	  _inner_tolerance(inner_tolerance),
+	  _outer_max_itrs(outer_max_iterations),
+	  _inner_max_itrs(inner_max_iterations),
+	  _pb_pd_ipc_collision_handler(std::move(collision_handler)),
+	  _toi_estimator(std::move(toi_estimator)),
+	  _culling(culling) {}
 
 void PositionBasedPDIPC::BindSystem(const json &config) {
 	TypeErasure::ReadObjects(config["objects"], _objs);
@@ -52,7 +66,7 @@ void PositionBasedPDIPC::InnerIteration(const SparseMatrixXd& lhs_out, const Vec
 
 double PositionBasedPDIPC::GetTotalEnergy(const VectorXd &x, const SparseMatrixXd &M_h2, const VectorXd &x_hat) {
 	return _pd_assembler.GetEnergy(_pd_objs, x)
-		   + _pd_ipc_collision_handler.GetBarrierEnergy(_massed_collision_objs)
+		   + _pb_pd_ipc_collision_handler.GetBarrierEnergy(_massed_collision_objs)
 		   + 0.5 * (x - x_hat).transpose() * M_h2 * (x - x_hat);
 }
 
@@ -73,7 +87,7 @@ void PositionBasedPDIPC::Step(double h) {
     VectorXd x_hat = x_current + h * v_current + h * h * LDLT_solver.solve(f_ext);
     VectorXd Mx_hat_h2 = M_h2 * x_hat;
 
-	_pd_ipc_collision_handler.ClearConstraintSet();
+	_pb_pd_ipc_collision_handler.ClearConstraintSet();
 	VectorXd barrier_y = VectorXd::Zero(_total_dof);
 	SparseMatrixXd barrier_global_matrix(_total_dof, _total_dof);
 
@@ -126,7 +140,7 @@ void PositionBasedPDIPC::Step(double h) {
 		} else {
 			toi = 1;
 		}
-		_pd_ipc_collision_handler.AddCollisionPairs(
+		_pb_pd_ipc_collision_handler.AddCollisionPairs(
 			_massed_collision_objs,
 			_offsets,
 			constraint_set,
@@ -136,9 +150,9 @@ void PositionBasedPDIPC::Step(double h) {
 		last_toi = toi;
 
 		barrier_y.setZero();
-		_pd_ipc_collision_handler.BarrierLocalProject(_massed_collision_objs, _offsets, barrier_y);
+		_pb_pd_ipc_collision_handler.BarrierLocalProject(_massed_collision_objs, _offsets, barrier_y);
 		barrier_global_matrix.setZero();
-		_pd_ipc_collision_handler.GetBarrierGlobalMatrix(_massed_collision_objs, _offsets, _total_dof, barrier_global_matrix);
+		_pb_pd_ipc_collision_handler.GetBarrierGlobalMatrix(_massed_collision_objs, _offsets, _total_dof, barrier_global_matrix);
 
 		x = x_current + toi * (x - x_current);
 		outer_itr++;

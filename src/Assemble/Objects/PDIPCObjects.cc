@@ -24,6 +24,7 @@
 #include "Collision/CollisionShape/ImplicitShape/ImplicitSphere.hpp"
 
 #include "TimeStepper/PDIPC.hpp"
+#include "TimeStepper/PositionBasedPDIPC.hpp"
 
 class PDIPCCloth :
 	public PDClothData,
@@ -49,6 +50,7 @@ public:
 const bool sampled_gravity_registered = ExternalForceRegistration::RegisterExternalForce<SampledObjectGravity, PDClothData>("gravity");
 const bool pdipc_cloth_registered = CreatorRegistration::RegisterForCreator<PDIPCCloth>("cloth");
 const bool pdipc_cloth_caster_registered = ObjectRegistration::RegisterForPDIPC<PDIPCCloth>("cloth");
+const bool position_based_pdipc_cloth_caster_registered = ObjectRegistration::RegisterForPositionBasedPDIPC<PDIPCCloth>("cloth");
 const bool pdipc_cloth_deleter_registered = TypeErasure::RegisterForDeleter<PDIPCCloth>("cloth");
 const bool pdipc_cloth_render_object_registered = CasterRegistration::RegisterForCaster<Renderable, PDIPCCloth>("cloth");
 
@@ -72,5 +74,6 @@ public:
 
 const bool pdipc_fixed_object_registered = CreatorRegistration::RegisterForCreator<PDIPCFixedObject>("fixed-object");
 const bool pdipc_fixed_object_caster_registered = ObjectRegistration::RegisterForPDIPC<PDIPCFixedObject>("fixed-object");
+const bool position_based_pdipc_fixed_object_caster_registered = ObjectRegistration::RegisterForPositionBasedPDIPC<PDIPCFixedObject>("fixed-object");
 const bool pdipc_fixed_object_deleter_registered = TypeErasure::RegisterForDeleter<PDIPCFixedObject>("fixed-object");
 const bool pdipc_fixed_object_render_object_registered = CasterRegistration::RegisterForCaster<Renderable, PDIPCFixedObject>("fixed-object");

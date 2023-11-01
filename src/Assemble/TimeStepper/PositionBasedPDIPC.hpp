@@ -10,7 +10,16 @@
 
 class PositionBasedPDIPC : public TimeStepper {
 public:
-	explicit PositionBasedPDIPC(const json& config);
+	static PositionBasedPDIPC* CreateFromConfig(const json& config);
+
+	PositionBasedPDIPC(
+		double outer_tolerance, double inner_tolerance,
+		int outer_max_iterations, int inner_max_iterations,
+		PositionBasedPDIPCCollisionHandler&& collision_handler,
+		TOIEstimator&& toi_estimator,
+		CCDCulling* culling
+	);
+
 	void BindSystem(const json &config) override;
 
 	void BindObjects(
@@ -44,18 +53,17 @@ protected:
 	std::vector<MassedCollisionInterface> _massed_collision_objs;
 	std::vector<PDObject> _pd_objs;
 
-	CCDCulling* _culling;
 
 	CoordinateAssembler _coord_assembler;
 	MassAssembler _mass_assembler;
 	ExternalForceAssembler _ext_force_assembler;
 
-
 	PDAssembler _pd_assembler;
-	PositionBasedPDIPCCollisionHandler _pd_ipc_collision_handler;
+	PositionBasedPDIPCCollisionHandler _pb_pd_ipc_collision_handler;
 	CollisionAssembler _collision_assembler;
 	TOIEstimator _toi_estimator;
 
+	CCDCulling* _culling;
 };
 
 namespace ObjectRegistration {
@@ -67,7 +75,6 @@ namespace ObjectRegistration {
 		CasterRegistration::RegisterForCaster<ExternalForced, T>(type);
 		CasterRegistration::RegisterForCaster<PDObject, T>(type);
 		CasterRegistration::RegisterForCaster<CollisionInterface, T>(type);
-		CasterRegistration::RegisterForCaster<MassedCollisionInterface, T>(type);
 		CasterRegistration::RegisterForCaster<MassedCollisionInterface, T>(type);
 		return true;
 	}

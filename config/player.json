@@ -1,5 +1,5 @@
 {
-  "input-file-directory": "cloth-ball-stable-large",
+  "input-file-directory": "cloth-ball",
   "start-iteration-number": 0,
   "end-iteration-number": -1,
   "is-loop": true,

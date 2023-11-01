@@ -6,7 +6,7 @@
             "centered": false,
 			"translation": [0, 0, 0.3],
 			"rotation-axis": [0, 0, 1],
-			"rotation-angle": 0,
+			"rotation-angle": 45,
             "density": 100,
             "spring-stiffness": 10000,
             "bending-stiffness": 0.01,

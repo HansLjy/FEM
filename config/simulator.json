@@ -1,16 +1,11 @@
 {
 	"simulation-config": {
-		"duration": 1,
-		"time-step": 0.01,
+		"duration": 5,
+		"time-step": 0.002,
 		"save-results": true,
 		"result-path": "/output/cloth-ball"
 	},
-	"time-stepper-config": "/pd-ipc.json",
-	"scene-config": "/pd-ipc-cloth-ball.json",
-
-
-
-
-	
+	"time-stepper-config": "/position-based-pd-ipc.json",
+	"scene-config": "/position-based-pd-ipc-cloth-ball.json",
 	"renderer-config": "/undergrad-thesis.json"
 }
