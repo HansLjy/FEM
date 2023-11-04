@@ -21,10 +21,17 @@ void Simulator::LoadScene(const std::string &filename) {
     auto simulation_config = config["simulation-config"];
     _duration = simulation_config["duration"];
     _time_step = simulation_config["time-step"];
-	_save_results = simulation_config["save-results"];
-	if (_save_results) {
-		_result_path = std::string(simulation_config["result-path"]);
+	_dump_mesh = simulation_config["dump-mesh"];
+	if (_dump_mesh) {
+		_mesh_path = std::string(simulation_config["mesh-path"]);
 	}
+
+	_dump_coord = simulation_config["dump-coord"];
+	_pickup_from_dump = simulation_config["pickup-from-dump"];
+	if (_pickup_from_dump) {
+		_pickup_frame_number = simulation_config["pickup-frame-number"];
+	}
+
 
 	const std::string time_stepper_config_filepath = config["time-stepper-config"];
 	std::ifstream time_stepper_config_file(std::string(CONFIG_PATH) + "/time-stepper" + time_stepper_config_filepath);
@@ -59,41 +66,57 @@ void Simulator::LoadScene(const std::string &filename) {
     _light_Kl = light_config_json["Kl"];
     _light_Kq = light_config_json["Kq"];
 
+	if (_pickup_from_dump) {
+		_time_stepper->PickCoord(_pickup_frame_number);
+	}
+
     spdlog::info("Scene loaded");
 }
 
 void Simulator::Simulate(const std::string& output_dir) {
     double current_time = 0;
-    int itr_id = 0;
-    int obj_id = 0;
+
 	std::ofstream topo_file(output_dir + "/topo");
-
 	const auto& renderable_object = _time_stepper->GetRenderObjects();
-
 	for (const auto& obj : renderable_object) {
-        MatrixXd vertices(obj.GetRenderVertexNum(), 3);
         MatrixXi topo(obj.GetRenderFaceNum(), 3);
 		obj.GetRenderTopos(topo);
-		obj.GetRenderVertices(vertices);
         write_binary(topo_file, topo);
 	}
-
 	topo_file.close();
 
+    int itr_id = 0;
     while(current_time < _duration) {
-        _time_stepper->Step(_time_step);
-        obj_id = 0;
-		std::ofstream itr_file(output_dir + "/itr" + std::to_string(itr_id));
+        int obj_id = 0;
+		std::ofstream mesh_file(output_dir + "/itr" + std::to_string(itr_id));
         for (const auto& obj : renderable_object) {
         	MatrixXd vertices(obj.GetRenderVertexNum(), 3);
 			obj.GetRenderVertices(vertices);
-            write_binary(itr_file, vertices);
-            // write_binary(itr_file, obj->GetFrameRotation());
-            // write_binary(itr_file, obj->GetFrameX());
+            write_binary(mesh_file, vertices);
         }
-		itr_file.close();
-        current_time += _time_step;
+		mesh_file.close();
         itr_id++;
+
+		if (_dump_mesh) {
+			int obj_id = 0;
+			for (const auto& obj : renderable_object) {
+				MatrixXd vertices(obj.GetRenderVertexNum(), 3);
+				MatrixXi topo(obj.GetRenderFaceNum(), 3);
+
+				obj.GetRenderTopos(topo);
+				obj.GetRenderVertices(vertices);
+
+				FileIOUtils::WriteMesh(_mesh_path + "/" + std::to_string(obj_id) + "_itr" + std::to_string(itr_id) + ".obj", vertices, topo);
+				obj_id++;
+			}
+		}
+
+		if (_dump_coord) {
+			_time_stepper->DumpCoord(itr_id);
+		}
+
+		_time_stepper->Step(_time_step);
+        current_time += _time_step;
         spdlog::info("Current time: {}", current_time);
     }
     json config;
@@ -137,7 +160,7 @@ void Simulator::InitializeScene(Scene &scene) {
             scene.SetTexture(obj.GetTexturePath(), uv_coords);
         }
     }
-	if (_save_results) {
+	if (_dump_mesh) {
 		int obj_id = 0;
 		for (const auto& obj : renderable_object) {
 			MatrixXd vertices(obj.GetRenderVertexNum(), 3);
@@ -146,7 +169,7 @@ void Simulator::InitializeScene(Scene &scene) {
 			obj.GetRenderTopos(topo);
 			obj.GetRenderVertices(vertices);
 
-			FileIOUtils::WriteMesh(_result_path + "/" + std::to_string(obj_id) + "_itr0.obj", vertices, topo);
+			FileIOUtils::WriteMesh(_mesh_path + "/" + std::to_string(obj_id) + "_itr0.obj", vertices, topo);
 			obj_id++;
 		}
 	}
@@ -156,13 +179,16 @@ void Simulator::InitializeScene(Scene &scene) {
 #include <chrono>
 
 void Simulator::Processing(Scene &scene) {
+	static int itr = 0;
     static int step_number = 0;
     static std::chrono::time_point<std::chrono::steady_clock> start_time;
     if (step_number == 0) {
         start_time = std::chrono::steady_clock::now();
     }
     step_number++;
-    _time_stepper->Step(_time_step);
+    
+	_time_stepper->Step(_time_step);
+	itr++;
     
     if (step_number == 200) {
         auto end_time = std::chrono::steady_clock::now();
@@ -187,7 +213,7 @@ void Simulator::Processing(Scene &scene) {
         scene.SetMesh(vertices, Matrix3d::Identity(), Vector3d::Zero());
     }
 
-	if (_save_results) {
+	if (_dump_mesh) {
 		int obj_id = 0;
 		for (const auto& obj : renderable_object) {
 			MatrixXd vertices(obj.GetRenderVertexNum(), 3);
@@ -196,8 +222,13 @@ void Simulator::Processing(Scene &scene) {
 			obj.GetRenderTopos(topo);
 			obj.GetRenderVertices(vertices);
 
-			FileIOUtils::WriteMesh(_result_path + "/" + std::to_string(obj_id) + "_itr" + std::to_string(step_number) + ".obj", vertices, topo);
+			FileIOUtils::WriteMesh(_mesh_path + "/" + std::to_string(obj_id) + "_itr" + std::to_string(step_number) + ".obj", vertices, topo);
 			obj_id++;
 		}
 	}
+	if (_dump_coord) {
+		_time_stepper->DumpCoord(itr);
+	}
+
+	spdlog::info("#iterations = {}", itr);
 }

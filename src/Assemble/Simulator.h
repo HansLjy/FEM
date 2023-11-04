@@ -21,8 +21,12 @@ public:
     ~Simulator() override;
 
 protected:
-	bool _save_results;
-	std::string _result_path;
+	bool _dump_mesh;
+	std::string _mesh_path;
+	bool _dump_coord;
+	bool _pickup_from_dump;
+	int _pickup_frame_number;
+
     double _duration;
     double _time_step;
     TimeStepper* _time_stepper;

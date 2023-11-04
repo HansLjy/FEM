@@ -1,5 +1,19 @@
 #include "PositionBasedPDIPC.hpp"
 
+void PositionBasedPDIPC::DumpCoord(int itr) const {
+	VectorXd x(_coord_assembler.GetDOF()), v(_coord_assembler.GetDOF());
+	_coord_assembler.GetCoordinate(x);
+	_coord_assembler.GetVelocity(v);
+	TimeStepperUtils::DumpXV(itr, x, v);
+}
+
+void PositionBasedPDIPC::PickCoord(int itr) {
+	VectorXd x, v;
+	TimeStepperUtils::PickXV(itr, x, v);
+	_coord_assembler.SetCoordinate(x);
+	_coord_assembler.SetVelocity(v);
+}
+
 PositionBasedPDIPC* PositionBasedPDIPC::CreateFromConfig(const json &config) {
 	auto culling = CCDCulling::GetProductFromConfig(config["culling"]);
 	return new PositionBasedPDIPC(
@@ -52,6 +66,19 @@ void PositionBasedPDIPC::BindObjects(
 	}
 }
 
+void PositionBasedPDIPC::TotalForceZeroProject(VectorXd& force) {
+	// TODO: now only support sampled objects
+	const int num_points = force.size() / 3;
+	Vector3d average_force = Vector3d::Zero();
+	for (int i = 0, i3 = 0; i < num_points; i++, i3 += 3) {
+		average_force += force.segment<3>(i3);
+	}
+	average_force /= num_points;
+	for (int i = 0, i3 = 0; i < num_points; i++, i3 += 3) {
+		force.segment<3>(i3) -= average_force;
+	}
+}
+
 void PositionBasedPDIPC::InnerIteration(const SparseMatrixXd& lhs_out, const VectorXd& rhs_out, VectorXd& x) const {
 	VectorXd rhs = rhs_out;
 	_pd_assembler.LocalProject(_pd_objs, x, rhs);
@@ -59,15 +86,54 @@ void PositionBasedPDIPC::InnerIteration(const SparseMatrixXd& lhs_out, const Vec
 	SparseMatrixXd global_matrix = _pd_assembler.GetGlobalMatrix(_pd_objs, _total_dof);
 	global_matrix += lhs_out;
 
-	Eigen::ConjugateGradient<SparseMatrixXd> CG_solver;
-	CG_solver.compute(global_matrix);
-	x = CG_solver.solve(rhs);
+	Eigen::SimplicialLDLT<SparseMatrixXd> LDLT_solver;
+	LDLT_solver.compute(global_matrix);
+	x = LDLT_solver.solve(rhs);
 }
 
 double PositionBasedPDIPC::GetTotalEnergy(const VectorXd &x, const SparseMatrixXd &M_h2, const VectorXd &x_hat) {
 	return _pd_assembler.GetEnergy(_pd_objs, x)
 		   + _pb_pd_ipc_collision_handler.GetBarrierEnergy(_massed_collision_objs)
 		   + 0.5 * (x - x_hat).transpose() * M_h2 * (x - x_hat);
+}
+
+VectorXd PositionBasedPDIPC::EstimateExternalForce(const SparseMatrixXd& M_h2, const VectorXd& x_current, const VectorXd& x_est) {
+	_collision_assembler.ComputeCollisionVertex(x_current, _collision_objs);
+	_collision_assembler.ComputeCollisionVertexVelocity(x_est - x_current, _collision_objs);
+
+	std::vector<PrimitivePair> constraint_set;
+	_culling->GetCCDSet(_collision_objs, _offsets, constraint_set);
+
+	std::vector<double> local_tois;
+	double toi = _toi_estimator.GetLocalTOIs(constraint_set, _collision_objs, local_tois);
+
+	if (toi <= 1) {
+		toi *= 0.8;
+	} else {
+		toi = 1;
+	}
+
+	_pb_pd_ipc_collision_handler.AddCollisionPairs(
+		_massed_collision_objs,
+		_offsets,
+		constraint_set,
+		local_tois,
+		toi
+	);
+
+	VectorXd barrier_y = VectorXd::Zero(_total_dof);
+	_pb_pd_ipc_collision_handler.BarrierLocalProject(_massed_collision_objs, _offsets, barrier_y);
+	SparseMatrixXd barrier_global_matrix(_total_dof, _total_dof);
+	_pb_pd_ipc_collision_handler.GetBarrierGlobalMatrix(_massed_collision_objs, _offsets, _total_dof, barrier_global_matrix);
+
+
+	Eigen::SimplicialLDLT<SparseMatrixXd> collision_solver(M_h2 + barrier_global_matrix);
+	// Eigen::SimplicialLDLT<SparseMatrixXd> collision_solver(M_h2 + barrier_global_matrix + A_elas);
+	VectorXd rhs_vector = M_h2 * x_est + barrier_y;
+
+	// VectorXd xc = collision_solver.solve(M_h2 * x + barrier_y);
+	VectorXd xc = collision_solver.solve(rhs_vector);
+	return M_h2 * (xc - x_est);
 }
 
 void PositionBasedPDIPC::Step(double h) {
@@ -83,25 +149,27 @@ void PositionBasedPDIPC::Step(double h) {
     VectorXd f_ext(_total_dof);
     _ext_force_assembler.GetExternalForce(f_ext);
     
-    Eigen::SimplicialLDLT<SparseMatrixXd> LDLT_solver(M);
-    VectorXd x_hat = x_current + h * v_current + h * h * LDLT_solver.solve(f_ext);
+    Eigen::SimplicialLDLT<SparseMatrixXd> m_solver(M);
+    VectorXd x_hat = x_current + h * v_current + h * h * m_solver.solve(f_ext);
     VectorXd Mx_hat_h2 = M_h2 * x_hat;
 
 	_pb_pd_ipc_collision_handler.ClearConstraintSet();
 	VectorXd barrier_y = VectorXd::Zero(_total_dof);
 	SparseMatrixXd barrier_global_matrix(_total_dof, _total_dof);
 
-	static int global_itrs = 0;
-	global_itrs++;
-
 	Eigen::ConjugateGradient<SparseMatrixXd> CG_solver;
+
+	/* Estimate penalty force */
+	VectorXd f_pen = EstimateExternalForce(M_h2, x_current, x_hat);
+	x_hat += h * h * m_solver.solve(f_pen);
+	Mx_hat_h2 += f_pen;
 
 	int outer_itr = 0;
 	double last_toi = 0;
+	double delta_x = 0;
 	VectorXd x = x_hat;							// final solution
 	do {
-		x = x_hat;
-
+		VectorXd x_pre = x;
 		int inner_itrs = 0;
 		_collision_assembler.ComputeCollisionVertex(x, _collision_objs);
 		double E_prev = GetTotalEnergy(x, M_h2, x_hat);
@@ -126,8 +194,8 @@ void PositionBasedPDIPC::Step(double h) {
 			spdlog::warn("Inner iteration does not converge!");
 		}
 
-		_collision_assembler.ComputeCollisionVertex(x_current, _collision_objs);
-		_collision_assembler.ComputeCollisionVertexVelocity(x - x_current, _collision_objs);
+		_collision_assembler.ComputeCollisionVertex(x_pre, _collision_objs);
+		_collision_assembler.ComputeCollisionVertexVelocity(x - x_pre, _collision_objs);
 
 		std::vector<PrimitivePair> constraint_set;
 		_culling->GetCCDSet(_collision_objs, _offsets, constraint_set);
@@ -135,11 +203,13 @@ void PositionBasedPDIPC::Step(double h) {
 		std::vector<double> local_tois;
 		double toi = _toi_estimator.GetLocalTOIs(constraint_set, _collision_objs, local_tois);
 
+		last_toi = toi;
 		if (toi <= 1) {
-			toi *= 0.998;
+			toi *= 0.8;
 		} else {
 			toi = 1;
 		}
+
 		_pb_pd_ipc_collision_handler.AddCollisionPairs(
 			_massed_collision_objs,
 			_offsets,
@@ -147,16 +217,29 @@ void PositionBasedPDIPC::Step(double h) {
 			local_tois,
 			toi
 		);
-		last_toi = toi;
 
 		barrier_y.setZero();
 		_pb_pd_ipc_collision_handler.BarrierLocalProject(_massed_collision_objs, _offsets, barrier_y);
 		barrier_global_matrix.setZero();
 		_pb_pd_ipc_collision_handler.GetBarrierGlobalMatrix(_massed_collision_objs, _offsets, _total_dof, barrier_global_matrix);
 
-		x = x_current + toi * (x - x_current);
+		// if (outer_itr < 1) {
+		// 	SparseMatrixXd A_elas = _pd_assembler.GetGlobalMatrix(_pd_objs, _total_dof);
+		// 	Eigen::SimplicialLDLT<SparseMatrixXd> collision_solver(M_h2 + barrier_global_matrix);
+		// 	// Eigen::SimplicialLDLT<SparseMatrixXd> collision_solver(M_h2 + barrier_global_matrix + A_elas);
+		// 	VectorXd rhs_vector = Mx_hat_h2 + barrier_y;
+		// 	_pd_assembler.LocalProject(_pd_objs, x, rhs_vector);
+
+		// 	// VectorXd xc = collision_solver.solve(M_h2 * x + barrier_y);
+		// 	VectorXd xc = collision_solver.solve(rhs_vector);
+		// 	VectorXd f_pen = (M_h2 + A_elas) * (xc - x);
+		// 	x_hat += m_solver.solve(f_pen) * h * h;
+		// 	Mx_hat_h2 += f_pen;
+		// }
+		delta_x = (x - x_pre).norm();
+		x = x_pre + toi * (x - x_pre);
 		outer_itr++;
-	} while (outer_itr <= 1 || last_toi < 0.9 && outer_itr < _outer_max_itrs);
+	} while (outer_itr <= 1 || delta_x > _outer_tolerance && outer_itr < _outer_max_itrs);
 
 	if (last_toi < 0.9) {
 		spdlog::warn("TOI = {}", last_toi);
@@ -165,9 +248,8 @@ void PositionBasedPDIPC::Step(double h) {
 	if (outer_itr < _outer_max_itrs) {
 		spdlog::info("Outer iteration converges in {} steps", outer_itr);
 	} else {
-		spdlog::warn("Outer iteration does not converge!");
+		spdlog::warn("Outer iteration does not converge! delta-x = {}", delta_x);
 	}
-	spdlog::info("Global itrs = {}", global_itrs);
 
 	VectorXd v = (x - x_current) / h;
 	_coord_assembler.SetCoordinate(x);

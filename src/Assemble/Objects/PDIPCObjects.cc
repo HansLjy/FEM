@@ -55,21 +55,21 @@ const bool pdipc_cloth_deleter_registered = TypeErasure::RegisterForDeleter<PDIP
 const bool pdipc_cloth_render_object_registered = CasterRegistration::RegisterForCaster<Renderable, PDIPCCloth>("cloth");
 
 class PDIPCFixedObject :
-    public FixedObjectData,
+    public FixedSampledObjectData,
     public CoordinateAdapter<BasicCoordinate, PDIPCFixedObject>,
-    public MassModelAdapter<NullMassModel, PDIPCFixedObject>,
+    public MassModelAdapter<SampledObjectMassModel, PDIPCFixedObject>,
     public PDNullEnergyModel,
-    public ExternalForceContainerAdapter<FixedObjectData, PDIPCFixedObject>,
-    public RenderShapeAdapter<FixedRenderShape, PDIPCFixedObject>,
-    public CollisionShapeAdapter<FixedCollisionShape, PDIPCFixedObject> {
+    public ExternalForceContainerAdapter<FixedSampledObjectData, PDIPCFixedObject>,
+    public RenderShapeAdapter<SampledRenderShape, PDIPCFixedObject>,
+    public CollisionShapeAdapter<SampledCollisionShape, PDIPCFixedObject> {
 public:
     PDIPCFixedObject(const json& config) :
-        ExternalForceContainerAdapter(ExternalForceContainer<FixedObjectData>::CreateFromConfig(config["external-forces"])),
-        RenderShapeAdapter(FixedRenderShape::CreateFromConfig(config["render"])),
-        CollisionShapeAdapter(FixedCollisionShape::CreateFromConfig(config["collision"])) {
+		FixedSampledObjectData(FixedSampledObjectData::CreateFromConfig(config)),
+        ExternalForceContainerAdapter(ExternalForceContainer<FixedSampledObjectData>::CreateFromConfig(config["external-forces"])),
+        RenderShapeAdapter(SampledRenderShape::CreateFromConfig(config["render"])),
+        CollisionShapeAdapter(config["collision"]) {
         CollisionShapeAdapter::Initialize();
     }
-
 };
 
 const bool pdipc_fixed_object_registered = CreatorRegistration::RegisterForCreator<PDIPCFixedObject>("fixed-object");

@@ -1,0 +1,33 @@
+From 34bf3e5b19d2aaa75d2d595427cf42086928eeec Mon Sep 17 00:00:00 2001
+From: hansljy <ezoiljy@outlook.com>
+Date: Thu, 2 Nov 2023 15:12:18 -0600
+Subject: [PATCH] update cmake
+
+---
+ CMakeLists.txt | 9 +++++++--
+ 1 file changed, 7 insertions(+), 2 deletions(-)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 61e5e42..cdf9d52 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -1,8 +1,13 @@
+ cmake_minimum_required(VERSION 3.1)
+ project(collisiondetection)
+ 
++find_package(Eigen3 3.4.0 EXACT)
++
++# release mode
++set(CMAKE_CXX_FLAGS_RELEASE "-O3")
++
+ file(GLOB LIBFILES src/*.cpp)
+ add_library(${PROJECT_NAME} STATIC ${LIBFILES})
+-target_include_directories(${PROJECT_NAME} PRIVATE "include" )
+-target_include_directories(${PROJECT_NAME} PRIVATE "$ENV{EIGEN3_INCLUDE_DIR}" )
++target_include_directories(${PROJECT_NAME} PUBLIC "include" )
++target_link_libraries(${PROJECT_NAME} PRIVATE Eigen3::Eigen)
+ install(TARGETS ${PROJECT_NAME} DESTINATION lib)
+\ No newline at end of file
+-- 
+2.34.1
+

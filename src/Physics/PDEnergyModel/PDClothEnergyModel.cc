@@ -32,22 +32,22 @@ void PDEnergyModelFunction::GetPDSpringEnergyLHSMatrix(
             coo.push_back(Tripletd(
                 x_offset + indices[0] * 3 + j,
                 y_offset + indices[0] * 3 + j,
-                stiffness / 2
+                stiffness
             ));
             coo.push_back(Tripletd(
                 x_offset + indices[0] * 3 + j,
                 y_offset + indices[1] * 3 + j,
-                -stiffness / 2
+                -stiffness
             ));
             coo.push_back(Tripletd(
                 x_offset + indices[1] * 3 + j,
                 y_offset + indices[0] * 3 + j,
-                -stiffness / 2
+                -stiffness
             ));
             coo.push_back(Tripletd(
                 x_offset + indices[1] * 3 + j,
                 y_offset + indices[1] * 3 + j,
-                stiffness / 2
+                stiffness
             ));
         }
     }
@@ -72,8 +72,8 @@ void PDEnergyModelFunction::GetPDSpringEnergyRHSVector(
         const Vector3d x1 = x.segment<3>(3 * indices[0]);
         const Vector3d x2 = x.segment<3>(3 * indices[1]);
         Vector3d d = SpringLocalProject(x1, x2, rest_length[i]);
-        y.segment<3>(indices[0] * 3) += d * stiffness / 2;
-        y.segment<3>(indices[1] * 3) += -d * stiffness / 2;
+        y.segment<3>(indices[0] * 3) += d * stiffness;
+        y.segment<3>(indices[1] * 3) += -d * stiffness;
     }
 }
 

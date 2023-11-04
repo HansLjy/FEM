@@ -1,5 +1,6 @@
 #include "PDIPCCollisionHelper.hpp"
 #include "Collision/CollisionUtil/ProcessPrimitivePair.hpp"
+#include "Collision/GeometryComputation.h"
 #include "GeometryUtil.hpp"
 #include "Collision/CollisionUtility.h"
 
@@ -18,23 +19,24 @@ void PDIPCCollisionUtility::GetVertexFaceRebounce(
 	const Vector3d face_toi1 = face1 + face_velocity1 * toi;
 	const Vector3d face_toi2 = face2 + face_velocity2 * toi;
 	const Vector3d face_toi3 = face3 + face_velocity3 * toi;
-	Vector3d barycentric_coord;
-	barycentric_coord.segment<2>(1) = GeometryUtil::GetPointPlaneClosestPoint(
-		vertex_toi,
-		face_toi1, face_toi2, face_toi3
-	);
-	barycentric_coord(0) = 1 - barycentric_coord(1) - barycentric_coord(2);
+	Vector3d barycentric_coord, normal;
+	LeiLan::VertexTriangleDistance(vertex_toi, face_toi1, face_toi2, face_toi3, barycentric_coord(0), barycentric_coord(1), barycentric_coord(2), normal);
+	// barycentric_coord.segment<2>(1) = GeometryUtil::GetPointPlaneClosestPoint(
+	// 	vertex_toi,
+	// 	face_toi1, face_toi2, face_toi3
+	// );
+	// barycentric_coord(0) = 1 - barycentric_coord(1) - barycentric_coord(2);
 	const double m1 = vertex_mass;
 	const double m2 = face_mass1 * barycentric_coord(0)
 					+ face_mass2 * barycentric_coord(1)
 					+ face_mass3 * barycentric_coord(2);
-	const Vector3d closest_point = barycentric_coord(0) * face_toi1
-								 + barycentric_coord(1) * face_toi2
-								 + barycentric_coord(2) * face_toi3;
+	// const Vector3d closest_point = barycentric_coord(0) * face_toi1
+	// 							 + barycentric_coord(1) * face_toi2
+	// 							 + barycentric_coord(2) * face_toi3;
 	const Vector3d closest_point_velocity = barycentric_coord(0) * face_velocity1
 										  + barycentric_coord(1) * face_velocity2
 										  + barycentric_coord(2) * face_velocity3;
-	const Vector3d normal = (vertex_toi - closest_point).normalized();
+	// const Vector3d normal = (vertex_toi - closest_point).normalized();
 	// std::cerr << "normal: "<< normal.transpose() << std::endl;
 	double normal_velocity1 = vertex_velocity.dot(normal), normal_velocity_after1;
 	double normal_velocity2 = closest_point_velocity.dot(normal), normal_velocity_after2;
@@ -47,10 +49,14 @@ void PDIPCCollisionUtility::GetVertexFaceRebounce(
 	double delta_v_max = d_hat / (1 - toi);
 	normal_velocity_after1 *= delta_v_max / delta_v;
 	normal_velocity_after2 *= delta_v_max / delta_v;
-	const Vector3d vertex_velocity_after = vertex_velocity - (vertex_velocity.dot(normal) - normal_velocity_after1) * normal;
-	const Vector3d face_velocity_after1 = face_velocity1 - (face_velocity1.dot(normal) - normal_velocity_after2) * normal;
-	const Vector3d face_velocity_after2 = face_velocity2 - (face_velocity2.dot(normal) - normal_velocity_after2) * normal;
-	const Vector3d face_velocity_after3 = face_velocity3 - (face_velocity3.dot(normal) - normal_velocity_after2) * normal;
+	const Vector3d vertex_tangent_velocity = vertex_velocity - vertex_velocity.dot(normal) * normal;
+	const Vector3d face_tangent_velocity1 = face_velocity1 - face_velocity1.dot(normal) * normal;
+	const Vector3d face_tangent_velocity2 = face_velocity2 - face_velocity2.dot(normal) * normal;
+	const Vector3d face_tangent_velocity3 = face_velocity3 - face_velocity3.dot(normal) * normal;
+	const Vector3d vertex_velocity_after = vertex_tangent_velocity * 0.7 + normal_velocity_after1 * normal;
+	const Vector3d face_velocity_after1 = face_tangent_velocity1 * 0.7 + normal_velocity_after2 * normal;
+	const Vector3d face_velocity_after2 = face_tangent_velocity2 * 0.7 + normal_velocity_after2 * normal;
+	const Vector3d face_velocity_after3 = face_tangent_velocity3 * 0.7 + normal_velocity_after2 * normal;
 
 	vertex_after = vertex + toi * vertex_velocity + (1 - toi) * vertex_velocity_after;
 	face_after1 = face1 + toi * face_velocity1 + (1 - toi) * face_velocity_after1;
@@ -76,25 +82,31 @@ void PDIPCCollisionUtility::GetEdgeEdgeRebounce(
 	const Vector3d edge_toi22 = edge22 + edge_velocity22 * toi;
 
 	Vector2d barycentric_coord;
-	barycentric_coord = GeometryUtil::GetLineLineClosestPoint(
-		edge_toi11, edge_toi12,
-		edge_toi21, edge_toi22
+	Vector3d normal;
+	LeiLan::EdgeEdgeSqDistance(
+		edge_toi11, edge_toi12, edge_toi21, edge_toi22,
+		barycentric_coord(0), barycentric_coord(1), normal
 	);
+
+	// barycentric_coord = GeometryUtil::GetLineLineClosestPoint(
+	// 	edge_toi11, edge_toi12,
+	// 	edge_toi21, edge_toi22
+	// );
 
 	const double m1 = edge_mass11 * (1 - barycentric_coord(0))
 					+ edge_mass12 * barycentric_coord(0);
 	const double m2 = edge_mass21 * (1 - barycentric_coord(1))
 					+ edge_mass22 * barycentric_coord(1);
-	const Vector3d closest_point1 = barycentric_coord(0) * edge_toi12
-								  + (1 - barycentric_coord(0)) * edge_toi11;
-	const Vector3d closest_point2 = barycentric_coord(1) * edge_toi22
-								  + (1 - barycentric_coord(1)) * edge_toi21;
+	// const Vector3d closest_point1 = barycentric_coord(0) * edge_toi12
+	// 							  + (1 - barycentric_coord(0)) * edge_toi11;
+	// const Vector3d closest_point2 = barycentric_coord(1) * edge_toi22
+	// 							  + (1 - barycentric_coord(1)) * edge_toi21;
 	const Vector3d closest_point_velocity1 = barycentric_coord(0) * edge_velocity12
 										   + (1 - barycentric_coord(0)) * edge_velocity11;
 	const Vector3d closest_point_velocity2 = barycentric_coord(1) * edge_velocity22
 										   + (1 - barycentric_coord(1)) * edge_velocity21;
 	
-	const Vector3d normal = (closest_point1 - closest_point2).normalized();
+	// const Vector3d normal = (closest_point1 - closest_point2).normalized();
 	double normal_velocity1 = closest_point_velocity1.dot(normal), normal_velocity_after1;
 	double normal_velocity2 = closest_point_velocity2.dot(normal), normal_velocity_after2;
 	PDIPCCollisionUtility::GetPointPointRebounce(
@@ -107,10 +119,15 @@ void PDIPCCollisionUtility::GetEdgeEdgeRebounce(
 	normal_velocity_after1 *= delta_v_max / delta_v;
 	normal_velocity_after2 *= delta_v_max / delta_v;
 
-	const Vector3d edge_velocity_after11 = edge_velocity11 - (edge_velocity11.dot(normal) - normal_velocity_after1) * normal;
-	const Vector3d edge_velocity_after12 = edge_velocity12 - (edge_velocity12.dot(normal) - normal_velocity_after1) * normal;
-	const Vector3d edge_velocity_after21 = edge_velocity21 - (edge_velocity21.dot(normal) - normal_velocity_after2) * normal;
-	const Vector3d edge_velocity_after22 = edge_velocity22 - (edge_velocity22.dot(normal) - normal_velocity_after2) * normal;
+	const Vector3d edge_tangent_velocity11 = edge_velocity11 - edge_velocity11.dot(normal) * normal;
+	const Vector3d edge_tangent_velocity12 = edge_velocity12 - edge_velocity12.dot(normal) * normal;
+	const Vector3d edge_tangent_velocity21 = edge_velocity21 - edge_velocity21.dot(normal) * normal;
+	const Vector3d edge_tangent_velocity22 = edge_velocity22 - edge_velocity22.dot(normal) * normal;
+
+	const Vector3d edge_velocity_after11 = edge_tangent_velocity11 * 0.7 + normal_velocity_after1 * normal;
+	const Vector3d edge_velocity_after12 = edge_tangent_velocity12 * 0.7 + normal_velocity_after1 * normal;
+	const Vector3d edge_velocity_after21 = edge_tangent_velocity21 * 0.7 + normal_velocity_after2 * normal;
+	const Vector3d edge_velocity_after22 = edge_tangent_velocity22 * 0.7 + normal_velocity_after2 * normal;
 	edge_after11 = edge11 + toi * edge_velocity11 + (1 - toi) * edge_velocity_after11;
 	edge_after12 = edge12 + toi * edge_velocity12 + (1 - toi) * edge_velocity_after12;
 	edge_after21 = edge21 + toi * edge_velocity21 + (1 - toi) * edge_velocity_after21;

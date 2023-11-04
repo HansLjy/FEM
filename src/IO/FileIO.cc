@@ -79,3 +79,14 @@ void FileIO::SaveToFile(
 	}
 	RealSaveToFile(filename, translated_vertices, topo);
 }
+
+#include "igl/writeOBJ.h"
+
+void DebugUtils::DumpVertexList(const std::string& name, const std::vector<Vector3d> vertex_list) {
+	MatrixXd vertices(vertex_list.size(), 3);
+	MatrixXi topo(0, 3);
+	for (int i = 0; i < vertex_list.size(); i++) {
+		vertices.row(i) = vertex_list[i];
+	}
+	igl::writeOBJ(std::string(MODEL_PATH) + "/output/debug/" + name + ".obj", vertices, topo);
+}

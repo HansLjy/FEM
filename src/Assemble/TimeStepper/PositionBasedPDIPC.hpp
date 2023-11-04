@@ -21,6 +21,8 @@ public:
 	);
 
 	void BindSystem(const json &config) override;
+	void DumpCoord(int itr) const override;
+	void PickCoord(int itr) override;
 
 	void BindObjects(
         const typename std::vector<Object>::const_iterator &begin,
@@ -31,6 +33,7 @@ public:
 
 	void InnerIteration(const SparseMatrixXd& lhs_out, const VectorXd& rhs_out, VectorXd& x) const;
 	double GetTotalEnergy(const VectorXd& x, const SparseMatrixXd& M_h2, const VectorXd& x_hat);
+	VectorXd EstimateExternalForce(const SparseMatrixXd& M_h2, const VectorXd& x_current, const VectorXd& x_est);
 
 	const std::vector<Renderable> & GetRenderObjects() const override;
 
@@ -64,6 +67,8 @@ protected:
 	TOIEstimator _toi_estimator;
 
 	CCDCulling* _culling;
+
+	static void TotalForceZeroProject(VectorXd& force);
 };
 
 namespace ObjectRegistration {

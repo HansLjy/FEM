@@ -1,10 +1,14 @@
 #include "PositionBasedPDIPCCollisionHelper.hpp"
 #include "Collision/CollisionUtil/ProcessPrimitivePair.hpp"
+#include "Collision/GeometryComputation.h"
+#include "FileIO.hpp"
 #include "GeometryUtil.hpp"
 #include "Collision/CollisionUtility.h"
 
 template<>
 Caster<MassedCollisionInterface>* Caster<MassedCollisionInterface>::_the_factory = nullptr;
+
+bool debug_bit = false;
 
 void PositionBasedPDIPCCollisionUtility::GetVertexFaceRebounce(
 	const Vector3d &vertex,
@@ -22,23 +26,29 @@ void PositionBasedPDIPCCollisionUtility::GetVertexFaceRebounce(
 	const Vector3d face_toi2 = face2 + face_velocity2 * toi;
 	const Vector3d face_toi3 = face3 + face_velocity3 * toi;
 	Vector3d barycentric_coord;
-	barycentric_coord.segment<2>(1) = GeometryUtil::GetPointPlaneClosestPoint(
-		vertex_toi,
-		face_toi1, face_toi2, face_toi3
+	Vector3d normal;
+	LeiLan::VertexTriangleDistance(
+		vertex_toi, face_toi1, face_toi2, face_toi3,
+		barycentric_coord(0), barycentric_coord(1), barycentric_coord(2), normal
 	);
-	barycentric_coord(0) = 1 - barycentric_coord(1) - barycentric_coord(2);
+	normal.normalize();
+
+	// barycentric_coord.segment<2>(1) = GeometryUtil::GetPointPlaneClosestPoint(
+	// 	vertex_toi,
+	// 	face_toi1, face_toi2, face_toi3
+	// );
+	// barycentric_coord(0) = 1 - barycentric_coord(1) - barycentric_coord(2);
 	const double m1 = vertex_mass;
 	const double m2 = face_mass1 * barycentric_coord(0)
 					+ face_mass2 * barycentric_coord(1)
 					+ face_mass3 * barycentric_coord(2);
-	const Vector3d closest_point = barycentric_coord(0) * face_toi1
-								 + barycentric_coord(1) * face_toi2
-								 + barycentric_coord(2) * face_toi3;
+	// const Vector3d closest_point = barycentric_coord(0) * face_toi1
+	// 							 + barycentric_coord(1) * face_toi2
+	// 							 + barycentric_coord(2) * face_toi3;
 	const Vector3d closest_point_velocity = barycentric_coord(0) * face_velocity1
 										  + barycentric_coord(1) * face_velocity2
 										  + barycentric_coord(2) * face_velocity3;
-	const Vector3d normal = (vertex_toi - closest_point).normalized();
-	// std::cerr << "normal: "<< normal.transpose() << std::endl;
+	// const Vector3d normal = (vertex_toi - closest_point).normalized();
 	double normal_velocity1 = vertex_velocity.dot(normal), normal_velocity_after1;
 	double normal_velocity2 = closest_point_velocity.dot(normal), normal_velocity_after2;
 	PositionBasedPDIPCCollisionUtility::GetPointPointRebounce(
@@ -50,10 +60,16 @@ void PositionBasedPDIPCCollisionUtility::GetVertexFaceRebounce(
 	double delta_v_max = d_hat / (1 - toi);
 	normal_velocity_after1 *= delta_v_max / delta_v;
 	normal_velocity_after2 *= delta_v_max / delta_v;
-	const Vector3d vertex_velocity_after = vertex_velocity - (vertex_velocity.dot(normal) - normal_velocity_after1) * normal;
-	const Vector3d face_velocity_after1 = face_velocity1 - (face_velocity1.dot(normal) - normal_velocity_after2) * normal;
-	const Vector3d face_velocity_after2 = face_velocity2 - (face_velocity2.dot(normal) - normal_velocity_after2) * normal;
-	const Vector3d face_velocity_after3 = face_velocity3 - (face_velocity3.dot(normal) - normal_velocity_after2) * normal;
+
+	const Vector3d vertex_tangent_velocity = vertex_velocity - vertex_velocity.dot(normal) * normal;
+	const Vector3d face_tangent_velocity1 = face_velocity1 - face_velocity1.dot(normal) * normal;
+	const Vector3d face_tangent_velocity2 = face_velocity2 - face_velocity2.dot(normal) * normal;
+	const Vector3d face_tangent_velocity3 = face_velocity3 - face_velocity3.dot(normal) * normal;
+
+	const Vector3d vertex_velocity_after = normal_velocity_after1 * normal + vertex_tangent_velocity * 0.7;
+	const Vector3d face_velocity_after1 = normal_velocity_after2 * normal + face_tangent_velocity1 * 0.7;
+	const Vector3d face_velocity_after2 = normal_velocity_after2 * normal + face_tangent_velocity2 * 0.7;
+	const Vector3d face_velocity_after3 = normal_velocity_after2 * normal + face_tangent_velocity3 * 0.7;
 
 	vertex_after = vertex + toi * vertex_velocity + (1 - toi) * vertex_velocity_after;
 	face_after1 = face1 + toi * face_velocity1 + (1 - toi) * face_velocity_after1;
@@ -79,10 +95,16 @@ void PositionBasedPDIPCCollisionUtility::GetEdgeEdgeRebounce(
 	const Vector3d edge_toi22 = edge22 + edge_velocity22 * toi;
 
 	Vector2d barycentric_coord;
-	barycentric_coord = GeometryUtil::GetLineLineClosestPoint(
-		edge_toi11, edge_toi12,
-		edge_toi21, edge_toi22
+	Vector3d normal;
+	LeiLan::EdgeEdgeSqDistance(
+		edge_toi11, edge_toi12, edge_toi21, edge_toi22,
+		barycentric_coord(0), barycentric_coord(1), normal
 	);
+	normal.normalize();
+	// barycentric_coord = GeometryUtil::GetLineLineClosestPoint(
+	// 	edge_toi11, edge_toi12,
+	// 	edge_toi21, edge_toi22
+	// );
 
 	const double m1 = edge_mass11 * (1 - barycentric_coord(0))
 					+ edge_mass12 * barycentric_coord(0);
@@ -97,7 +119,7 @@ void PositionBasedPDIPCCollisionUtility::GetEdgeEdgeRebounce(
 	const Vector3d closest_point_velocity2 = barycentric_coord(1) * edge_velocity22
 										   + (1 - barycentric_coord(1)) * edge_velocity21;
 	
-	const Vector3d normal = (closest_point1 - closest_point2).normalized();
+	// const Vector3d normal = (closest_point1 - closest_point2).normalized();
 	double normal_velocity1 = closest_point_velocity1.dot(normal), normal_velocity_after1;
 	double normal_velocity2 = closest_point_velocity2.dot(normal), normal_velocity_after2;
 	PositionBasedPDIPCCollisionUtility::GetPointPointRebounce(
@@ -110,14 +132,50 @@ void PositionBasedPDIPCCollisionUtility::GetEdgeEdgeRebounce(
 	normal_velocity_after1 *= delta_v_max / delta_v;
 	normal_velocity_after2 *= delta_v_max / delta_v;
 
-	const Vector3d edge_velocity_after11 = edge_velocity11 - (edge_velocity11.dot(normal) - normal_velocity_after1) * normal;
-	const Vector3d edge_velocity_after12 = edge_velocity12 - (edge_velocity12.dot(normal) - normal_velocity_after1) * normal;
-	const Vector3d edge_velocity_after21 = edge_velocity21 - (edge_velocity21.dot(normal) - normal_velocity_after2) * normal;
-	const Vector3d edge_velocity_after22 = edge_velocity22 - (edge_velocity22.dot(normal) - normal_velocity_after2) * normal;
+	const Vector3d edge_tangent_velocity11 = edge_velocity11 - edge_velocity11.dot(normal) * normal;
+	const Vector3d edge_tangent_velocity12 = edge_velocity12 - edge_velocity12.dot(normal) * normal;
+	const Vector3d edge_tangent_velocity21 = edge_velocity21 - edge_velocity21.dot(normal) * normal;
+	const Vector3d edge_tangent_velocity22 = edge_velocity22 - edge_velocity22.dot(normal) * normal;
+
+	const Vector3d edge_velocity_after11 = normal_velocity_after1 * normal + 0.7 * edge_tangent_velocity11;
+	const Vector3d edge_velocity_after12 = normal_velocity_after1 * normal + 0.7 * edge_tangent_velocity12;
+	const Vector3d edge_velocity_after21 = normal_velocity_after2 * normal + 0.7 * edge_tangent_velocity21;
+	const Vector3d edge_velocity_after22 = normal_velocity_after2 * normal + 0.7 * edge_tangent_velocity22;
+
 	edge_after11 = edge11 + toi * edge_velocity11 + (1 - toi) * edge_velocity_after11;
 	edge_after12 = edge12 + toi * edge_velocity12 + (1 - toi) * edge_velocity_after12;
 	edge_after21 = edge21 + toi * edge_velocity21 + (1 - toi) * edge_velocity_after21;
 	edge_after22 = edge22 + toi * edge_velocity22 + (1 - toi) * edge_velocity_after22;
+
+	// if (debug_bit) {
+	// 	std::vector<Vector3d> edge_toi1;
+	// 	edge_toi1.push_back(edge_toi11);
+	// 	edge_toi1.push_back(edge_toi12);
+	// 	DebugUtils::DumpVertexList("fuck-edge1", edge_toi1);
+
+	// 	std::vector<Vector3d> edge_toi2;
+	// 	edge_toi2.push_back(edge_toi21);
+	// 	edge_toi2.push_back(edge_toi22);
+	// 	DebugUtils::DumpVertexList("fuck-edge2", edge_toi2);
+
+
+	// 	std::vector<Vector3d> edge_after1;
+	// 	edge_after1.push_back(edge_after11);
+	// 	edge_after1.push_back(edge_after12);
+	// 	DebugUtils::DumpVertexList("fuck-edge-after1", edge_after1);
+
+	// 	std::vector<Vector3d> edge_after2;
+	// 	edge_after2.push_back(edge_after21);
+	// 	edge_after2.push_back(edge_after22);
+	// 	DebugUtils::DumpVertexList("fuck-edge-after2", edge_after2);
+
+		
+	// 	std::cerr << (closest_point1 - closest_point2).norm() << std::endl;
+	// 	std::cerr << normal.transpose() << std::endl;
+	// 	std::cerr << normal_velocity1 << " " << normal_velocity2 << std::endl;
+	// 	std::cerr << normal_velocity_after1 << " " << normal_velocity_after2 << std::endl;
+	// 	// DebugUtils::DumpVertexList("fuck-normal", normal_vertices);
+	// }
 }
 
 void PositionBasedPDIPCCollisionUtility::GetPointPointRebounce(
@@ -138,11 +196,12 @@ void PositionBasedPDIPCCollisionUtility::GetPointPointRebounce(
 }
 
 double PositionBasedPDIPCCollisionUtility::GetStiffness(double kappa, double d_hat, double distance) {
-	if (distance >= d_hat) {
-		distance = 0.99 * d_hat;
-	}
-	distance = std::max(1e-8 * d_hat, distance);
-	return - kappa * std::log(distance / d_hat);
+	return kappa * (1 / std::max(1e-8, distance));
+	// if (distance >= d_hat) {
+	// 	return 0;
+	// }
+	// distance = std::max(1e-8 * d_hat, distance);
+	// return - kappa * std::log(distance / d_hat);
 }
 
 void PositionBasedPDIPCCollisionHandler::ClearConstraintSet() {
@@ -255,9 +314,9 @@ void PositionBasedPDIPCCollisionHandler::AddCollisionPairs(
 					face3 + global_toi * face_velocity3
 				);
 
-				if (distance_toi >= _d_hat) {
-					break;
-				}
+				// if (distance_toi >= _d_hat) {
+				// 	break;
+				// }
 
 				_primitive_pairs.emplace_back(primitive_pair);
 
@@ -319,13 +378,17 @@ void PositionBasedPDIPCCollisionHandler::AddCollisionPairs(
 					edge22 + global_toi * edge_velocity22
 				);
 
-				if (distance_toi >= _d_hat) {
-					break;
-				}
+				// if (distance_toi >= _d_hat) {
+				// 	break;
+				// }
 				
 				_primitive_pairs.emplace_back(primitive_pair);
 
 				const double stiffness = PositionBasedPDIPCCollisionUtility::GetStiffness(_kappa, _d_hat, distance_toi);
+
+				if (primitive_pair._primitive_id1 == 107 && primitive_pair._primitive_id2 == 2364) {
+					debug_bit = true;
+				}
 
 				Vector3d edge_after11, edge_after12, edge_after21, edge_after22;
 				
@@ -342,6 +405,8 @@ void PositionBasedPDIPCCollisionHandler::AddCollisionPairs(
 					edge_after11, edge_after12,
 					edge_after21, edge_after22
 				);
+
+				debug_bit = false;
 
 				_projection_infos.emplace_back(ProjectionInfo(
 					primitive_pair._obj_id1, edge_indices1[0], stiffness,
@@ -365,6 +430,25 @@ void PositionBasedPDIPCCollisionHandler::AddCollisionPairs(
 			}
 		}
 	}
+	// for (const auto& projection_info : _projection_infos) {
+	// 	if (projection_info._obj_id == 0 && projection_info._vertex_id == 1) {
+	// 		std::cerr << "===================" << std::endl
+	// 				<< "obj id: " << projection_info._obj_id << std::endl
+	// 				<< "vertex id: " << projection_info._vertex_id << std::endl
+	// 				<< "target position: " << projection_info._target_position.transpose() << std::endl
+	// 				<< "stiffness: " << projection_info._stiffness << std::endl;
+	// 	}
+
+	// }
+
+	// std::vector<Vector3d> targets;
+	// for (const auto& projection_info : _projection_infos) {
+	// 	if (projection_info._obj_id == 0 && projection_info._vertex_id == 112) {
+	// 		targets.push_back(projection_info._target_position);
+	// 	}
+	// }
+	// std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
+	// DebugUtils::DumpVertexList("fuck", targets);
 }
 
 double PositionBasedPDIPCCollisionHandler::GetBarrierEnergy(

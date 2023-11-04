@@ -43,3 +43,21 @@ SampledObjectData::SampledObjectData(
 	_tet_topo(tet_topo),
 	_total_mass(mass.sum()),
 	_mass(mass) {}
+
+#include "ExternalForce/ExternalForce.hpp"
+
+template<>
+Factory<ExternalForce<FixedSampledObjectData>>* Factory<ExternalForce<FixedSampledObjectData>>::_the_factory = nullptr;
+
+FixedSampledObjectData FixedSampledObjectData::CreateFromConfig(const json &config) {
+	VectorXd vertices;
+	MatrixXi topo;
+	FileIOUtils::ReadMesh(config["filename"], vertices, topo);
+	return GetFixedSampledObjectData(vertices, topo, config["codimension"], config["single-mass"]);
+}
+
+FixedSampledObjectData FixedSampledObjectData::GetFixedSampledObjectData(const VectorXd &x, const MatrixXi &topo, int codimension, double single_mass) {
+	int num_points = x.size() / 3;
+	VectorXd mass = VectorXd::Constant(num_points, single_mass);
+	return SampledObjectData::GetSampledObjectData(x, mass, topo, codimension);
+}

@@ -48,3 +48,7 @@ namespace FileIOUtils {
 		const Vector3d& translation = Vector3d::Zero()
 	);
 }
+
+namespace DebugUtils {
+	void DumpVertexList(const std::string& name, const std::vector<Vector3d> vertex_list);
+}
