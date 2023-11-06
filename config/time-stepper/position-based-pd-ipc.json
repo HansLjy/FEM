@@ -2,15 +2,15 @@
 	"type": "position-based-PDIPC",
 	"outer-tolerance": 1e-5,
 	"inner-tolerance": 1e-3,
-	"outer-max-iterations": 10,
-	"inner-max-iterations": 10,
+	"outer-max-iterations": 100,
+	"inner-max-iterations": 20,
 	"culling": {
 		"type": "spatial-hashing",
 		"grid-length": 0.03,
 		"hash-table-size": 8192
 	},
 	"collision-handler": {
-		"kappa": 1e4,
+		"kappa": 1e9,
 		"d-hat": 1e-3,
 		"stiffness-blending": 0.5,
 		"velocity-damping": 1

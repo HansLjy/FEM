@@ -40,34 +40,32 @@ CONCEPT_MODEL_IDIOM_END
 
 namespace PositionBasedPDIPCCollisionUtility {
 	void GetVertexFaceRebounce(
-		const Vector3d& vertex,
-		const Vector3d& face1, const Vector3d& face2, const Vector3d& face3,
-		const Vector3d& vertex_velocity,
-		const Vector3d& face_velocity1, const Vector3d& face_velocity2, const Vector3d& face_velocity3,
+		const Vector3d &vertex,
+		const Vector3d &face1, const Vector3d &face2, const Vector3d &face3,
+		const Vector3d &vertex_velocity,
+		const Vector3d &face_velocity1, const Vector3d &face_velocity2, const Vector3d &face_velocity3,
 		const double vertex_mass,
 		const double face_mass1, const double face_mass2, const double face_mass3,
-		const double toi,
+		const double local_toi,
 		const double d_hat,
-		Vector3d& vertex_after,
-		Vector3d& face_after1, Vector3d& face_after2, Vector3d& face_after3
+		Vector3d &vertex_after,
+		Vector3d &face_after1, Vector3d &face_after2, Vector3d &face_after3
 	);
 
 	void GetEdgeEdgeRebounce(
-		const Vector3d& edge11, const Vector3d& edge12,
-		const Vector3d& edge21, const Vector3d& edge22,
-		const Vector3d& edge_velocity11, const Vector3d& edge_velocity12,
-		const Vector3d& edge_velocity21, const Vector3d& edge_velocity22,
+		const Vector3d &edge11, const Vector3d &edge12,
+		const Vector3d &edge21, const Vector3d &edge22,
+		const Vector3d &edge_velocity11, const Vector3d &edge_velocity12,
+		const Vector3d &edge_velocity21, const Vector3d &edge_velocity22,
 		const double edge_mass11, const double edge_mass12,
 		const double edge_mass21, const double edge_mass22,
-		const double toi,
+		const double local_toi,
 		const double d_hat,
-		Vector3d& edge_after11, Vector3d& edge_after12,
-		Vector3d& edge_after21, Vector3d& edge_after22
+		Vector3d &edge_after11, Vector3d &edge_after12,
+		Vector3d &edge_after21, Vector3d &edge_after22
 	);
 
-	// The normal points from primitive 1 to primitive 2
-	void GetPointPointRebounce(double delta_v, double mass1, double mass2, double& v_after1, double& v_after2);	
-	double GetStiffness(double kappa, double d_hat, double distance);
+	double GetStiffness(double kappa, double d_hat2, double distance2, double min_stffness);
 }
 
 class PositionBasedPDIPCCollisionHandler {
@@ -85,7 +83,8 @@ public:
 		const std::vector<int>& offsets,
 		const std::vector<PrimitivePair>& constraint_set,
 		const std::vector<double> & local_tois,
-		const double global_toi
+		const double global_toi,
+		double dt
 	);
 
 	double GetBarrierEnergy(

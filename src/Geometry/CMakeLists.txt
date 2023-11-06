@@ -22,6 +22,8 @@ file(GLOB_RECURSE GEOMETRY_SOURCE_FILE
 	SpatialQuery/*.cc
 )
 
+add_definitions("-DBOW_COMPILE_DOUBLE -DBOW_COMPILE_3D -DBOW_STATIC_LIBRARY")
+
 if(BUILD_TEST)
     add_subdirectory(Test)
 endif()

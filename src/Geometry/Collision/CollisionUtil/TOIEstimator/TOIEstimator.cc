@@ -1,6 +1,8 @@
 #include "TOIEstimator.hpp"
 #include "Collision/CollisionUtil/ProcessPrimitivePair.hpp"
 
+#include "Collision/IpcTookit/CCD.h"
+
 double TOIEstimator::GetTOI(
 	const std::vector<PrimitivePair> &constraint_set,
 	const std::vector<CollisionInterface> &objs
@@ -40,9 +42,13 @@ double TOIEstimator::GetLocalTOIs(
 		
 		switch (primitive_pair._type) {
 			case CollisionType::kVertexFace: {
+				// if (primitive_pair._obj_id1 == 1 && primitive_pair._primitive_id1 == 3 &&
+				// 	primitive_pair._obj_id2 == 0 && primitive_pair._primitive_id2 == 3) {
+				// 		std::cerr << "fuck: " << __FILE__ << ":" << __LINE__ << std::endl;
+				// 	}
 				const int vertex_index = primitive_pair._primitive_id1;
 				const Vector3d vertex = obj1.GetCollisionVertices().row(vertex_index);
-				const Vector3d vertex_velocity = obj1.GetCollisionVertexVelocity(primitive_pair._primitive_id1);
+				const Vector3d vertex_velocity = obj1.GetCollisionVertexVelocity(vertex_index);
 				
 				const RowVector3i face_indices = obj2.GetCollisionFaceTopo().row(primitive_pair._primitive_id2);
 				const Vector3d face1 = obj2.GetCollisionVertices().row(face_indices[0]);
@@ -52,7 +58,12 @@ double TOIEstimator::GetLocalTOIs(
 				const Vector3d face_velocity2 = obj2.GetCollisionVertexVelocity(face_indices[1]);
 				const Vector3d face_velocity3 = obj2.GetCollisionVertexVelocity(face_indices[2]);
 				
-				double local_toi = _ccd->VertexFaceCollision(vertex, face1, face2, face3, vertex_velocity, face_velocity1, face_velocity2, face_velocity3);
+				// double local_toi = _ccd->VertexFaceCollision(vertex, face1, face2, face3, vertex_velocity, face_velocity1, face_velocity2, face_velocity3);
+				double local_toi = IPC::point_triangle_ccd(
+					vertex, face1, face2, face3,
+					vertex_velocity, face_velocity1, face_velocity2, face_velocity3,
+					0.1, 0
+				);
 				local_tois.emplace_back(local_toi);
 				if (local_toi < toi) {
 					toi = local_toi;
@@ -73,7 +84,12 @@ double TOIEstimator::GetLocalTOIs(
 				const Vector3d edge_velocity21 = obj2.GetCollisionVertexVelocity(edge_indices2[0]);
 				const Vector3d edge_velocity22 = obj2.GetCollisionVertexVelocity(edge_indices2[1]);
 
-				double local_toi = _ccd->EdgeEdgeCollision(edge11, edge12, edge21, edge22, edge_velocity11, edge_velocity12, edge_velocity21, edge_velocity22);
+				// double local_toi = _ccd->EdgeEdgeCollision(edge11, edge12, edge21, edge22, edge_velocity11, edge_velocity12, edge_velocity21, edge_velocity22);
+				double local_toi = IPC::edge_edge_ccd(
+					edge11, edge12, edge21, edge22,
+					edge_velocity11, edge_velocity12, edge_velocity21, edge_velocity22,
+					0.1, 0
+				);
 				local_tois.emplace_back(local_toi);
 				if (local_toi < toi) {
 					toi = local_toi;

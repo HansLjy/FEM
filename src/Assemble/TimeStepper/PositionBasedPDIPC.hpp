@@ -33,7 +33,7 @@ public:
 
 	void InnerIteration(const SparseMatrixXd& lhs_out, const VectorXd& rhs_out, VectorXd& x) const;
 	double GetTotalEnergy(const VectorXd& x, const SparseMatrixXd& M_h2, const VectorXd& x_hat);
-	VectorXd EstimateExternalForce(const SparseMatrixXd& M_h2, const VectorXd& x_current, const VectorXd& x_est);
+	VectorXd EstimateExternalForce(const SparseMatrixXd& M_h2, const VectorXd& x_current, const VectorXd& x_est, const double dt);
 
 	const std::vector<Renderable> & GetRenderObjects() const override;
 
