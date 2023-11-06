@@ -176,21 +176,24 @@ void PositionBasedPDIPC::Step(double h) {
 	VectorXd x = x_hat;							// final solution
 	do {
 		int inner_itrs = 0;
-		_collision_assembler.ComputeCollisionVertex(x, _collision_objs);
-		double E_prev = GetTotalEnergy(x, M_h2, x_hat);
-		double E_delta = 0;
-		do {
+		for (int i = 0; i < 20; i++) {
 			InnerIteration(M_h2 + barrier_global_matrix, Mx_hat_h2 + barrier_y, x);
+		}
+		// _collision_assembler.ComputeCollisionVertex(x, _collision_objs);
+		// double E_prev = GetTotalEnergy(x, M_h2, x_hat);
+		// double E_delta = 0;
+		// do {
+		// 	InnerIteration(M_h2 + barrier_global_matrix, Mx_hat_h2 + barrier_y, x);
 
-			_collision_assembler.ComputeCollisionVertex(x, _collision_objs);
-			double E_current = GetTotalEnergy(x, M_h2, x_hat);
-			E_delta = E_prev > 1e-6
-					? std::abs(E_current - E_prev) / E_prev
-					: std::abs(E_current - E_prev);
-			E_prev = E_current;
+		// 	_collision_assembler.ComputeCollisionVertex(x, _collision_objs);
+		// 	double E_current = GetTotalEnergy(x, M_h2, x_hat);
+		// 	E_delta = E_prev > 1e-6
+		// 			? std::abs(E_current - E_prev) / E_prev
+		// 			: std::abs(E_current - E_prev);
+		// 	E_prev = E_current;
 
-			inner_itrs++;
-		} while (E_delta > _inner_tolerance && inner_itrs < _inner_max_itrs);
+		// 	inner_itrs++;
+		// } while (E_delta > _inner_tolerance && inner_itrs < _inner_max_itrs);
 
 
 		if (inner_itrs < _inner_max_itrs) {
@@ -216,11 +219,11 @@ void PositionBasedPDIPC::Step(double h) {
 		last_toi = toi;
 		std::cerr << last_toi << std::endl;
 
-		// for (int i = 0; i < local_tois.size(); i++) {
-		// 	if (local_tois[i] * 0.8 == toi) {
-		// 		DebugUtils::PrintPrimitivePair(constraint_set[i], _collision_objs);
-		// 	}
-		// }
+		for (int i = 0; i < local_tois.size(); i++) {
+			if (local_tois[i] * 0.95 == toi) {
+				DebugUtils::PrintPrimitivePair(constraint_set[i], _collision_objs);
+			}
+		}
 
 		_pb_pd_ipc_collision_handler.AddCollisionPairs(
 			_massed_collision_objs,

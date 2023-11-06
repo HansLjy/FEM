@@ -2,10 +2,10 @@
     "objects": [
         {
             "type": "cloth",
-            "filename": "/plane_16.obj",
+            "filename": "/plane_9.obj",
             "centered": false,
-			"translation": [0, 0, 0.21],
-			"rotation-axis": [0, 1, 0],
+			"translation": [0.2, 0.2, 0.21],
+			"rotation-axis": [0, 0, 1],
 			"rotation-angle": 0,
             "density": 100,
             "spring-stiffness": 10000,
@@ -27,7 +27,7 @@
 		{
             "type": "fixed-object",
             "external-forces": [],
-			"filename": "/floor_small.obj",
+			"filename": "/cube.obj",
 			"codimension": 2,
 			"single-mass": 1e10,
             "render": {

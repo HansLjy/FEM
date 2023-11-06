@@ -10,7 +10,7 @@
 		"hash-table-size": 8192
 	},
 	"collision-handler": {
-		"kappa": 1e9,
+		"kappa": 1e7,
 		"d-hat": 1e-3,
 		"stiffness-blending": 0.5,
 		"velocity-damping": 1
