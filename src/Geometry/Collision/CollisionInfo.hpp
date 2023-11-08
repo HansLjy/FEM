@@ -15,11 +15,30 @@ struct PrimitivePair {
 	int _primitive_id2;
 };
 
+#include <iostream>
 
 class CollisionInterface;
 namespace DebugUtils {
 	void PrintPrimitivePair(const PrimitivePair& pair);
-	void PrintPrimitivePair(const PrimitivePair& pair, const std::vector<CollisionInterface>& objs);
+
+	template<class CollisionInterface>
+	void PrintPrimitivePair(const PrimitivePair& pair, const std::vector<CollisionInterface>& objs) {
+		PrintPrimitivePair(pair);
+		if (pair._type == CollisionType::kEdgeEdge) {
+			std::cerr << "vertices for edge 1: " << objs[pair._obj_id1].GetCollisionEdgeTopo().row(pair._primitive_id1) << std::endl;
+			std::cerr << "vertices for edge 2: " << objs[pair._obj_id2].GetCollisionEdgeTopo().row(pair._primitive_id2) << std::endl;
+		} else {
+			std::cerr << "vertices for edge 1: " << pair._primitive_id1 << std::endl;
+			std::cerr << "vertices for edge 2: " << objs[pair._obj_id2].GetCollisionFaceTopo().row(pair._primitive_id2) << std::endl;
+		}
+	}
+
+	inline bool PrimitivePairEqual(const PrimitivePair& primitive_pair, int obj_id1, int primitive_id1, int obj_id2, int primitive_id2) {
+		return primitive_pair._obj_id1 == obj_id1
+			&& primitive_pair._obj_id2 == obj_id2
+			&& primitive_pair._primitive_id1 == primitive_id1
+			&& primitive_pair._primitive_id2 == primitive_id2;
+	}
 }
 
 struct PardonPairInfo {

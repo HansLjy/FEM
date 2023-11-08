@@ -3,34 +3,9 @@
 #include "PointEdgeDistance.h"
 #include "PointTriangleDistance.h"
 #include "DistanceType.h"
+#include "UnclassifiedDistance.hpp"
 
 namespace IPC {
-
-    double point_triangle_distance_unclassified(
-        const Vector3d& p,
-        const Vector3d& t0,
-        const Vector3d& t1,
-        const Vector3d& t2)
-    {
-        switch (point_triangle_distance_type(p, t0, t1, t2)) {
-        case 0:
-            return point_point_distance(p, t0);
-        case 1:
-            return point_point_distance(p, t1);
-        case 2:
-            return point_point_distance(p, t2);
-        case 3:
-            return point_edge_distance(p, t0, t1);
-        case 4:
-            return point_edge_distance(p, t1, t2);
-        case 5:
-            return point_edge_distance(p, t2, t0);
-        case 6:
-            return point_triangle_distance(p, t0, t1, t2);
-        default:
-            return std::numeric_limits<double>::max();
-        }
-    }
 
     bool point_triangle_cd_broadphase(
         const Vector3d& p,

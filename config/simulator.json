@@ -1,12 +1,12 @@
 {
 	"simulation-config": {
 		"duration": 2,
-		"time-step": 0.001,
-		"dump-mesh": false,
+		"time-step": 0.01,
+		"dump-mesh": true,
 		"mesh-path": "/output/test",
 		"dump-coord": false,
 		"pickup-from-dump": false,
-		"pickup-frame-number": 195
+		"pickup-frame-number": 0
 	},
 	"time-stepper-config": "/position-based-pd-ipc.json",
 	"scene-config": "/position-based-pd-ipc-cloth-ball.json",

@@ -172,38 +172,38 @@ void PositionBasedPDIPC::Step(double h) {
 	int outer_itr = 0;
 	double last_toi = 0;
 	double delta_x = 0;
-	VectorXd x_pre = x_current;
+	VectorXd x_ccd_start = x_current;
 	VectorXd x = x_hat;							// final solution
-	do {
+	while(true) {
 		int inner_itrs = 0;
-		for (int i = 0; i < 20; i++) {
+		bool inner_converge = false;
+		while(true) {
+			VectorXd x_pre = x;
+			_collision_assembler.ComputeCollisionVertex(x_pre, _collision_objs);
+			double E_pre = GetTotalEnergy(x_pre, M_h2, x_hat);
 			InnerIteration(M_h2 + barrier_global_matrix, Mx_hat_h2 + barrier_y, x);
+
+			_collision_assembler.ComputeCollisionVertex(x, _collision_objs);
+			double E_current = GetTotalEnergy(x, M_h2, x_hat);
+
+			// std::cerr << E_current << std::endl;
+
+			assert(E_current < E_pre || E_current < 1e-8);
+
+			if (++inner_itrs >= _inner_max_itrs || (x - x_pre).norm() < _inner_tolerance) {
+				break;
+			}
 		}
-		// _collision_assembler.ComputeCollisionVertex(x, _collision_objs);
-		// double E_prev = GetTotalEnergy(x, M_h2, x_hat);
-		// double E_delta = 0;
-		// do {
-		// 	InnerIteration(M_h2 + barrier_global_matrix, Mx_hat_h2 + barrier_y, x);
-
-		// 	_collision_assembler.ComputeCollisionVertex(x, _collision_objs);
-		// 	double E_current = GetTotalEnergy(x, M_h2, x_hat);
-		// 	E_delta = E_prev > 1e-6
-		// 			? std::abs(E_current - E_prev) / E_prev
-		// 			: std::abs(E_current - E_prev);
-		// 	E_prev = E_current;
-
-		// 	inner_itrs++;
-		// } while (E_delta > _inner_tolerance && inner_itrs < _inner_max_itrs);
-
 
 		if (inner_itrs < _inner_max_itrs) {
+			inner_converge = true;
 			// spdlog::info("Inner iteration converges in {} steps", inner_itrs);
 		} else {
 			spdlog::warn("Inner iteration does not converge!");
 		}
 
-		_collision_assembler.ComputeCollisionVertex(x_pre, _collision_objs);
-		_collision_assembler.ComputeCollisionVertexVelocity(x - x_pre, _collision_objs);
+		_collision_assembler.ComputeCollisionVertex(x_ccd_start, _collision_objs);
+		_collision_assembler.ComputeCollisionVertexVelocity(x - x_ccd_start, _collision_objs);
 
 		std::vector<PrimitivePair> constraint_set;
 		_culling->GetCCDSet(_collision_objs, _offsets, constraint_set);
@@ -212,18 +212,18 @@ void PositionBasedPDIPC::Step(double h) {
 		double toi = _toi_estimator.GetLocalTOIs(constraint_set, _collision_objs, local_tois);
 
 		if (toi <= 1) {
-			toi *= 0.95;
+			toi *= 0.8;
 		} else {
 			toi = 1;
 		}
 		last_toi = toi;
 		std::cerr << last_toi << std::endl;
 
-		for (int i = 0; i < local_tois.size(); i++) {
-			if (local_tois[i] * 0.95 == toi) {
-				DebugUtils::PrintPrimitivePair(constraint_set[i], _collision_objs);
-			}
-		}
+		// for (int i = 0; i < local_tois.size(); i++) {
+		// 	if (local_tois[i] * 0.8 == toi) {
+		// 		DebugUtils::PrintPrimitivePair(constraint_set[i], _massed_collision_objs);
+		// 	}
+		// }
 
 		_pb_pd_ipc_collision_handler.AddCollisionPairs(
 			_massed_collision_objs,
@@ -238,24 +238,14 @@ void PositionBasedPDIPC::Step(double h) {
 		barrier_global_matrix.setZero();
 		_pb_pd_ipc_collision_handler.GetBarrierGlobalMatrix(_massed_collision_objs, _offsets, _total_dof, barrier_global_matrix);
 
-		// if (outer_itr < 1) {
-		// 	SparseMatrixXd A_elas = _pd_assembler.GetGlobalMatrix(_pd_objs, _total_dof);
-		// 	Eigen::SimplicialLDLT<SparseMatrixXd> collision_solver(M_h2 + barrier_global_matrix);
-		// 	// Eigen::SimplicialLDLT<SparseMatrixXd> collision_solver(M_h2 + barrier_global_matrix + A_elas);
-		// 	VectorXd rhs_vector = Mx_hat_h2 + barrier_y;
-		// 	_pd_assembler.LocalProject(_pd_objs, x, rhs_vector);
-
-		// 	// VectorXd xc = collision_solver.solve(M_h2 * x + barrier_y);
-		// 	VectorXd xc = collision_solver.solve(rhs_vector);
-		// 	VectorXd f_pen = (M_h2 + A_elas) * (xc - x);
-		// 	x_hat += m_solver.solve(f_pen) * h * h;
-		// 	Mx_hat_h2 += f_pen;
-		// }
-		delta_x = (x - x_pre).norm();
-		x = x_pre + toi * (x - x_pre);
-		x_pre = x;
+		delta_x = (x - x_ccd_start).norm();
+		x = x_ccd_start + toi * (x - x_ccd_start);
+		x_ccd_start = x;
+		if (inner_converge && toi == 1) {
+			break;
+		}
 		outer_itr++;
-	} while (outer_itr <= 1 || (1 - last_toi) * delta_x > _outer_tolerance);
+	}
 
 	if (last_toi < 0.9) {
 		spdlog::warn("TOI = {}", last_toi);

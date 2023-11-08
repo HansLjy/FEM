@@ -4,7 +4,6 @@
 #include "EigenAll.h"
 
 namespace IPC {
-
     double point_triangle_distance(
         const Vector3d& p,
         const Vector3d& t0, const Vector3d& t1, const Vector3d& t2

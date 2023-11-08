@@ -1,6 +1,7 @@
 #pragma once
 
 #include "EigenAll.h"
+#include "FileIO.hpp"
 #include "Pattern.h"
 #include "BlockMatrix.h"
 #include "Collision/CollisionInfo.hpp"
@@ -48,6 +49,7 @@ namespace PositionBasedPDIPCCollisionUtility {
 		const double face_mass1, const double face_mass2, const double face_mass3,
 		const double local_toi,
 		const double d_hat,
+		const double velocity_damping,
 		Vector3d &vertex_after,
 		Vector3d &face_after1, Vector3d &face_after2, Vector3d &face_after3
 	);
@@ -61,6 +63,7 @@ namespace PositionBasedPDIPCCollisionUtility {
 		const double edge_mass21, const double edge_mass22,
 		const double local_toi,
 		const double d_hat,
+		const double velocity_damping,
 		Vector3d &edge_after11, Vector3d &edge_after12,
 		Vector3d &edge_after21, Vector3d &edge_after22
 	);
@@ -109,6 +112,42 @@ public:
 		int total_dof,
 		SparseMatrixXd& global_matrix
 	) const;
+
+	void DumpTargetPositions(const std::string& name, int obj_id, int vertex_id, const std::function<bool(const Vector3d&)>& judge) {
+		std::vector<Vector3d> targets;
+		int project_id = 0;
+		for (const auto& projection_info : _projection_infos) {
+			if (projection_info._obj_id == obj_id && projection_info._vertex_id == vertex_id && judge(projection_info._target_position)) {
+				targets.push_back(projection_info._target_position);
+				// DebugUtils::PrintPrimitivePair(_primitive_pairs[project_id / 4]);
+			}
+			project_id++;
+		}
+		DebugUtils::DumpVertexList(name, targets);
+	}
+
+	void DumpAllTargetPositions(
+		const std::string& name,
+		const std::vector<MassedCollisionInterface>& objs,
+		const std::function<bool(const int obj_id, const int vertex_id, const Vector3d&)>& judge
+	) {
+		std::vector<Vector3d> targets;
+		int project_id = 0;
+		int satisfiled_id = 0;
+		std::cerr << "================" << std::endl;
+		for (const auto& projection_info : _projection_infos) {
+			std::cerr << project_id << ": " << projection_info._stiffness << std::endl;
+			if (judge(projection_info._obj_id, projection_info._vertex_id, projection_info._target_position)) {
+				targets.push_back(projection_info._target_position);
+				if (satisfiled_id == 118) {
+					DebugUtils::PrintPrimitivePair(_primitive_pairs[project_id / 4], objs);
+				}
+				satisfiled_id++;
+			}
+			project_id++;
+		}
+		DebugUtils::DumpVertexList(name, targets);
+	}
 
 // protected:
 	double _kappa;

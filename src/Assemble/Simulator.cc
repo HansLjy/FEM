@@ -222,13 +222,17 @@ void Simulator::Processing(Scene &scene) {
 			obj.GetRenderTopos(topo);
 			obj.GetRenderVertices(vertices);
 
-			FileIOUtils::WriteMesh(_mesh_path + "/" + std::to_string(obj_id) + "_itr" + std::to_string(step_number) + ".obj", vertices, topo);
+			FileIOUtils::WriteMesh(_mesh_path + "/" + std::to_string(obj_id) + "_itr" + std::to_string(itr) + ".obj", vertices, topo);
 			obj_id++;
 		}
 	}
 	if (_dump_coord) {
 		_time_stepper->DumpCoord(itr);
 	}
+
+	// if (itr == 56) {
+	// 	exit(-1);
+	// }
 
 	spdlog::info("#iterations = {}", itr);
 }
