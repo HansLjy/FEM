@@ -4,6 +4,7 @@
 #include "Collision/CollisionHandler/PositionBasedPDIPCCollisionHelper.hpp"
 #include "Collision/CollisionUtil/Culling/CCDCulling.hpp"
 #include "Collision/CollisionUtil/TOIEstimator/TOIEstimator.hpp"
+#include "Collision/CollisionUtil/BarrierSet/BarrierSetGenerator.hpp"
 #include "Collision/CollisionUtil/Assembler/CollisionAssembler.hpp"
 #include "Assembler/Assembler.hpp"
 #include "Assembler/PDAssembler.hpp"
@@ -17,7 +18,8 @@ public:
 		int outer_max_iterations, int inner_max_iterations,
 		PositionBasedPDIPCCollisionHandler&& collision_handler,
 		TOIEstimator&& toi_estimator,
-		CCDCulling* culling
+		CCDCulling* culling,
+		BarrierSetGenerator* barrier_set_generator
 	);
 
 	void BindSystem(const json &config) override;
@@ -67,6 +69,7 @@ protected:
 	TOIEstimator _toi_estimator;
 
 	CCDCulling* _culling;
+	BarrierSetGenerator* _barrier_set_generator;
 
 	static void TotalForceZeroProject(VectorXd& force);
 };

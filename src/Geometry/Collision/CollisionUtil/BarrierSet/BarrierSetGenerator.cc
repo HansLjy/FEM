@@ -1,7 +1,7 @@
 #include "BarrierSetGenerator.hpp"
 #include "Collision/CollisionUtility.h"
+#include "Collision/IpcTookit/UnclassifiedDistance.hpp"
 #include "Pattern.h"
-#include "tbb/parallel_for.h"
 
 template<>
 Factory<BarrierSetGenerator>* Factory<BarrierSetGenerator>::_the_factory = nullptr;
@@ -68,8 +68,7 @@ void SpatialHashingBarrierSetGenerator::GenerateBarrierSet(
         const int num_edges = edge_topo.rows();
 
         /* vertex-face collision */
-		std::vector<std::vector<PrimitivePair>> local_vf_barrier_pairs(num_faces);
-		tbb::parallel_for(0, num_faces, [&](int face_id){
+		for (int face_id = 0; face_id < num_faces; face_id++) {
             const auto topo = face_topo.row(face_id);
             Vector3d face_vertex1 = vertices.row(topo(0)).transpose();
             Vector3d face_vertex2 = vertices.row(topo(1)).transpose();
@@ -83,24 +82,19 @@ void SpatialHashingBarrierSetGenerator::GenerateBarrierSet(
 				if (candidate._obj_id == obj_id && (candidate._primitive_id == topo(0) || candidate._primitive_id == topo(1) || candidate._primitive_id == topo(2))) {
 					continue;
 				}
-				auto distance = GetVFDistance(candidate._vertex, face_vertex1, face_vertex2, face_vertex3);
-                if (distance < _d_hat) {
-                    local_vf_barrier_pairs[face_id].push_back(PrimitivePair{
+				auto distance2 = IPC::point_triangle_distance_unclassified(candidate._vertex, face_vertex1, face_vertex2, face_vertex3);
+                if (distance2 < _d_hat * _d_hat) {
+                    barrier_set.push_back(PrimitivePair{
                         CollisionType::kVertexFace,
                         candidate._obj_id, obj_id,
                         candidate._primitive_id, face_id
                     });
                 }
             }
-		});
-		int total_vf_barrier_pairs = 0;
-        for (int face_id = 0; face_id < num_faces; face_id++) {
-			total_vf_barrier_pairs += local_vf_barrier_pairs[face_id].size();
-        }
+		};
 
         /* edge edge collision */
-		std::vector<std::vector<PrimitivePair>> local_ee_barrier_pairs(num_edges);
-		tbb::parallel_for(0, num_edges, [&](int edge_id){
+		for (int edge_id = 0; edge_id < num_edges; edge_id++) {
             const auto topo = edge_topo.row(edge_id);
 
             Vector3d edge_vertex1 = vertices.row(topo(0)).transpose();
@@ -120,37 +114,16 @@ void SpatialHashingBarrierSetGenerator::GenerateBarrierSet(
 						continue;
 					}
 				}
-				auto distance = GetEEDistance(candidate._vertex1, candidate._vertex2, edge_vertex1, edge_vertex2);
-                if (distance < _d_hat) {
-                    local_ee_barrier_pairs[edge_id].push_back(PrimitivePair{
+				auto distance2 = IPC::edge_edge_distance_unclassified(candidate._vertex1, candidate._vertex2, edge_vertex1, edge_vertex2);
+                if (distance2 < _d_hat * _d_hat) {
+                    barrier_set.push_back(PrimitivePair{
                         CollisionType::kEdgeEdge,
                         candidate._obj_id, obj_id,
                         candidate._primitive_id, edge_id
                     });
                 }
             }
-		});
-		int total_ee_barrier_pairs = 0;
-        for (int edge_id = 0; edge_id < num_edges; edge_id++) {
-			total_ee_barrier_pairs += local_ee_barrier_pairs[edge_id].size();
-        }
-
-		barrier_set.reserve(barrier_set.size() + total_ee_barrier_pairs + total_vf_barrier_pairs);
-		for (int face_id = 0; face_id < num_faces; face_id++) {
-			barrier_set.insert(
-				barrier_set.end(),
-				local_vf_barrier_pairs[face_id].begin(),
-				local_vf_barrier_pairs[face_id].end()
-			);
-        }
-		for (int edge_id = 0; edge_id < num_edges; edge_id++) {
-			barrier_set.insert(
-				barrier_set.end(),
-				local_ee_barrier_pairs[edge_id].begin(),
-				local_ee_barrier_pairs[edge_id].end()
-			);
-        }
-
+		};
 		obj_id++;
     }
 

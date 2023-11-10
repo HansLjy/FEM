@@ -16,12 +16,14 @@ void PositionBasedPDIPC::PickCoord(int itr) {
 
 PositionBasedPDIPC* PositionBasedPDIPC::CreateFromConfig(const json &config) {
 	auto culling = CCDCulling::GetProductFromConfig(config["culling"]);
+	auto barrier_set_generator = BarrierSetGenerator::GetProductFromConfig(config["barrier-set-generator"]);
 	return new PositionBasedPDIPC(
 		config["outer-tolerance"], config["inner-tolerance"],
 		config["outer-max-iterations"], config["inner-max-iterations"],
 		PositionBasedPDIPCCollisionHandler(config["collision-handler"]),
 		TOIEstimator(config["toi-estimator"]),
-		culling
+		culling,
+		barrier_set_generator
 	);
 }
 
@@ -30,14 +32,16 @@ PositionBasedPDIPC::PositionBasedPDIPC (
 	int outer_max_iterations, int inner_max_iterations,
 	PositionBasedPDIPCCollisionHandler&& collision_handler,
 	TOIEstimator&& toi_estimator,
-	CCDCulling* culling)
+	CCDCulling* culling,
+	BarrierSetGenerator* barrier_set_generator)
 	: _outer_tolerance(outer_tolerance),
 	  _inner_tolerance(inner_tolerance),
 	  _outer_max_itrs(outer_max_iterations),
 	  _inner_max_itrs(inner_max_iterations),
 	  _pb_pd_ipc_collision_handler(std::move(collision_handler)),
 	  _toi_estimator(std::move(toi_estimator)),
-	  _culling(culling) {}
+	  _culling(culling),
+	  _barrier_set_generator(barrier_set_generator) {}
 
 void PositionBasedPDIPC::BindSystem(const json &config) {
 	TypeErasure::ReadObjects(config["objects"], _objs);
@@ -118,13 +122,7 @@ VectorXd PositionBasedPDIPC::EstimateExternalForce(
 		toi = 1;
 	}
 
-	_pb_pd_ipc_collision_handler.AddCollisionPairs(
-		_massed_collision_objs,
-		_offsets,
-		constraint_set,
-		local_tois,
-		toi, dt
-	);
+	throw "fuck";
 
 	VectorXd barrier_y = VectorXd::Zero(_total_dof);
 	_pb_pd_ipc_collision_handler.BarrierLocalProject(_massed_collision_objs, _offsets, barrier_y);
@@ -169,9 +167,10 @@ void PositionBasedPDIPC::Step(double h) {
 	// x_hat += h * h * m_solver.solve(f_pen);
 	// Mx_hat_h2 += f_pen;
 
+	int B_size = 0;
+	int delta_B_size = 0;
 	int outer_itr = 0;
 	double last_toi = 0;
-	double delta_x = 0;
 	VectorXd x_ccd_start = x_current;
 	VectorXd x = x_hat;							// final solution
 	while(true) {
@@ -179,18 +178,16 @@ void PositionBasedPDIPC::Step(double h) {
 		bool inner_converge = false;
 		while(true) {
 			VectorXd x_pre = x;
-			_collision_assembler.ComputeCollisionVertex(x_pre, _collision_objs);
-			double E_pre = GetTotalEnergy(x_pre, M_h2, x_hat);
 			InnerIteration(M_h2 + barrier_global_matrix, Mx_hat_h2 + barrier_y, x);
 
-			_collision_assembler.ComputeCollisionVertex(x, _collision_objs);
-			double E_current = GetTotalEnergy(x, M_h2, x_hat);
+			double tolerance;
+			if (B_size == 0 || delta_B_size <= 1) {
+				tolerance = _inner_tolerance;
+			} else {
+				tolerance = std::log(delta_B_size) * _inner_tolerance;
+			}
 
-			// std::cerr << E_current << std::endl;
-
-			assert(E_current < E_pre || E_current < 1e-8);
-
-			if (++inner_itrs >= _inner_max_itrs || (x - x_pre).norm() < _inner_tolerance) {
+			if (++inner_itrs >= _inner_max_itrs || (x - x_pre).norm() < tolerance) {
 				break;
 			}
 		}
@@ -217,7 +214,7 @@ void PositionBasedPDIPC::Step(double h) {
 			toi = 1;
 		}
 		last_toi = toi;
-		std::cerr << last_toi << std::endl;
+		spdlog::info("toi = {}", last_toi);
 
 		// for (int i = 0; i < local_tois.size(); i++) {
 		// 	if (local_tois[i] * 0.8 == toi) {
@@ -225,37 +222,34 @@ void PositionBasedPDIPC::Step(double h) {
 		// 	}
 		// }
 
-		_pb_pd_ipc_collision_handler.AddCollisionPairs(
-			_massed_collision_objs,
-			_offsets,
-			constraint_set,
-			local_tois,
-			toi, h
-		);
+		std::vector<PrimitivePair> barrier_set;
+		_collision_assembler.ComputeCollisionVertex(x_ccd_start + toi * (x - x_ccd_start), _collision_objs);
+		_barrier_set_generator->GenerateBarrierSet(_collision_objs, _offsets, barrier_set);
+
+		_pb_pd_ipc_collision_handler.AddBarrierSet(barrier_set);
+		_collision_assembler.ComputeCollisionVertex(x_ccd_start, _collision_objs);
+		_collision_assembler.ComputeCollisionVertexVelocity(x - x_ccd_start, _collision_objs);
+		_pb_pd_ipc_collision_handler.TargetPositionGeneration(_massed_collision_objs, toi, h);
+
+		int new_B_size = _pb_pd_ipc_collision_handler._barrier_set.size();
+		delta_B_size = new_B_size - B_size;
+		B_size = new_B_size;
 
 		barrier_y.setZero();
 		_pb_pd_ipc_collision_handler.BarrierLocalProject(_massed_collision_objs, _offsets, barrier_y);
 		barrier_global_matrix.setZero();
 		_pb_pd_ipc_collision_handler.GetBarrierGlobalMatrix(_massed_collision_objs, _offsets, _total_dof, barrier_global_matrix);
 
-		delta_x = (x - x_ccd_start).norm();
-		x = x_ccd_start + toi * (x - x_ccd_start);
-		x_ccd_start = x;
-		if (inner_converge && toi == 1) {
+		const double delta_x = (x - x_ccd_start).lpNorm<Eigen::Infinity>();
+		x_ccd_start += toi * (x - x_ccd_start);
+		if (inner_converge && delta_x < _outer_tolerance) {
+			x = x_ccd_start;
 			break;
 		}
 		outer_itr++;
 	}
 
-	if (last_toi < 0.9) {
-		spdlog::warn("TOI = {}", last_toi);
-	}
-
-	if (outer_itr < _outer_max_itrs) {
-		spdlog::info("Outer iteration converges in {} steps", outer_itr);
-	} else {
-		spdlog::warn("Outer iteration does not converge! delta-x = {}", delta_x);
-	}
+	spdlog::info("Outer iteration converges in {} steps", outer_itr);
 
 	VectorXd v = (x - x_current) / h * (1 - h);
 	_coord_assembler.SetCoordinate(x);

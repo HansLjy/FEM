@@ -1,6 +1,6 @@
 {
 	"type": "position-based-PDIPC",
-	"outer-tolerance": 1e-5,
+	"outer-tolerance": 1e-3,
 	"inner-tolerance": 1e-3,
 	"outer-max-iterations": 100,
 	"inner-max-iterations": 100,
@@ -9,8 +9,14 @@
 		"grid-length": 0.03,
 		"hash-table-size": 8192
 	},
+	"barrier-set-generator": {
+		"type": "spatial-hashing",
+		"d-hat": 1e-3,
+		"grid-length": 0.03,
+		"hash-table-size": 8192
+	},
 	"collision-handler": {
-		"kappa": 1e5,
+		"kappa": 1e7,
 		"d-hat": 1e-3,
 		"stiffness-blending": 1,
 		"velocity-damping": 1

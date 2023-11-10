@@ -6,6 +6,7 @@
 #include "BlockMatrix.h"
 #include "Collision/CollisionInfo.hpp"
 #include "Object.hpp"
+#include <set>
 
 CONCEPT_MODEL_IDIOM_BEGIN(MassedCollisionInterface)
     ADD_INTERFACE_FUNCTION(int GetDOF() const, GetDOF())
@@ -51,7 +52,8 @@ namespace PositionBasedPDIPCCollisionUtility {
 		const double d_hat,
 		const double velocity_damping,
 		Vector3d &vertex_after,
-		Vector3d &face_after1, Vector3d &face_after2, Vector3d &face_after3
+		Vector3d &face_after1, Vector3d &face_after2, Vector3d &face_after3,
+		double& mass1, double& mass2
 	);
 
 	void GetEdgeEdgeRebounce(
@@ -65,10 +67,12 @@ namespace PositionBasedPDIPCCollisionUtility {
 		const double d_hat,
 		const double velocity_damping,
 		Vector3d &edge_after11, Vector3d &edge_after12,
-		Vector3d &edge_after21, Vector3d &edge_after22
+		Vector3d &edge_after21, Vector3d &edge_after22,
+		double &mass1, double &mass2
 	);
 
-	double GetStiffness(double kappa, double d_hat2, double distance2, double min_stffness);
+	double GetStiffness(double kappa, double d_hat2, double distance2, double mass, double dt);
+
 }
 
 class PositionBasedPDIPCCollisionHandler {
@@ -81,13 +85,19 @@ public:
 
 	void ClearConstraintSet();
 	
-	void AddCollisionPairs(
+	void AddBarrierSet (
+		const std::vector<CollisionInterface>& objs,
+		const std::vector<int> offsets,
+		const std::vector<PrimitivePair> barrier_set_candidate
+	);
+
+	void AddBarrierSet (
+		const std::vector<PrimitivePair> barrier_set
+	);
+
+	void TargetPositionGeneration(
 		const std::vector<MassedCollisionInterface>& objs,
-		const std::vector<int>& offsets,
-		const std::vector<PrimitivePair>& constraint_set,
-		const std::vector<double> & local_tois,
-		const double global_toi,
-		double dt
+		double global_toi, double dt
 	);
 
 	double GetBarrierEnergy(
@@ -113,42 +123,6 @@ public:
 		SparseMatrixXd& global_matrix
 	) const;
 
-	void DumpTargetPositions(const std::string& name, int obj_id, int vertex_id, const std::function<bool(const Vector3d&)>& judge) {
-		std::vector<Vector3d> targets;
-		int project_id = 0;
-		for (const auto& projection_info : _projection_infos) {
-			if (projection_info._obj_id == obj_id && projection_info._vertex_id == vertex_id && judge(projection_info._target_position)) {
-				targets.push_back(projection_info._target_position);
-				// DebugUtils::PrintPrimitivePair(_primitive_pairs[project_id / 4]);
-			}
-			project_id++;
-		}
-		DebugUtils::DumpVertexList(name, targets);
-	}
-
-	void DumpAllTargetPositions(
-		const std::string& name,
-		const std::vector<MassedCollisionInterface>& objs,
-		const std::function<bool(const int obj_id, const int vertex_id, const Vector3d&)>& judge
-	) {
-		std::vector<Vector3d> targets;
-		int project_id = 0;
-		int satisfiled_id = 0;
-		std::cerr << "================" << std::endl;
-		for (const auto& projection_info : _projection_infos) {
-			std::cerr << project_id << ": " << projection_info._stiffness << std::endl;
-			if (judge(projection_info._obj_id, projection_info._vertex_id, projection_info._target_position)) {
-				targets.push_back(projection_info._target_position);
-				if (satisfiled_id == 118) {
-					DebugUtils::PrintPrimitivePair(_primitive_pairs[project_id / 4], objs);
-				}
-				satisfiled_id++;
-			}
-			project_id++;
-		}
-		DebugUtils::DumpVertexList(name, targets);
-	}
-
 // protected:
 	double _kappa;
 	double _d_hat;
@@ -166,7 +140,6 @@ public:
 	};
 	
 	std::vector<ProjectionInfo> _projection_infos;
-	std::vector<PrimitivePair> _primitive_pairs;					// every primitive pair cooresponds to 4 projection infos
-	InterfaceContainer<MassedCollisionInterface> _obj_container;
+	std::set<PrimitivePair> _barrier_set;
 	
 };

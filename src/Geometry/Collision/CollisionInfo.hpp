@@ -13,6 +13,22 @@ struct PrimitivePair {
 	int _obj_id2;
 	int _primitive_id1;
 	int _primitive_id2;
+
+	bool operator<(const PrimitivePair& rhs) const {
+		if (_type != rhs._type) {
+			return _type < rhs._type;
+		}
+		if (_obj_id1 != rhs._obj_id1) {
+			return _obj_id1 < rhs._obj_id1;
+		}
+		if (_obj_id2 != rhs._obj_id2) {
+			return _obj_id2 < rhs._obj_id2;
+		}
+		if (_primitive_id1 != rhs._primitive_id1) {
+			return _primitive_id1 < rhs._primitive_id1;
+		}
+		return _primitive_id2 < rhs._primitive_id2;
+	}
 };
 
 #include <iostream>

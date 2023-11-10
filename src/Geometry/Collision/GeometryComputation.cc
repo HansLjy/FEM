@@ -158,6 +158,8 @@ double LeiLan::EdgeEdgeSqDistance(Vector3d xi, Vector3d xj, Vector3d xa, Vector3
 	return dir.dot(dir);
 }
 
+#include <iostream>
+
 double LeiLan::VertexTriangleDistance(Vector3d xi, Vector3d xa, Vector3d xb, Vector3d xc, double& ba, double& bb, double& bc, Vector3d& dir)
 {
 	Vector3d xba, xca, xia;

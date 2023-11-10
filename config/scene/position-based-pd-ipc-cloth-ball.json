@@ -8,8 +8,32 @@
 			"rotation-axis": [0, 1, 0],
 			"rotation-angle": 90,
             "density": 100,
-            "spring-stiffness": 100000,
-            "bending-stiffness": 0.01,
+            "spring-stiffness": 10000,
+            "bending-stiffness": 0.02,
+            "energy": {},
+            "external-forces": [
+                {
+                    "type": "gravity",
+                    "g": [0, 0, -9.8]
+                }
+            ],
+            "render": {
+                "have-bounding-box": false,
+                "use-texture": false,
+                "texture-path": ""
+            },
+			"collision": {}
+        },
+		{
+            "type": "cloth",
+            "filename": "/plane_large.obj",
+            "centered": false,
+			"translation": [0, 0, 3.1],
+			"rotation-axis": [1, 0, 0],
+			"rotation-angle": 90,
+            "density": 100,
+            "spring-stiffness": 10000,
+            "bending-stiffness": 0.02,
             "energy": {},
             "external-forces": [
                 {
