@@ -10,9 +10,8 @@ Factory<ExternalForce<PDClothData>>* Factory<ExternalForce<PDClothData>>::_the_f
 PDClothData PDClothData::CreateFromFile(const json &config) {
     VectorXd x;
     MatrixXi face_topo, tet_topo(0, 4), edge_topo;
-	Vector3d rotation_axis = Json2Vec(config["rotation-axis"]);
-	double rotation_angle = static_cast<double>(config["rotation-angle"]) / 180 * M_PI;
-	Matrix3d rotation = Matrix3d(Eigen::AngleAxis(rotation_angle, rotation_axis));
+	Matrix3d rotation = JsonUtils::ReadJsonRotationList(config["rotations"]);
+
     FileIOUtils::ReadMesh(
 		config["filename"],
 		x, face_topo,

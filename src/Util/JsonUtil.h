@@ -46,4 +46,8 @@ Matrix3d Json2Matrix3d(const json& mat);
 
 glm::vec3 Json2GlmVec3(const json& vec);
 
+namespace JsonUtils {
+	Matrix3d ReadJsonRotationList(const json& rotation_list);
+}
+
 #endif //FEM_JSONUTIL_H

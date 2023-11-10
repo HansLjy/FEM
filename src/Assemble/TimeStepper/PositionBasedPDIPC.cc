@@ -122,7 +122,7 @@ VectorXd PositionBasedPDIPC::EstimateExternalForce(
 		toi = 1;
 	}
 
-	throw "fuck";
+	// throw "fuck";
 
 	VectorXd barrier_y = VectorXd::Zero(_total_dof);
 	_pb_pd_ipc_collision_handler.BarrierLocalProject(_massed_collision_objs, _offsets, barrier_y);
@@ -159,8 +159,6 @@ void PositionBasedPDIPC::Step(double h) {
 	_pb_pd_ipc_collision_handler.ClearConstraintSet();
 	VectorXd barrier_y = VectorXd::Zero(_total_dof);
 	SparseMatrixXd barrier_global_matrix(_total_dof, _total_dof);
-
-	Eigen::ConjugateGradient<SparseMatrixXd> CG_solver;
 
 	/* Estimate penalty force */
 	// VectorXd f_pen = EstimateExternalForce(M_h2, x_current, x_hat, h);

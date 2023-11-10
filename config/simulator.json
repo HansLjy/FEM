@@ -3,10 +3,10 @@
 		"duration": 3,
 		"time-step": 0.01,
 		"dump-mesh": true,
-		"mesh-path": "/output/test",
+		"mesh-path": "/output/debug",
 		"dump-coord": true,
 		"pickup-from-dump": false,
-		"pickup-frame-number": 94
+		"pickup-frame-number": 0
 	},
 	"time-stepper-config": "/position-based-pd-ipc.json",
 	"scene-config": "/position-based-pd-ipc-cloth-ball.json",

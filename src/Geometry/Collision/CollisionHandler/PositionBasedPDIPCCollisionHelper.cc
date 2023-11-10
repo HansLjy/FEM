@@ -10,6 +10,7 @@
 #include "Collision/IpcTookit/UnclassifiedDistance.hpp"
 #include "Collision/CollisionUtility.h"
 #include "Collision/CollisionInterface.hpp"
+#include <cmath>
 
 template<>
 Caster<MassedCollisionInterface>* Caster<MassedCollisionInterface>::_the_factory = nullptr;
@@ -42,10 +43,6 @@ void PositionBasedPDIPCCollisionUtility::GetVertexFaceRebounce(
 	);
 	normal.normalize();
 
-	// if (distance2 < 1e-12) {
-	// 	spdlog::warn("vertex-face pair too close!");
-	// }
-
 	mass1 = vertex_mass;
 	mass2 = face_mass1 * barycentric_coord(0)
 		  + face_mass2 * barycentric_coord(1)
@@ -68,10 +65,7 @@ void PositionBasedPDIPCCollisionUtility::GetVertexFaceRebounce(
 	const Vector3d tangent_velocity1 = vertex_velocity - normal_velocity1 * normal;
 	const Vector3d tangent_velocity2 = closest_point_velocity - normal_velocity2 * normal;
 
-	assert((tangent_velocity1 + normal_velocity1 * normal - vertex_velocity).norm() < 1e-10);
-	assert((tangent_velocity2 + normal_velocity2 * normal - closest_point_velocity).norm() < 1e-10);
-
-	const double rebounce_dist = d_hat - std::sqrt(distance2);
+	const double rebounce_dist = std::max(d_hat - std::sqrt(distance2), 0.0);
 
 	const double normal_velocity_after1 =   rebounce_dist * (mass2 / (mass1 + mass2)) / (1 - local_toi);
 	const double normal_velocity_after2 = - rebounce_dist * (mass1 / (mass1 + mass2)) / (1 - local_toi);
@@ -137,10 +131,6 @@ void PositionBasedPDIPCCollisionUtility::GetEdgeEdgeRebounce(
 	);
 	normal.normalize();
 
-	// if (distance2 < 1e-12) {
-	// 	spdlog::warn("edge-edge pair too close!");
-	// }
-
 	mass1 = edge_mass11 * (1 - barycentric_coord(0))
 		  + edge_mass12 * barycentric_coord(0);
 	mass2 = edge_mass21 * (1 - barycentric_coord(1))
@@ -165,7 +155,7 @@ void PositionBasedPDIPCCollisionUtility::GetEdgeEdgeRebounce(
 	const Vector3d tangent_velocity1 = closest_point_velocity1 - normal_velocity1 * normal;
 	const Vector3d tangent_velocity2 = closest_point_velocity2 - normal_velocity2 * normal;
 
-	const double rebounce_dist = d_hat - std::sqrt(distance2);
+	const double rebounce_dist = std::max(d_hat - std::sqrt(distance2), 0.0);
 
 	const double normal_velocity_after1 =   rebounce_dist * (mass2 / (mass1 + mass2)) / (1 - local_toi);
 	const double normal_velocity_after2 = - rebounce_dist * (mass1 / (mass1 + mass2)) / (1 - local_toi);
@@ -209,7 +199,7 @@ void PositionBasedPDIPCCollisionHandler::TargetPositionGeneration(
 ) {
 	_projection_infos.clear();
 	_projection_infos.reserve(_barrier_set.size() * 4);
-	int active_c_set = 0;
+	std::vector<PrimitivePair> debug_primitive_pairs;
 	for (const auto& barrier_primitive_pair : _barrier_set) {
 		const auto& obj1 = objs[barrier_primitive_pair._obj_id1];
 		const auto& obj2 = objs[barrier_primitive_pair._obj_id2];
@@ -241,19 +231,17 @@ void PositionBasedPDIPCCollisionHandler::TargetPositionGeneration(
 					break;
 				}
 				
-				active_c_set++;
+				// double local_toi = IPC::point_triangle_ccd(
+				// 	vertex, face1, face2, face3, 
+				// 	vertex_velocity, face_velocity1, face_velocity2, face_velocity3, 
+				// 	0.1, 0
+				// );
 
-				double local_toi = IPC::point_triangle_ccd(
-					vertex, face1, face2, face3, 
-					vertex_velocity, face_velocity1, face_velocity2, face_velocity3, 
-					0.1, 0
-				);
-
-				if (local_toi > 1) {
-					local_toi = 1;
-				} else {
-					local_toi *= 0.8;
-				}
+				// if (local_toi > 1) {
+				// 	local_toi = 1;
+				// } else {
+				// 	local_toi *= 0.8;
+				// }
 
 				double mass1, mass2;
 				PositionBasedPDIPCCollisionUtility::GetVertexFaceRebounce(
@@ -296,8 +284,8 @@ void PositionBasedPDIPCCollisionHandler::TargetPositionGeneration(
 					face_after3
 				));
 
-				// if (vertex_index == 3280 || face_indices[0] == 3280 || face_indices[1] == 3280 || face_indices[2] == 3280) {
-				// 	DebugUtils::PrintPrimitivePair(barrier_primitive_pair, objs);
+				// if (vertex_index == 2275 || face_indices[0] == 2275 || face_indices[1] == 2275 || face_indices[2] == 2275) {
+				// 	debug_primitive_pairs.push_back(barrier_primitive_pair);
 				// }
 
 				// if (DebugUtils::PrimitivePairEqual(barrier_primitive_pair, 0, 3965, 1, 1)) {
@@ -346,19 +334,18 @@ void PositionBasedPDIPCCollisionHandler::TargetPositionGeneration(
 				if (distance2 >= _d_hat * _d_hat) {
 					break;
 				}
-				active_c_set++;
 
-				double local_toi = IPC::edge_edge_ccd(
-					edge11, edge12, edge21, edge22, 
-					edge_velocity11, edge_velocity12, edge_velocity21, edge_velocity22, 
-					0.1, 0
-				);
+				// double local_toi = IPC::edge_edge_ccd(
+				// 	edge11, edge12, edge21, edge22, 
+				// 	edge_velocity11, edge_velocity12, edge_velocity21, edge_velocity22, 
+				// 	0.1, 0
+				// );
 
-				if (local_toi > 1) {
-					local_toi = 1;
-				} else {
-					local_toi *= 0.8;
-				}
+				// if (local_toi > 1) {
+				// 	local_toi = 1;
+				// } else {
+				// 	local_toi *= 0.8;
+				// }
 				
 				double mass1, mass2;
 
@@ -400,8 +387,20 @@ void PositionBasedPDIPCCollisionHandler::TargetPositionGeneration(
 					edge_after22
 				));
 
-				// if (edge_indices1[0] == 3280 || edge_indices1[1] == 3280 || edge_indices2[0] == 3280 || edge_indices2[1] == 3280) {
-				// 	DebugUtils::PrintPrimitivePair(barrier_primitive_pair, objs);
+				// if (DebugUtils::PrimitivePairEqual(barrier_primitive_pair, 0, 5840, 0, 5543)) {
+				// 	std::vector<Vector3d> fuck_toi;
+				// 	fuck_toi.push_back(edge11 + edge_velocity11);
+				// 	fuck_toi.push_back(edge12 + edge_velocity12);
+				// 	fuck_toi.push_back(edge21 + edge_velocity21);
+				// 	fuck_toi.push_back(edge22 + edge_velocity22);
+				// 	DebugUtils::DumpVertexList("fuck-toi", fuck_toi);
+
+				// 	std::vector<Vector3d> fuck;
+				// 	fuck.push_back(edge_after11);
+				// 	fuck.push_back(edge_after12);
+				// 	fuck.push_back(edge_after21);
+				// 	fuck.push_back(edge_after22);
+				// 	DebugUtils::DumpVertexList("fuck-collision", fuck);
 				// }
 
 				break;
@@ -410,17 +409,21 @@ void PositionBasedPDIPCCollisionHandler::TargetPositionGeneration(
 	}
 	// spdlog::info("current active primitive pairs = {}", active_c_set);
 
-	// if (global_toi < 1e-5) {
-	// 	std::vector<Vector3d> targets;
-	// 	for (const auto& projection_info : _projection_infos) {
-	// 		if (projection_info._obj_id == 0 && projection_info._vertex_id == 3280) {
-	// 			targets.push_back(projection_info._target_position);
-	// 			std::cerr << projection_info._stiffness << std::endl;
+	// static int visit_cnt = 0;
+	// std::vector<Vector3d> targets;
+	// int debug_primitive_pair_id = 0;
+	// double min_z = 0;
+	// for (const auto& projection_info : _projection_infos) {
+	// 	if (projection_info._obj_id == 0 && projection_info._vertex_id == 2275) {
+	// 		targets.push_back(projection_info._target_position);
+	// 		if (projection_info._target_position(2) < min_z) {
+	// 			DebugUtils::PrintPrimitivePair(debug_primitive_pairs[debug_primitive_pair_id], objs);
+	// 			min_z = projection_info._target_position(2);
 	// 		}
+	// 		debug_primitive_pair_id++;
 	// 	}
-	// 	DebugUtils::DumpVertexList("fuck-bb", targets);
-	// 	exit(-1);
 	// }
+	// DebugUtils::DumpVertexList("fuck-bb" + std::to_string(visit_cnt++), targets);
 
 	// DebugUtils::DumpVertexList("fuck-bb", debug_targets);
 

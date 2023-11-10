@@ -15,3 +15,13 @@ Matrix3d Json2Matrix3d(const json& mat) {
 glm::vec3 Json2GlmVec3(const json& vec) {
     return {vec[0], vec[1], vec[2]};
 }
+
+Matrix3d JsonUtils::ReadJsonRotationList(const json &rotation_list) {
+	Matrix3d rotation = Matrix3d::Identity();
+	for (const auto& rotation_config : rotation_list) {
+		const Vector3d axis = Json2Vec(rotation_config["axis"]).normalized();
+		const double angle = static_cast<double>(rotation_config["angle"]) / 180 * M_PI;
+		rotation = AngleAxisd(angle, axis) * rotation;
+	}
+	return rotation;
+}
