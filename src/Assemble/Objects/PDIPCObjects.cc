@@ -30,7 +30,7 @@ class PDIPCCloth :
 	public PDClothData,
     public CoordinateAdapter<BasicCoordinate, PDIPCCloth>,
     public MassModelAdapter<SampledObjectMassModel, PDIPCCloth>,
-    public PDClothEnergyModel<PDIPCCloth>,
+    public PDClothEnergyModel<PDIPCCloth, ParallelType::kNone>,
     public ExternalForceContainerAdapter<PDClothData, PDIPCCloth>,
     public RenderShapeAdapter<SampledRenderShape, PDIPCCloth>,
 	public CollisionShapeAdapter<SampledCollisionShape, PDIPCCloth> {

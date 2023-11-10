@@ -59,7 +59,6 @@ CPMAddPackage(
 	GIT_TAG v3.11.2
 )
 
-
 CPMAddPackage(
 	NAME igl
 	GIT_REPOSITORY git@github.com:libigl/libigl.git
@@ -86,4 +85,8 @@ target_link_libraries(FEMUtility PUBLIC TBB::tbb)
 if (BUILD_TEST)
 	target_link_libraries(FEMUtility PUBLIC TestUtility)
 endif ()
+
+if (BUILD_BENCHMARK)
+	add_subdirectory(BenchmarkUtility)
+endif()
 

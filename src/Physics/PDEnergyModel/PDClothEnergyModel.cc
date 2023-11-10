@@ -1,6 +1,7 @@
 #include "PDClothEnergyModel.hpp"
 #include "GeometryUtil.hpp"
 #include <iostream>
+#include "tbb/parallel_for.h"
 
 double PDEnergyModelFunction::GetPDSpringEnergy(
     const Ref<const VectorXd> &x,
@@ -59,7 +60,8 @@ Vector3d PDEnergyModelFunction::SpringLocalProject(
     return (x1 - x2).normalized() * rest_length;
 }
 
-void PDEnergyModelFunction::GetPDSpringEnergyRHSVector(
+template<>
+void PDEnergyModelFunction::GetPDSpringEnergyRHSVector<ParallelType::kNone>(
     const Ref<const VectorXd> &x,
     const Ref<const MatrixXi> &edge_topo,
     const std::vector<double> &rest_length,
@@ -67,14 +69,36 @@ void PDEnergyModelFunction::GetPDSpringEnergyRHSVector(
     Ref<VectorXd> y
 ) {
     const int num_edges = edge_topo.rows();
-    for (int i = 0; i < num_edges; i++) {
-        const RowVector2i indices = edge_topo.row(i);
+    for (int edge_id = 0; edge_id < num_edges; edge_id++) {
+        const RowVector2i indices = edge_topo.row(edge_id);
         const Vector3d x1 = x.segment<3>(3 * indices[0]);
         const Vector3d x2 = x.segment<3>(3 * indices[1]);
-        Vector3d d = SpringLocalProject(x1, x2, rest_length[i]);
+        Vector3d d = SpringLocalProject(x1, x2, rest_length[edge_id]);
         y.segment<3>(indices[0] * 3) += d * stiffness;
         y.segment<3>(indices[1] * 3) += -d * stiffness;
     }
+}
+
+template<>
+void PDEnergyModelFunction::GetPDSpringEnergyRHSVector<ParallelType::kCPU>(
+    const Ref<const VectorXd> &x,
+    const Ref<const MatrixXi> &edge_topo,
+    const std::vector<double> &rest_length,
+    double stiffness,
+    Ref<VectorXd> y
+) {
+    const int num_edges = edge_topo.rows();
+	// TODO: this does not work
+	tbb::parallel_for(tbb::blocked_range(0, num_edges, 150), [&](tbb::blocked_range<int> r) {
+		for (int edge_id = r.begin(); edge_id < r.end(); edge_id++) {
+			const RowVector2i indices = edge_topo.row(edge_id);
+			const Vector3d x1 = x.segment<3>(3 * indices[0]);
+			const Vector3d x2 = x.segment<3>(3 * indices[1]);
+			Vector3d d = SpringLocalProject(x1, x2, rest_length[edge_id]);
+			y.segment<3>(indices[0] * 3) += d * stiffness;
+			y.segment<3>(indices[1] * 3) += -d * stiffness;
+		}
+	});
 }
 
 void PDEnergyModelFunction::InitQuadraticBendingMatrix(

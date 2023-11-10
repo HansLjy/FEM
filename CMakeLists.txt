@@ -27,6 +27,10 @@ add_definitions(-DMODEL_PATH="${PROJECT_SOURCE_DIR}/data/model")
 add_definitions(-DOUTPUT_PATH="${PROJECT_SOURCE_DIR}/output")
 add_definitions(-DCONFIG_PATH="${PROJECT_SOURCE_DIR}/config")
 
+if(CPU_PARALLEL)
+	add_definitions(-DCPU_PARALLEL)
+endif()
+
 if(BUILD_TEST)
 	add_definitions(-DBUILD_TEST)
 endif()

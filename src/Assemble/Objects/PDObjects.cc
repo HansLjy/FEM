@@ -26,7 +26,7 @@ class PDCloth :
     public PDClothData,
     public CoordinateAdapter<BasicCoordinate, PDCloth>,
     public MassModelAdapter<SampledObjectMassModel, PDCloth>,
-    public PDClothEnergyModel<PDCloth>,
+    public PDClothEnergyModel<PDCloth, ParallelType::kCPU>,
     public ExternalForceContainerAdapter<PDClothData, PDCloth>,
     public RenderShapeAdapter<SampledRenderShape, PDCloth>,
 	public CollisionShapeAdapter<SampledCollisionShape, PDCloth> {

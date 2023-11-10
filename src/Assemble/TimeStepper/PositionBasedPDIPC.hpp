@@ -22,6 +22,8 @@ public:
 		BarrierSetGenerator* barrier_set_generator
 	);
 
+	void Precompute();
+
 	void BindSystem(const json &config) override;
 	void DumpCoord(int itr) const override;
 	void PickCoord(int itr) override;

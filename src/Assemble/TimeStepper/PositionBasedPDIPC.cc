@@ -146,7 +146,6 @@ void PositionBasedPDIPC::Step(double h) {
 
     SparseMatrixXd M;
     _mass_assembler.GetMass(M);
-    SparseMatrixXd G = _pd_assembler.GetGlobalMatrix(_pd_objs, _total_dof);
     SparseMatrixXd M_h2 = M / (h * h);
 
     VectorXd f_ext(_total_dof);
@@ -160,10 +159,8 @@ void PositionBasedPDIPC::Step(double h) {
 	VectorXd barrier_y = VectorXd::Zero(_total_dof);
 	SparseMatrixXd barrier_global_matrix(_total_dof, _total_dof);
 
-	/* Estimate penalty force */
-	// VectorXd f_pen = EstimateExternalForce(M_h2, x_current, x_hat, h);
-	// x_hat += h * h * m_solver.solve(f_pen);
-	// Mx_hat_h2 += f_pen;
+	SparseMatrixXd mass_barrier_lhs_matrix = M_h2 + barrier_global_matrix;
+	VectorXd mass_barrier_rhs_vector = Mx_hat_h2 + barrier_y;
 
 	int B_size = 0;
 	int delta_B_size = 0;
@@ -176,7 +173,7 @@ void PositionBasedPDIPC::Step(double h) {
 		bool inner_converge = false;
 		while(true) {
 			VectorXd x_pre = x;
-			InnerIteration(M_h2 + barrier_global_matrix, Mx_hat_h2 + barrier_y, x);
+			InnerIteration(mass_barrier_lhs_matrix, mass_barrier_rhs_vector, x);
 
 			double tolerance;
 			if (B_size == 0 || delta_B_size <= 1) {
@@ -214,12 +211,6 @@ void PositionBasedPDIPC::Step(double h) {
 		last_toi = toi;
 		spdlog::info("toi = {}", last_toi);
 
-		// for (int i = 0; i < local_tois.size(); i++) {
-		// 	if (local_tois[i] * 0.8 == toi) {
-		// 		DebugUtils::PrintPrimitivePair(constraint_set[i], _massed_collision_objs);
-		// 	}
-		// }
-
 		std::vector<PrimitivePair> barrier_set;
 		_collision_assembler.ComputeCollisionVertex(x_ccd_start + toi * (x - x_ccd_start), _collision_objs);
 		_barrier_set_generator->GenerateBarrierSet(_collision_objs, _offsets, barrier_set);
@@ -237,6 +228,9 @@ void PositionBasedPDIPC::Step(double h) {
 		_pb_pd_ipc_collision_handler.BarrierLocalProject(_massed_collision_objs, _offsets, barrier_y);
 		barrier_global_matrix.setZero();
 		_pb_pd_ipc_collision_handler.GetBarrierGlobalMatrix(_massed_collision_objs, _offsets, _total_dof, barrier_global_matrix);
+
+		mass_barrier_lhs_matrix = M_h2 + barrier_global_matrix;
+		mass_barrier_rhs_vector = Mx_hat_h2 + barrier_y;
 
 		const double delta_x = (x - x_ccd_start).lpNorm<Eigen::Infinity>();
 		x_ccd_start += toi * (x - x_ccd_start);
